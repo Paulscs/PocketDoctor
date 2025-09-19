@@ -1,0 +1,24 @@
+# Node / React Native
+node_modules/
+.expo/
+.expo-shared/
+*.apk
+*.ipa
+
+# Python / FastAPI
+__pycache__/
+*.pyc
+venv/
+.pytest_cache/
+
+# Entornos
+.env
+.env.local
+
+# Docker
+*.log
+docker-compose.override.yml
+
+# IDEs
+.vscode/
+.idea/
