@@ -1,5 +1,5 @@
 import React from "react";
-import { View, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+import { View, TextInput, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useThemeColor } from "@/hooks/use-theme-color";
@@ -10,10 +10,11 @@ interface InputProps {
   value?: string;
   onChangeText?: (text: string) => void;
   secureTextEntry?: boolean;
-  keyboardType?: "default" | "email-address" | "numeric";
+  keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
   icon?: string;
   error?: string;
   style?: any;
+  rightComponent?: React.ReactNode; // <-- agregado
 }
 
 export function Input({
@@ -26,21 +27,22 @@ export function Input({
   icon,
   error,
   style,
+  rightComponent
 }: InputProps) {
   const backgroundColor = useThemeColor(
-    { light: "#ffffff", dark: "#1a1a1a" },
-    "background"
+    { light: "#FFFFFF", dark: "#1a1a1a" },
+    "card"
   );
   const textColor = useThemeColor(
-    { light: "#000000", dark: "#ffffff" },
+    { light: "#2D3748", dark: "#ffffff" },
     "text"
   );
   const placeholderColor = useThemeColor(
-    { light: "#8E8E93", dark: "#8E8E93" },
+    { light: "#999", dark: "#8E8E93" },
     "icon"
   );
   const borderColor = useThemeColor(
-    { light: "#E0E0E0", dark: "#38383A" },
+    { light: "#E2E8F0", dark: "#38383A" },
     "border"
   );
   const errorColor = useThemeColor(
@@ -64,6 +66,7 @@ export function Input({
           secureTextEntry={secureTextEntry}
           keyboardType={keyboardType}
         />
+        {rightComponent ? <View style={styles.rightWrapper}>{rightComponent}</View> : null}
       </View>
       {error && (
         <ThemedText style={[styles.error, { color: errorColor }]}>
@@ -80,8 +83,9 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: "600",
     marginBottom: 8,
+    marginTop: 20,
   },
   inputContainer: {
     flexDirection: "row",
@@ -89,12 +93,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 4,
     gap: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   input: {
     flex: 1,
     fontSize: 16,
+    paddingVertical: 16,
+  },
+  rightWrapper: {
+    marginLeft: 8,
+    alignSelf: "center",
   },
   error: {
     fontSize: 14,

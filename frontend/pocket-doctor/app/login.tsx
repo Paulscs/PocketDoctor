@@ -11,9 +11,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import CheckRow from "@/components/ui/CheckRow";
+import { Ionicons } from "@expo/vector-icons";
+import { ThemedText } from "@/components/themed-text";
+const BRAND_BLUE = "#002D73";
+const MUTED = "#52607A";
+
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("ejemplo@gmail.com");
+  const [email, setEmail] = useState("");
+  const [secure, setSecure] = useState(true);
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -23,6 +30,7 @@ export default function LoginScreen() {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
+    const isFormValid = email.trim() !== "" && password.trim() !== "";
 
     setIsLoading(true);
     try {
@@ -53,15 +61,11 @@ export default function LoginScreen() {
         {/* Logo Section */}
         <View style={styles.logoContainer}>
           {/* Real Pocket Doctor Logo */}
-          <Image
-            source={require("@/assets/images/logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.welcomeText}>Bienvenido</Text>
-          <Text style={styles.subtitle}>
+          <Image source={require("@/assets/images/aloneLogo.png")} style={styles.logo} resizeMode="contain" />
+          <ThemedText style={styles.title}>Bienvenido</ThemedText>
+          <ThemedText style={styles.subtitle}>
             Inicia sesión para acceder a tu asistente médico IA
-          </Text>
+          </ThemedText>
         </View>
 
         {/* Form Section */}
@@ -77,7 +81,6 @@ export default function LoginScreen() {
               autoCapitalize="none"
               placeholderTextColor="#999"
             />
-            <Text style={styles.inputIcon}>📧</Text>
           </View>
 
           <Text style={styles.inputLabel}>Contraseña</Text>
@@ -87,10 +90,12 @@ export default function LoginScreen() {
               placeholder="Introduzca su contraseña"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              secureTextEntry={secure}
               placeholderTextColor="#999"
             />
-            <Text style={styles.inputIcon}>🔒</Text>
+            <TouchableOpacity onPress={() => setSecure(!secure)} style={styles.eyeBtn}>
+            <Ionicons name={secure ? "eye-off" : "eye"} size={20} color="#666" />
+            </TouchableOpacity>
           </View>
 
           {/* Remember Me & Forgot Password */}
@@ -99,15 +104,15 @@ export default function LoginScreen() {
               style={styles.rememberContainer}
               onPress={() => setRememberMe(!rememberMe)}
             >
-              <View
-                style={[styles.checkbox, rememberMe && styles.checkboxChecked]}
+              <CheckRow
+                checked={rememberMe}
+                onToggle={() => setRememberMe(!rememberMe)}
+                text="Recordarme"
               >
-                {rememberMe && <Text style={styles.checkmark}>✓</Text>}
-              </View>
-              <Text style={styles.rememberText}>Recordarme</Text>
+              </CheckRow>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleForgotPassword}>
-              <Text style={styles.forgotText}>Contraseña olvidada?</Text>
+              <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
             </TouchableOpacity>
           </View>
 
@@ -130,43 +135,18 @@ export default function LoginScreen() {
           </View>
 
           {/* Social Login Buttons */}
-          <View style={styles.socialContainer}>
-            <TouchableOpacity
-              style={styles.socialButton}
-              onPress={() => handleSocialLogin("Google")}
-            >
-              <Image
-                source={require("@/assets/images/google.png")}
-                style={styles.socialIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.socialText}>Google</Text>
-            </TouchableOpacity>
+          <View style={styles.socialButtonsContainer}>
+              <TouchableOpacity style={styles.socialButton}>
+                <Image source={require("@/assets/images/google.png")} style={styles.socialIcon} resizeMode="contain" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.socialButton}>
+                <Image source={require("@/assets/images/microsoft.png")} style={styles.socialIcon} resizeMode="contain" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.socialButton}>
+                <Image source={require("@/assets/images/apple.png")} style={styles.socialIcon} resizeMode="contain" />
+              </TouchableOpacity>
+            </View>
 
-            <TouchableOpacity
-              style={styles.socialButton}
-              onPress={() => handleSocialLogin("Microsoft")}
-            >
-              <Image
-                source={require("@/assets/images/microsoft.png")}
-                style={styles.socialIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.socialText}>Microsoft</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.socialButton}
-              onPress={() => handleSocialLogin("Apple")}
-            >
-              <Image
-                source={require("@/assets/images/apple.png")}
-                style={styles.socialIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.socialText}>Apple</Text>
-            </TouchableOpacity>
-          </View>
 
           {/* Sign Up Link */}
           <View style={styles.signUpContainer}>
@@ -188,6 +168,8 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  title: { fontSize: 28, fontWeight: "700", color: BRAND_BLUE, marginBottom: 6 },
+  subtitle: { fontSize: 14, color: MUTED, textAlign: "center", paddingHorizontal: 12 },
   container: {
     flex: 1,
     backgroundColor: "#F8F9FA",
@@ -197,26 +179,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 40,
   },
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 50,
-  },
-  logo: {
-    width: 140,
-    height: 140,
-    marginBottom: 32,
-  },
+  logoContainer: { alignItems: "center", marginBottom: 32, marginTop: 20 },
+  logo: { width: 200, height: 140 },
   welcomeText: {
     fontSize: 32,
     fontWeight: "700",
     color: "#1A365D",
     marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#718096",
-    textAlign: "center",
-    lineHeight: 22,
   },
   formContainer: {
     flex: 1,
@@ -224,30 +193,28 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#2D3748",
+    color: "#002D73",
     marginBottom: 8,
     marginTop: 20,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+    paddingVertical: 12,
+    marginBottom: 8,
   },
   textInput: {
     flex: 1,
     fontSize: 16,
     color: "#2D3748",
-    paddingVertical: 16,
+    paddingVertical: 8,
+    backgroundColor: "transparent",
+  },
+  eyeBtn: { 
+    padding: 6,
+    marginLeft: 8,
   },
   inputIcon: {
     fontSize: 20,
@@ -263,6 +230,23 @@ const styles = StyleSheet.create({
   rememberContainer: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  socialButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 24,
+    marginBottom: 32,
+  },
+  socialButton: {
+    width: 48,
+    height: 48,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  socialIcon: {
+    width: 32,
+    height: 32,
   },
   checkbox: {
     width: 20,
@@ -288,12 +272,13 @@ const styles = StyleSheet.create({
     color: "#4A5568",
   },
   forgotText: {
+    color: "#002D73",
+    fontWeight: "600",
     fontSize: 14,
-    color: "#4299E1",
     textDecorationLine: "underline",
   },
   loginButton: {
-    backgroundColor: "#4299E1",
+    backgroundColor: "#002D73",
     borderRadius: 25,
     paddingVertical: 16,
     alignItems: "center",
@@ -327,29 +312,6 @@ const styles = StyleSheet.create({
   socialContainer: {
     alignItems: "center",
   },
-  socialButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    width: "80%",
-    justifyContent: "flex-start",
-  },
-  socialIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 16,
-  },
   socialText: {
     fontSize: 16,
     fontWeight: "500",
@@ -367,10 +329,9 @@ const styles = StyleSheet.create({
     color: "#718096",
   },
   signUpLink: {
-    fontSize: 14,
-    color: "#4299E1",
+    color: "#002D73",
     fontWeight: "600",
-    textDecorationLine: "underline",
+    fontSize: 14,
   },
   footer: {
     flexDirection: "row",

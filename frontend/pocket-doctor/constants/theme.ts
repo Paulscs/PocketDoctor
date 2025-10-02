@@ -29,21 +29,9 @@ export const BorderRadius = {
 
 export const Typography = {
   fontFamily: {
-    regular: Platform.select({
-      ios: "System",
-      android: "Roboto",
-      default: "System",
-    }),
-    medium: Platform.select({
-      ios: "System",
-      android: "Roboto-Medium",
-      default: "System",
-    }),
-    bold: Platform.select({
-      ios: "System",
-      android: "Roboto-Bold",
-      default: "System",
-    }),
+    regular: "Pridi_400Regular",
+    medium: "Pridi_500Medium", 
+    bold: "Pridi_700Bold",
   },
   fontSize: {
     xs: 12,
