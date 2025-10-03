@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "pocket-doctor",
+    "name": "Pocket Doctor Asistente Médico AI",
     "slug": "pocket-doctor",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.litox06.pocket-doctor"
     },
     "android": {
       "adaptiveIcon": {
