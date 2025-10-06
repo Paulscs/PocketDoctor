@@ -27,7 +27,7 @@ export function Input({
   icon,
   error,
   style,
-  rightComponent
+  rightComponent,
 }: InputProps) {
   const backgroundColor = useThemeColor(
     { light: "#FFFFFF", dark: "#1a1a1a" },
@@ -66,7 +66,9 @@ export function Input({
           secureTextEntry={secureTextEntry}
           keyboardType={keyboardType}
         />
-        {rightComponent ? <View style={styles.rightWrapper}>{rightComponent}</View> : null}
+        {rightComponent ? (
+          <View style={styles.rightWrapper}>{rightComponent}</View>
+        ) : null}
       </View>
       {error && (
         <ThemedText style={[styles.error, { color: errorColor }]}>

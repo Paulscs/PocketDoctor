@@ -1,8 +1,9 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useThemeColor } from "@/hooks/use-theme-color";
 
-type Props = {
+interface CheckRowProps {
   checked: boolean;
   onToggle: () => void;
   text: string;
@@ -11,27 +12,58 @@ type Props = {
   afterLinkText?: string;
   privacyText?: string;
   onPressPrivacy?: () => void;
-};
+}
 
-export default function CheckRow({ checked, onToggle, text, linkText, onPressLink, afterLinkText, privacyText, onPressPrivacy }: Props) {
+export default function CheckRow({
+  checked,
+  onToggle,
+  text,
+  linkText,
+  onPressLink,
+  afterLinkText,
+  privacyText,
+  onPressPrivacy,
+}: CheckRowProps) {
+  const primaryColor = useThemeColor(
+    { light: "#002D73", dark: "#0A84FF" },
+    "primary"
+  );
+  const textColor = useThemeColor(
+    { light: "#6B7280", dark: "#A0A0A0" },
+    "text"
+  );
+
   return (
-    <View style={styles.row}>
-      <TouchableOpacity style={[styles.check, styles.roundCheck, checked && styles.checkedRound]} onPress={onToggle}>
-        {checked && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+    <View style={styles.container}>
+      <TouchableOpacity onPress={onToggle} style={styles.checkboxContainer}>
+        <View
+          style={[
+            styles.checkbox,
+            checked && {
+              backgroundColor: primaryColor,
+              borderColor: primaryColor,
+            },
+          ]}
+        >
+          {checked && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
+        </View>
       </TouchableOpacity>
-
-      <View style={styles.textBlock}>
-        <Text style={styles.text}>
+      <View style={styles.textContainer}>
+        <Text style={[styles.text, { color: textColor }]}>
           {text}
           {linkText && (
-            <Text style={styles.link} onPress={onPressLink}>
+            <Text onPress={onPressLink} style={styles.link}>
               {linkText}
             </Text>
           )}
-          {afterLinkText}
-          {privacyText && (
-            <Text style={styles.link} onPress={onPressPrivacy}>
-              {privacyText}
+          {afterLinkText && (
+            <Text style={[styles.text, { color: textColor }]}>
+              {afterLinkText}
+              {privacyText && (
+                <Text onPress={onPressPrivacy} style={styles.link}>
+                  {privacyText}
+                </Text>
+              )}
             </Text>
           )}
         </Text>
@@ -41,23 +73,33 @@ export default function CheckRow({ checked, onToggle, text, linkText, onPressLin
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "flex-start", marginVertical: 16 },
-  check: { marginRight: 12, paddingTop: 2 },
-  roundCheck: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#E2E8F0",
-    backgroundColor: "transparent",
+  container: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginVertical: 12,
+  },
+  checkboxContainer: {
+    marginRight: 10,
+    marginTop: 2,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 50,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
     justifyContent: "center",
     alignItems: "center",
   },
-  checkedRound: {
-    backgroundColor: "#002D73",
-    borderColor: "#002D73",
+  textContainer: {
+    flex: 1,
   },
-  textBlock: { flex: 1 },
-  text: { color: "#6B7280", fontSize: 13, lineHeight: 18 },
-  link: { color: "#002D73", fontWeight: "600" },
+  text: {
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  link: {
+    color: "#002D73",
+    fontWeight: "600",
+  },
 });

@@ -26,5 +26,14 @@ export default function SocialButton({ provider, onPress }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: "center" },
-  circle: { width: 54, height: 54, borderRadius: 27, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#ECEFF5" },
+  circle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#ECEFF5",
+  },
 });

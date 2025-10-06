@@ -30,7 +30,7 @@ export const BorderRadius = {
 export const Typography = {
   fontFamily: {
     regular: "Pridi_400Regular",
-    medium: "Pridi_500Medium", 
+    medium: "Pridi_500Medium",
     bold: "Pridi_700Bold",
   },
   fontSize: {
