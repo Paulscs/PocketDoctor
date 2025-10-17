@@ -3,7 +3,7 @@ export const TabItems = [
     id: "home",
     label: "Home",
     icon: "house.fill",
-    route: "/(tabs)/",
+    route: "/(tabs)/home",
   },
   {
     id: "chat",

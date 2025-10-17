@@ -186,7 +186,7 @@ function RegisterScreenInner() {
   const onRegister = () => {
     setSubmitted(true);
     if (!formValid) return;
-    router.push("/(tabs)");
+    router.push("/(tabs)/home");
   };
 
   return (

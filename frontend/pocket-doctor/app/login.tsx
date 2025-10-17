@@ -56,7 +56,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await new Promise(r => setTimeout(r, 1000));
-      router.push("/(tabs)");
+      router.push("/(tabs)/home");
     } catch {
       Alert.alert("Error", "No se pudo iniciar sesión. Intenta de nuevo.");
     } finally {
