@@ -23,6 +23,8 @@ const COLORS = {
   WARNING_BG: "#FFF3CD",
   WARNING_BORDER: "#FFEAA7",
   MUTED: "#6B7280",
+  MEDICAL_BLUE: "#2563EB",
+  HEALTH_GREEN: "#059669",
   WHITE: "#FFFFFF",
   BLACK: "#111827",
   LIGHT_GRAY: "#F8F9FA",
@@ -65,7 +67,7 @@ export default function HomeScreen() {
           </View>
         </View>
         <View style={styles.headerRight}>
-          <ThemedText style={styles.pageTitle}>Home</ThemedText>
+          <ThemedText style={styles.pageTitle}>Inicio</ThemedText>
           <View style={styles.profileIcon}>
             <ThemedText style={styles.profileIconText}>A</ThemedText>
           </View>
@@ -99,43 +101,113 @@ export default function HomeScreen() {
 
           <View style={styles.quickActionsGrid}>
             <TouchableOpacity
-              style={styles.quickActionCard}
+              style={[styles.quickActionCard, styles.uploadCard]}
               onPress={handleUploadResults}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
-              <View style={styles.quickActionIcon}>
-                <IconSymbol
-                  name="square.and.arrow.up"
-                  size={24}
-                  color={COLORS.BRAND_BLUE}
-                />
+              <View style={styles.cardHeader}>
+                <View
+                  style={[
+                    styles.quickActionIcon,
+                    { backgroundColor: COLORS.WHITE },
+                  ]}
+                >
+                  <IconSymbol
+                    name="square.and.arrow.up"
+                    size={28}
+                    color={COLORS.PURPLE}
+                  />
+                </View>
+                <View style={styles.cardBadge}>
+                  <ThemedText style={styles.badgeText}>AI</ThemedText>
+                </View>
               </View>
-              <ThemedText style={styles.quickActionTitle}>
-                Cargar resultados
-              </ThemedText>
-              <ThemedText style={styles.quickActionSubtitle}>
-                Análisis instantáneo con AI
-              </ThemedText>
+              <View style={styles.cardContent}>
+                <ThemedText style={styles.quickActionTitle}>
+                  Cargar resultados
+                </ThemedText>
+                <View style={styles.subtitleContainer}>
+                  <View style={styles.featureTag}>
+                    <IconSymbol
+                      name="bolt.fill"
+                      size={12}
+                      color={COLORS.WHITE}
+                    />
+                    <ThemedText style={styles.featureText}>
+                      Instantáneo
+                    </ThemedText>
+                  </View>
+                  <View style={styles.featureTag}>
+                    <IconSymbol
+                      name="brain.head.profile"
+                      size={12}
+                      color={COLORS.WHITE}
+                    />
+                    <ThemedText style={styles.featureText}>
+                      AI Powered
+                    </ThemedText>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.cardFooter}>
+                <ThemedText style={styles.cardFooterText}>
+                  Toca para comenzar
+                </ThemedText>
+                <IconSymbol name="arrow.right" size={16} color={COLORS.WHITE} />
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.quickActionCard}
+              style={[styles.quickActionCard, styles.consultationCard]}
               onPress={handleAIConsultation}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
-              <View style={styles.quickActionIcon}>
-                <IconSymbol
-                  name="gearshape.fill"
-                  size={24}
-                  color={COLORS.BRAND_BLUE}
-                />
+              <View style={styles.cardHeader}>
+                <View
+                  style={[
+                    styles.quickActionIcon,
+                    { backgroundColor: COLORS.WHITE },
+                  ]}
+                >
+                  <IconSymbol
+                    name="message.badge.filled.fill"
+                    size={28}
+                    color={COLORS.TEAL}
+                  />
+                </View>
+                <View style={styles.cardBadge}>
+                  <ThemedText style={styles.badgeText}>24/7</ThemedText>
+                </View>
               </View>
-              <ThemedText style={styles.quickActionTitle}>
-                Consulta AI
-              </ThemedText>
-              <ThemedText style={styles.quickActionSubtitle}>
-                Consulta médica 24/7
-              </ThemedText>
+              <View style={styles.cardContent}>
+                <ThemedText style={styles.quickActionTitle}>
+                  Consulta AI
+                </ThemedText>
+                <View style={styles.subtitleContainer}>
+                  <View style={styles.featureTag}>
+                    <IconSymbol
+                      name="clock.fill"
+                      size={12}
+                      color={COLORS.WHITE}
+                    />
+                    <ThemedText style={styles.featureText}>24/7</ThemedText>
+                  </View>
+                  <View style={styles.featureTag}>
+                    <IconSymbol
+                      name="stethoscope"
+                      size={12}
+                      color={COLORS.WHITE}
+                    />
+                    <ThemedText style={styles.featureText}>Médico</ThemedText>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.cardFooter}>
+                <ThemedText style={styles.cardFooterText}>
+                  Toca para comenzar
+                </ThemedText>
+                <IconSymbol name="arrow.right" size={16} color={COLORS.WHITE} />
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -327,7 +399,7 @@ const styles = StyleSheet.create({
   // Greeting Section
   greetingSection: {
     paddingTop: 24,
-    paddingBottom: 20,
+    paddingBottom: 12,
     paddingHorizontal: 8,
   },
   greeting: {
@@ -345,6 +417,7 @@ const styles = StyleSheet.create({
   // Search Section
   searchSection: {
     marginBottom: 24,
+    marginTop: 8,
   },
   searchBar: {
     backgroundColor: COLORS.WHITE,
@@ -368,41 +441,99 @@ const styles = StyleSheet.create({
   },
   quickActionsGrid: {
     flexDirection: "row",
-    gap: 12,
+    gap: 16,
   },
   quickActionCard: {
     flex: 1,
-    backgroundColor: COLORS.LIGHT_BLUE,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+    minHeight: 180,
+  },
+  uploadCard: {
+    backgroundColor: COLORS.MEDICAL_BLUE,
+  },
+  consultationCard: {
+    backgroundColor: COLORS.HEALTH_GREEN,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 16,
+  },
+  quickActionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
-  quickActionIcon: {
-    width: 48,
-    height: 48,
-    backgroundColor: COLORS.WHITE,
+  cardBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: COLORS.WHITE,
+    letterSpacing: 0.5,
+  },
+  cardContent: {
+    flex: 1,
     justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
   },
   quickActionTitle: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.WHITE,
+    marginBottom: 12,
+    lineHeight: 22,
+  },
+  subtitleContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  featureTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    gap: 4,
+  },
+  featureText: {
+    fontSize: 11,
     fontWeight: "600",
     color: COLORS.WHITE,
-    textAlign: "center",
-    marginBottom: 4,
+    letterSpacing: 0.3,
   },
-  quickActionSubtitle: {
-    fontSize: 14,
+  cardFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+    paddingHorizontal: 8,
+    paddingBottom: 4,
+  },
+  cardFooterText: {
+    fontSize: 12,
     color: COLORS.WHITE,
-    textAlign: "center",
-    opacity: 0.9,
+    fontWeight: "600",
+    flex: 1,
+    marginRight: 12,
   },
 
   // Activities Section
@@ -418,7 +549,8 @@ const styles = StyleSheet.create({
   seeAllLink: {
     fontSize: 14,
     color: COLORS.BRAND_BLUE,
-    fontWeight: "500",
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
   activitiesList: {
     backgroundColor: COLORS.WHITE,

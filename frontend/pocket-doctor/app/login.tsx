@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   },
 
   button: {
-    backgroundColor: COLORS.LIGHT_BLUE,
+    backgroundColor: COLORS.BRAND_BLUE,
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",

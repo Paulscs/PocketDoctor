@@ -1,7 +1,7 @@
 export const TabItems = [
   {
     id: "home",
-    label: "Home",
+    label: "Inicio",
     icon: "house.fill",
     route: "/(tabs)/home",
   },
