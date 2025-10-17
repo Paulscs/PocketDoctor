@@ -170,10 +170,79 @@ export function useAuth() {
 
     try {
       // TODO: Call forgot password API
-      Alert.alert("Password Reset", "Password reset link sent to your email");
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Mock validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        Alert.alert("Error", "Por favor, ingresa un correo electrónico válido");
+        return false;
+      }
+
+      Alert.alert(
+        "Código Enviado",
+        "Se ha enviado un código de verificación a tu correo electrónico"
+      );
       return true;
     } catch (error) {
-      Alert.alert("Error", "Failed to send password reset email");
+      Alert.alert("Error", "No se pudo enviar el código. Intenta de nuevo.");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyResetCode = async (
+    email: string,
+    code: string
+  ): Promise<boolean> => {
+    setIsLoading(true);
+
+    try {
+      // TODO: Call verify reset code API
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Mock validation - accept any 4-digit code for demo
+      if (code.length !== 4) {
+        Alert.alert("Error", "El código debe tener 4 dígitos");
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      Alert.alert("Error", "Código inválido. Intenta de nuevo.");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (
+    email: string,
+    code: string,
+    newPassword: string
+  ): Promise<boolean> => {
+    setIsLoading(true);
+
+    try {
+      // TODO: Call reset password API
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Mock validation
+      if (newPassword.length < 8) {
+        Alert.alert("Error", "La contraseña debe tener al menos 8 caracteres");
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        "No se pudo actualizar la contraseña. Intenta de nuevo."
+      );
       return false;
     } finally {
       setIsLoading(false);
@@ -192,5 +261,7 @@ export function useAuth() {
     logout,
     socialLogin,
     forgotPassword,
+    verifyResetCode,
+    resetPassword,
   };
 }
