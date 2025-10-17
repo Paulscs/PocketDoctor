@@ -1,65 +1,72 @@
-from fastapi import APIRouter, HTTPException, Path
-from typing import List, Dict, Any
-from ..core.supabase_client import supabase
-from ..schemas.centros_medicos import CentroMedicoIn, CentroMedicoOut
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Optional
+from supabase import create_client
+from ..core.config import settings
+from ..core.security import get_current_user, AuthUser
+from ..core.permissions import ensure_admin_or_403
+from ..schemas.centros import CentroCreate, CentroUpdate, CentroOut
 
-router = APIRouter(prefix="/centros-medicos", tags=["centros_medicos"])
+router = APIRouter(prefix="/centros", tags=["centros_medicos"])
 
-TABLE = "centros_medicos"
+def client_for_user(token: str):
+    c = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    c.postgrest.auth(token)  # RLS con el token del usuario
+    return c
 
-@router.get("", response_model=List[CentroMedicoOut])
-def list_centros():
-    try:
-        resp = supabase.table(TABLE).select("*").order("id", desc=False).execute()
-        return resp.data or []
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al listar: {e}")
+@router.get("", response_model=list[CentroOut])
+def list_centros(
+    q: Optional[str] = Query(None, description="Buscar por nombre (contiene)"),
+    ciudad: Optional[str] = None,
+    provincia: Optional[str] = None,
+    limit: int = 20,
+    offset: int = 0,
+    user: AuthUser = Depends(get_current_user),
+):
+    c = client_for_user(user.token)
+    query = c.table("centros_medicos").select("*")
 
-@router.get("/{id}", response_model=CentroMedicoOut)
-def get_centro(id: int = Path(..., gt=0)):
-    try:
-        resp = supabase.table(TABLE).select("*").eq("id", id).execute()
-        rows = resp.data or []
-        if not rows:
-            raise HTTPException(status_code=404, detail="No encontrado")
-        return rows[0]
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener: {e}")
+    if q:
+        query = query.ilike("nombre", f"%{q}%")
+    if ciudad:
+        query = query.ilike("ciudad", f"%{ciudad}%")
+    if provincia:
+        query = query.ilike("provincia", f"%{provincia}%")
 
-@router.post("", response_model=CentroMedicoOut, status_code=201)
-def create_centro(payload: CentroMedicoIn):
-    try:
-        resp = supabase.table(TABLE).insert(payload.dict()).execute()
-        if not resp.data:
-            raise HTTPException(status_code=500, detail="No se pudo crear")
-        return resp.data[0]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al crear: {e}")
+    query = query.range(offset, offset + limit - 1)
+    res = query.execute()
+    return res.data or []
 
-@router.put("/{id}", response_model=CentroMedicoOut)
-def update_centro(id: int = Path(..., gt=0), payload: CentroMedicoIn = ...):
-    try:
-        resp = supabase.table(TABLE).update(payload.dict()).eq("id", id).execute()
-        rows = resp.data or []
-        if not rows:
-            raise HTTPException(status_code=404, detail="No encontrado")
-        return rows[0]
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al actualizar: {e}")
+@router.get("/{centro_id}", response_model=CentroOut)
+def get_centro(centro_id: int, user: AuthUser = Depends(get_current_user)):
+    c = client_for_user(user.token)
+    res = c.table("centros_medicos").select("*").eq("id", centro_id).single().execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Centro no encontrado")
+    return res.data
 
-@router.delete("/{id}", response_model=Dict[str, Any])
-def delete_centro(id: int = Path(..., gt=0)):
-    try:
-        resp = supabase.table(TABLE).delete().eq("id", id).execute()
-        rows = resp.data or []
-        if not rows:
-            raise HTTPException(status_code=404, detail="No encontrado")
-        return {"deleted": True, "id": id}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al eliminar: {e}")
+@router.post("", response_model=CentroOut, status_code=201)
+def create_centro(payload: CentroCreate, user: AuthUser = Depends(get_current_user)):
+    c = client_for_user(user.token)
+    ensure_admin_or_403(c, user.sub)
+    res = c.table("centros_medicos").insert(payload.model_dump()).select("*").single().execute()
+    if not res.data:
+        raise HTTPException(status_code=400, detail="No se pudo crear el centro")
+    return res.data
+
+@router.put("/{centro_id}", response_model=CentroOut)
+def update_centro(centro_id: int, payload: CentroUpdate, user: AuthUser = Depends(get_current_user)):
+    c = client_for_user(user.token)
+    ensure_admin_or_403(c, user.sub)
+    data = {k: v for k, v in payload.model_dump().items() if v is not None}
+    res = c.table("centros_medicos").update(data).eq("id", centro_id).select("*").single().execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Centro no encontrado")
+    return res.data
+
+@router.delete("/{centro_id}", status_code=204)
+def delete_centro(centro_id: int, user: AuthUser = Depends(get_current_user)):
+    c = client_for_user(user.token)
+    ensure_admin_or_403(c, user.sub)
+    # devolvemos 204 aunque borre 0 filas para no filtrar existencia
+    c.table("centros_medicos").delete().eq("id", centro_id).execute()
+    return
