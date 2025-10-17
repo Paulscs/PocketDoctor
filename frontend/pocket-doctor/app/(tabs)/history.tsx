@@ -2,10 +2,8 @@ import React from "react";
 import { View, StyleSheet, ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
-// 🎨 Theme Colors
 const COLORS = {
   BRAND_BLUE: "#002D73",
   LIGHT_BLUE: "#5A7BB5",
@@ -32,7 +30,6 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.logoContainer}>

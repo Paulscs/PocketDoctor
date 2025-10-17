@@ -11,12 +11,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Ionicons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { router } from "expo-router";
 
-// 🎨 Theme Colors
 const COLORS = {
   BRAND_BLUE: "#002D73",
   LIGHT_BLUE: "#5A7BB5",
@@ -137,7 +135,6 @@ export default function ValidateDataScreen() {
   };
 
   const handleDownloadPDF = () => {
-    // TODO: Download PDF
     console.log("Download PDF");
   };
 
@@ -181,7 +178,7 @@ export default function ValidateDataScreen() {
           onPress={handleCancel}
           activeOpacity={0.7}
         >
-          <IconSymbol name="arrow.left" size={24} color={COLORS.GRAY_700} />
+          <Ionicons name="arrow-back" size={24} color={COLORS.GRAY_700} />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
@@ -209,11 +206,7 @@ export default function ValidateDataScreen() {
           {/* Icon and Title */}
           <View style={styles.iconContainer}>
             <View style={styles.mainIcon}>
-              <IconSymbol
-                name="arrow.clockwise"
-                size={40}
-                color={COLORS.WHITE}
-              />
+              <Ionicons name="sync" size={40} color={COLORS.WHITE} />
             </View>
             <ThemedText style={styles.mainTitle}>
               Validar datos extraídos
@@ -228,11 +221,7 @@ export default function ValidateDataScreen() {
                 <View key={data.id} style={styles.dataCard}>
                   <View style={styles.dataHeader}>
                     <View style={styles.dataIcon}>
-                      <IconSymbol
-                        name="brain.head.profile"
-                        size={16}
-                        color={COLORS.WHITE}
-                      />
+                      <Ionicons name="medical" size={16} color={COLORS.WHITE} />
                     </View>
                     <ThemedText style={styles.dataName}>{data.name}</ThemedText>
                     <View
@@ -267,7 +256,7 @@ export default function ValidateDataScreen() {
                           onPress={() => handleEditValue(data.id)}
                           activeOpacity={0.7}
                         >
-                          <IconSymbol
+                          <Ionicons
                             name="pencil"
                             size={14}
                             color={COLORS.MEDICAL_BLUE}
@@ -299,11 +288,7 @@ export default function ValidateDataScreen() {
           onPress={handleProceedWithAI}
           activeOpacity={0.8}
         >
-          <IconSymbol
-            name="brain.head.profile"
-            size={20}
-            color={COLORS.WHITE}
-          />
+          <Ionicons name="bulb" size={20} color={COLORS.WHITE} />
           <ThemedText style={styles.primaryButtonText}>
             Proceder con Analíticas IA
           </ThemedText>
@@ -346,7 +331,7 @@ export default function ValidateDataScreen() {
                 onPress={handleCancelEdit}
                 activeOpacity={0.7}
               >
-                <IconSymbol name="xmark" size={20} color={COLORS.GRAY_500} />
+                <Ionicons name="close" size={20} color={COLORS.GRAY_500} />
               </TouchableOpacity>
             </View>
 
@@ -607,7 +592,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: COLORS.BRAND_BLUE,
   },
-  // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",

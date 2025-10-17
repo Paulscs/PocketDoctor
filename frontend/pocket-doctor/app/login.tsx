@@ -13,7 +13,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
-// 🎨 Theme
 const COLORS = {
   BRAND_BLUE: "#002D73",
   LIGHT_BLUE: "#5A7BB5",
@@ -205,7 +204,6 @@ export default function LoginScreen() {
   );
 }
 
-// 💅 Styles
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.WHITE },
   content: { flexGrow: 1, padding: SIZES.PADDING },

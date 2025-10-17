@@ -8,12 +8,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Ionicons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { router } from "expo-router";
 
-// 🎨 Theme Colors
 const COLORS = {
   BRAND_BLUE: "#002D73",
   LIGHT_BLUE: "#5A7BB5",
@@ -48,7 +47,6 @@ export default function RecommendationsScreen() {
   );
 
   const handleDiscussWithIA = () => {
-    // TODO: Navigate to IA chat
     console.log("Discuss with Doctor IA");
   };
 
@@ -69,7 +67,7 @@ export default function RecommendationsScreen() {
           onPress={handleBack}
           activeOpacity={0.7}
         >
-          <IconSymbol name="arrow.left" size={24} color={COLORS.GRAY_700} />
+          <Ionicons name="arrow-back" size={24} color={COLORS.GRAY_700} />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
@@ -97,8 +95,8 @@ export default function RecommendationsScreen() {
           {/* Icon and Title */}
           <View style={styles.iconContainer}>
             <View style={styles.mainIcon}>
-              <IconSymbol
-                name="info.circle.fill"
+              <Ionicons
+                name="information-circle"
                 size={40}
                 color={COLORS.WHITE}
               />
@@ -111,11 +109,7 @@ export default function RecommendationsScreen() {
             {/* Blood Pressure Card */}
             <View style={styles.recommendationCard}>
               <View style={styles.cardIcon}>
-                <IconSymbol
-                  name="waveform.path.ecg"
-                  size={20}
-                  color={COLORS.WHITE}
-                />
+                <Ionicons name="pulse" size={20} color={COLORS.WHITE} />
               </View>
               <View style={styles.cardContent}>
                 <ThemedText style={styles.cardTitle}>

@@ -9,12 +9,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
-// 🎨 Theme Colors
 const COLORS = {
   BRAND_BLUE: "#002D73",
   LIGHT_BLUE: "#5A7BB5",
@@ -37,7 +35,6 @@ export default function UploadScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleCameraPress = () => {
-    // Simulate camera file selection for testing
     setSelectedFile({
       name: "foto_laboratorio.jpg",
       type: "JPG",
@@ -46,7 +43,6 @@ export default function UploadScreen() {
   };
 
   const handleFilePress = () => {
-    // Simulate file picker for testing
     setSelectedFile({
       name: "resultados_laboratorio.pdf",
       type: "PDF",
@@ -62,11 +58,9 @@ export default function UploadScreen() {
 
     setIsProcessing(true);
     try {
-      // TODO: Implement document processing
       await new Promise(resolve => setTimeout(resolve, 2000));
-      // Navigate to validate data screen
       router.push("/validate-data");
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "No se pudo procesar el documento");
     } finally {
       setIsProcessing(false);
@@ -169,11 +163,7 @@ export default function UploadScreen() {
                 onPress={handleCameraPress}
                 activeOpacity={0.7}
               >
-                <IconSymbol
-                  name="camera.fill"
-                  size={20}
-                  color={COLORS.BRAND_BLUE}
-                />
+                <Ionicons name="camera" size={20} color={COLORS.BRAND_BLUE} />
                 <ThemedText style={styles.optionText}>Cámara</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
@@ -297,7 +287,6 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
 
-  // Upload Icon
   uploadIconContainer: {
     alignItems: "center",
     marginTop: 40,
@@ -312,7 +301,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // Title
   title: {
     fontSize: 24,
     fontWeight: "700",
@@ -322,7 +310,6 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
   },
 
-  // Upload Area
   uploadArea: {
     marginBottom: 32,
   },
@@ -386,7 +373,6 @@ const styles = StyleSheet.create({
     color: COLORS.BRAND_BLUE,
   },
 
-  // Selected File
   selectedFileContainer: {
     marginBottom: 24,
   },
@@ -414,7 +400,6 @@ const styles = StyleSheet.create({
     color: COLORS.MUTED,
   },
 
-  // Action Buttons
   actionButtons: {
     marginTop: "auto",
     gap: 12,

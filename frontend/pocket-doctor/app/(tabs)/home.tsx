@@ -14,7 +14,6 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
-// 🎨 Theme Colors
 const COLORS = {
   BRAND_BLUE: "#002D73",
   LIGHT_BLUE: "#5A7BB5",
@@ -44,12 +43,10 @@ export default function HomeScreen() {
   };
 
   const handleAIConsultation = () => {
-    // TODO: Navigate to AI consultation
     console.log("Navigate to AI consultation");
   };
 
   const handleViewAllActivities = () => {
-    // TODO: Navigate to history screen
     console.log("Navigate to all activities");
   };
 
@@ -393,7 +390,6 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
 
-  // Greeting Section
   greetingSection: {
     paddingTop: 24,
     paddingBottom: 12,
@@ -411,7 +407,6 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
 
-  // Search Section
   searchSection: {
     marginBottom: 24,
     marginTop: 8,
@@ -426,7 +421,6 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
-  // Quick Actions
   quickActionsSection: {
     marginBottom: 32,
   },
@@ -533,7 +527,6 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
 
-  // Activities Section
   activitiesSection: {
     marginBottom: 24,
   },
@@ -599,7 +592,6 @@ const styles = StyleSheet.create({
     color: COLORS.WHITE,
   },
 
-  // Warning Section
   warningSection: {
     marginTop: "auto",
     paddingTop: 20,

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Image,
   Alert,
   ScrollView,
   Modal,
@@ -15,7 +14,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
 
-// 🎨 Theme
 const COLORS = {
   BRAND_BLUE: "#002D73",
   LIGHT_BLUE: "#5A7BB5",
@@ -94,7 +92,7 @@ export default function ForgotPasswordScreen() {
       if (success) {
         setCurrentStep("code");
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "No se pudo enviar el código. Intenta de nuevo.");
     } finally {
       setLoading(false);
@@ -105,10 +103,9 @@ export default function ForgotPasswordScreen() {
     if (!validateCode()) return;
     setLoading(true);
     try {
-      // Mock verification - replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       setCurrentStep("password");
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Código inválido. Intenta de nuevo.");
     } finally {
       setLoading(false);
@@ -119,10 +116,9 @@ export default function ForgotPasswordScreen() {
     if (!validatePasswords()) return;
     setLoading(true);
     try {
-      // Mock password update - replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       setShowSuccessModal(true);
-    } catch (error) {
+    } catch {
       Alert.alert(
         "Error",
         "No se pudo actualizar la contraseña. Intenta de nuevo."
@@ -140,7 +136,7 @@ export default function ForgotPasswordScreen() {
         "Código Reenviado",
         "Se ha enviado un nuevo código a tu correo"
       );
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "No se pudo reenviar el código. Intenta de nuevo.");
     } finally {
       setLoading(false);
@@ -391,7 +387,6 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-// 💅 Styles
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.WHITE },
   content: { flexGrow: 1 },
@@ -512,7 +507,6 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
 
-  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",

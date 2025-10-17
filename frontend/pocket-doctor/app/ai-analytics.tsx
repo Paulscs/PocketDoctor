@@ -8,12 +8,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Ionicons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { router } from "expo-router";
 
-// 🎨 Theme Colors
 const COLORS = {
   BRAND_BLUE: "#002D73",
   LIGHT_BLUE: "#5A7BB5",
@@ -52,7 +51,6 @@ export default function IAAnalyticsScreen() {
   };
 
   const handleDownloadPDF = () => {
-    // TODO: Download PDF
     console.log("Download PDF");
   };
 
@@ -69,7 +67,7 @@ export default function IAAnalyticsScreen() {
           onPress={handleBack}
           activeOpacity={0.7}
         >
-          <IconSymbol name="arrow.left" size={24} color={COLORS.GRAY_700} />
+          <Ionicons name="arrow-back" size={24} color={COLORS.GRAY_700} />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
@@ -163,11 +161,7 @@ export default function IAAnalyticsScreen() {
           <View style={styles.risksCard}>
             <View style={styles.risksHeader}>
               <View style={styles.warningIcon}>
-                <IconSymbol
-                  name="exclamationmark.triangle.fill"
-                  size={20}
-                  color={COLORS.WARNING}
-                />
+                <Ionicons name="warning" size={20} color={COLORS.WARNING} />
               </View>
               <ThemedText style={styles.risksTitle}>
                 Posibles Riesgos
@@ -204,7 +198,7 @@ export default function IAAnalyticsScreen() {
             onPress={handleViewDetailedRecommendations}
             activeOpacity={0.8}
           >
-            <IconSymbol name="doc.text" size={20} color={COLORS.WHITE} />
+            <IconSymbol name="doc.fill" size={20} color={COLORS.WHITE} />
             <ThemedText style={styles.actionButtonText}>
               Ver recomendaciones detalladas
             </ThemedText>
