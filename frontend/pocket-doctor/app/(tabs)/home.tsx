@@ -8,11 +8,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 // 🎨 Theme Colors
 const COLORS = {
@@ -25,6 +25,8 @@ const COLORS = {
   MUTED: "#6B7280",
   MEDICAL_BLUE: "#2563EB",
   HEALTH_GREEN: "#059669",
+  PURPLE: "#8B5CF6",
+  TEAL: "#14B8A6",
   WHITE: "#FFFFFF",
   BLACK: "#111827",
   LIGHT_GRAY: "#F8F9FA",
@@ -38,8 +40,7 @@ export default function HomeScreen() {
   );
 
   const handleUploadResults = () => {
-    // TODO: Navigate to upload screen
-    console.log("Navigate to upload results");
+    router.push("/upload");
   };
 
   const handleAIConsultation = () => {
@@ -115,11 +116,11 @@ export default function HomeScreen() {
                   <IconSymbol
                     name="square.and.arrow.up"
                     size={28}
-                    color={COLORS.PURPLE}
+                    color={COLORS.MEDICAL_BLUE}
                   />
                 </View>
                 <View style={styles.cardBadge}>
-                  <ThemedText style={styles.badgeText}>AI</ThemedText>
+                  <ThemedText style={styles.badgeText}>IA</ThemedText>
                 </View>
               </View>
               <View style={styles.cardContent}>
@@ -128,23 +129,15 @@ export default function HomeScreen() {
                 </ThemedText>
                 <View style={styles.subtitleContainer}>
                   <View style={styles.featureTag}>
-                    <IconSymbol
-                      name="bolt.fill"
-                      size={12}
-                      color={COLORS.WHITE}
-                    />
+                    <Ionicons name="flash" size={12} color={COLORS.WHITE} />
                     <ThemedText style={styles.featureText}>
                       Instantáneo
                     </ThemedText>
                   </View>
                   <View style={styles.featureTag}>
-                    <IconSymbol
-                      name="brain.head.profile"
-                      size={12}
-                      color={COLORS.WHITE}
-                    />
+                    <Ionicons name="bulb" size={12} color={COLORS.WHITE} />
                     <ThemedText style={styles.featureText}>
-                      AI Powered
+                      IA Powered
                     </ThemedText>
                   </View>
                 </View>
@@ -153,7 +146,11 @@ export default function HomeScreen() {
                 <ThemedText style={styles.cardFooterText}>
                   Toca para comenzar
                 </ThemedText>
-                <IconSymbol name="arrow.right" size={16} color={COLORS.WHITE} />
+                <IconSymbol
+                  name="chevron.right"
+                  size={16}
+                  color={COLORS.WHITE}
+                />
               </View>
             </TouchableOpacity>
 
@@ -170,7 +167,7 @@ export default function HomeScreen() {
                   ]}
                 >
                   <IconSymbol
-                    name="message.badge.filled.fill"
+                    name="message.fill"
                     size={28}
                     color={COLORS.TEAL}
                   />
@@ -193,11 +190,7 @@ export default function HomeScreen() {
                     <ThemedText style={styles.featureText}>24/7</ThemedText>
                   </View>
                   <View style={styles.featureTag}>
-                    <IconSymbol
-                      name="stethoscope"
-                      size={12}
-                      color={COLORS.WHITE}
-                    />
+                    <Ionicons name="medical" size={12} color={COLORS.WHITE} />
                     <ThemedText style={styles.featureText}>Médico</ThemedText>
                   </View>
                 </View>
@@ -206,7 +199,11 @@ export default function HomeScreen() {
                 <ThemedText style={styles.cardFooterText}>
                   Toca para comenzar
                 </ThemedText>
-                <IconSymbol name="arrow.right" size={16} color={COLORS.WHITE} />
+                <IconSymbol
+                  name="chevron.right"
+                  size={16}
+                  color={COLORS.WHITE}
+                />
               </View>
             </TouchableOpacity>
           </View>
