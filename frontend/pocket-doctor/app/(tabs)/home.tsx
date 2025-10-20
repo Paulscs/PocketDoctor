@@ -43,7 +43,7 @@ export default function HomeScreen() {
   };
 
   const handleAIConsultation = () => {
-    console.log("Navigate to AI consultation");
+    router.push("/(tabs)/chat");
   };
 
   const handleViewAllActivities = () => {

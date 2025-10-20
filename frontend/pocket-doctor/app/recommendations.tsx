@@ -47,7 +47,7 @@ export default function RecommendationsScreen() {
   );
 
   const handleDiscussWithIA = () => {
-    console.log("Discuss with Doctor IA");
+    router.push("/(tabs)/chat");
   };
 
   const handleBackToDashboard = () => {
