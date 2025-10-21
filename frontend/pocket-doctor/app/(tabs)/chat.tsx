@@ -11,6 +11,7 @@ import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 interface Message {
   id: string;
@@ -106,6 +107,10 @@ export default function ChatScreen() {
     { light: COLORS.WHITE, dark: "#000000" },
     "background"
   );
+
+  const handleProfilePress = () => {
+    router.push("/(tabs)/profile");
+  };
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -513,9 +518,13 @@ export default function ChatScreen() {
         </View>
         <View style={styles.headerRight}>
           <ThemedText style={styles.pageTitle}>Chat</ThemedText>
-          <View style={styles.profileIcon}>
+          <TouchableOpacity
+            style={styles.profileIcon}
+            onPress={handleProfilePress}
+            activeOpacity={0.7}
+          >
             <ThemedText style={styles.profileIconText}>A</ThemedText>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 

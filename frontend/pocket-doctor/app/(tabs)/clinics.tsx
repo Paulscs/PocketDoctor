@@ -10,6 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 interface Clinic {
   id: string;
@@ -197,6 +198,10 @@ export default function ClinicsScreen() {
     "background"
   );
 
+  const handleProfilePress = () => {
+    router.push("/(tabs)/profile");
+  };
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(
     null
@@ -371,7 +376,13 @@ export default function ClinicsScreen() {
             <ThemedText style={styles.pageTitle}>Especialistas</ThemedText>
           </View>
           <View style={styles.profileIcon}>
-            <ThemedText style={styles.profileIconText}>A</ThemedText>
+            <TouchableOpacity
+              style={styles.profileIconButton}
+              onPress={handleProfilePress}
+              activeOpacity={0.7}
+            >
+              <ThemedText style={styles.profileIconText}>A</ThemedText>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -501,6 +512,13 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     backgroundColor: COLORS.BRAND_BLUE,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  profileIconButton: {
+    width: 32,
+    height: 32,
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",

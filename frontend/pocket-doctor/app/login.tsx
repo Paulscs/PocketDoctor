@@ -22,6 +22,12 @@ const COLORS = {
   BLACK: "#111827",
   PLACEHOLDER: "#9CA3AF",
   DIVIDER: "#E5E7EB",
+  FRIENDLY_BLUE: "#3B82F6",
+  FRIENDLY_BLUE_BG: "#EFF6FF",
+  FRIENDLY_BLUE_BORDER: "#BFDBFE",
+  FRIENDLY_GREEN: "#10B981",
+  FRIENDLY_GREEN_BG: "#ECFDF5",
+  FRIENDLY_GREEN_BORDER: "#A7F3D0",
 } as const;
 
 const SIZES = {
@@ -198,6 +204,45 @@ export default function LoginScreen() {
               <Text style={styles.signUpLink}>Crear cuenta</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Footer Warnings */}
+          <View style={styles.footerWarnings}>
+            <View style={[styles.warningCard, styles.medicalCard]}>
+              <View style={[styles.warningIcon, styles.medicalIcon]}>
+                <Ionicons
+                  name="medical-outline"
+                  size={12}
+                  color={COLORS.WHITE}
+                />
+              </View>
+              <View style={styles.warningContent}>
+                <Text style={[styles.warningTitle, styles.medicalTitle]}>
+                  Solo informativo
+                </Text>
+                <Text style={[styles.warningText, styles.medicalText]}>
+                  No reemplaza diagnóstico médico
+                </Text>
+              </View>
+            </View>
+
+            <View style={[styles.warningCard, styles.securityCard]}>
+              <View style={[styles.warningIcon, styles.securityIcon]}>
+                <Ionicons
+                  name="shield-checkmark"
+                  size={12}
+                  color={COLORS.WHITE}
+                />
+              </View>
+              <View style={styles.warningContent}>
+                <Text style={[styles.warningTitle, styles.securityTitle]}>
+                  HIPAA
+                </Text>
+                <Text style={[styles.warningText, styles.securityText]}>
+                  Datos encriptados y seguros
+                </Text>
+              </View>
+            </View>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -306,12 +351,76 @@ const styles = StyleSheet.create({
   signUpRow: {
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   signUpText: { color: COLORS.MUTED, fontSize: 14 },
   signUpLink: {
     color: COLORS.BRAND_BLUE,
     fontWeight: "600",
     fontSize: 14,
+  },
+
+  footerWarnings: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 20,
+  },
+  warningCard: {
+    flex: 1,
+    borderRadius: 8,
+    padding: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+  },
+  warningIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  warningContent: {
+    flex: 1,
+  },
+  warningTitle: {
+    fontSize: 10,
+    fontWeight: "700",
+    marginBottom: 1,
+  },
+  warningText: {
+    fontSize: 9,
+    lineHeight: 11,
+  },
+
+  // Medical card styles (friendly blue)
+  medicalCard: {
+    backgroundColor: COLORS.FRIENDLY_BLUE_BG,
+    borderColor: COLORS.FRIENDLY_BLUE_BORDER,
+  },
+  medicalIcon: {
+    backgroundColor: COLORS.FRIENDLY_BLUE,
+  },
+  medicalTitle: {
+    color: COLORS.FRIENDLY_BLUE,
+  },
+  medicalText: {
+    color: "#1E40AF",
+  },
+
+  // Security card styles (friendly green)
+  securityCard: {
+    backgroundColor: COLORS.FRIENDLY_GREEN_BG,
+    borderColor: COLORS.FRIENDLY_GREEN_BORDER,
+  },
+  securityIcon: {
+    backgroundColor: COLORS.FRIENDLY_GREEN,
+  },
+  securityTitle: {
+    color: COLORS.FRIENDLY_GREEN,
+  },
+  securityText: {
+    color: "#047857",
   },
 });

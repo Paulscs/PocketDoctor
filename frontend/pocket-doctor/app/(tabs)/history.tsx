@@ -1,14 +1,35 @@
 import React from "react";
-import { View, StyleSheet, ScrollView, Image } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+
+interface MedicalResult {
+  id: string;
+  title: string;
+  date: string;
+  type: "blood" | "imaging" | "cardiac" | "other";
+  status: "normal" | "elevated" | "low" | "critical";
+  description: string;
+}
 
 const COLORS = {
   BRAND_BLUE: "#002D73",
   LIGHT_BLUE: "#5A7BB5",
   MEDICAL_BLUE: "#1E40AF",
   HEALTH_GREEN: "#059669",
+  SUCCESS: "#34C759",
+  WARNING: "#FF9500",
+  ERROR: "#FF3B30",
   WHITE: "#FFFFFF",
   GRAY_50: "#F9FAFB",
   GRAY_100: "#F3F4F6",
@@ -20,12 +41,140 @@ const COLORS = {
   GRAY_700: "#374151",
   GRAY_800: "#1F2937",
   GRAY_900: "#111827",
+} as const;
+
+const MOCK_MEDICAL_RESULTS: MedicalResult[] = [
+  {
+    id: "1",
+    title: "Resultados 14 Marzo 2025",
+    date: "2025-03-14",
+    type: "blood",
+    status: "normal",
+    description:
+      "Análisis de sangre completo - Todos los valores dentro del rango normal",
+  },
+  {
+    id: "2",
+    title: "Resultados 12 Marzo 2025",
+    date: "2025-03-12",
+    type: "cardiac",
+    status: "elevated",
+    description: "Electrocardiograma - Ritmo cardíaco ligeramente elevado",
+  },
+  {
+    id: "3",
+    title: "Resultados 8 Marzo 2025",
+    date: "2025-03-08",
+    type: "imaging",
+    status: "normal",
+    description: "Radiografía de tórax - Sin hallazgos patológicos",
+  },
+  {
+    id: "4",
+    title: "Resultados 5 Marzo 2025",
+    date: "2025-03-05",
+    type: "blood",
+    status: "elevated",
+    description: "Perfil lipídico - Colesterol elevado detectado",
+  },
+];
+
+const getResultIcon = (type: MedicalResult["type"]) => {
+  switch (type) {
+    case "blood":
+      return "water";
+    case "imaging":
+      return "scan";
+    case "cardiac":
+      return "heart";
+    default:
+      return "document-text";
+  }
+};
+
+const getStatusColor = (status: MedicalResult["status"]) => {
+  switch (status) {
+    case "normal":
+      return COLORS.SUCCESS;
+    case "elevated":
+    case "low":
+      return COLORS.WARNING;
+    case "critical":
+      return COLORS.ERROR;
+    default:
+      return COLORS.GRAY_500;
+  }
+};
+
+const getStatusText = (status: MedicalResult["status"]) => {
+  switch (status) {
+    case "normal":
+      return "Normal";
+    case "elevated":
+      return "Elevado";
+    case "low":
+      return "Bajo";
+    case "critical":
+      return "Crítico";
+    default:
+      return "Pendiente";
+  }
 };
 
 export default function HistoryScreen() {
   const backgroundColor = useThemeColor(
     { light: COLORS.WHITE, dark: "#000000" },
     "background"
+  );
+
+  const handleResultPress = (result: MedicalResult) => {
+    console.log("Viewing result:", result.title);
+    // TODO: Navigate to detailed result view
+  };
+
+  const handleViewAllResults = () => {
+    console.log("Viewing all results");
+    // TODO: Navigate to comprehensive results view
+  };
+
+  const handleProfilePress = () => {
+    router.push("/(tabs)/profile");
+  };
+
+  const renderResultItem = (result: MedicalResult) => (
+    <TouchableOpacity
+      key={result.id}
+      style={styles.resultItem}
+      onPress={() => handleResultPress(result)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.resultIcon}>
+        <Ionicons
+          name={getResultIcon(result.type) as any}
+          size={20}
+          color={COLORS.BRAND_BLUE}
+        />
+      </View>
+      <View style={styles.resultContent}>
+        <ThemedText style={styles.resultTitle}>{result.title}</ThemedText>
+        <ThemedText style={styles.resultDescription}>
+          {result.description}
+        </ThemedText>
+      </View>
+      <View style={styles.resultActions}>
+        <View
+          style={[
+            styles.statusBadge,
+            { backgroundColor: getStatusColor(result.status) },
+          ]}
+        >
+          <ThemedText style={styles.statusText}>
+            {getStatusText(result.status)}
+          </ThemedText>
+        </View>
+        <IconSymbol name="chevron.right" size={16} color={COLORS.GRAY_400} />
+      </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -43,24 +192,40 @@ export default function HistoryScreen() {
         </View>
         <View style={styles.headerRight}>
           <ThemedText style={styles.pageTitle}>Historial</ThemedText>
-          <View style={styles.profileIcon}>
+          <TouchableOpacity
+            style={styles.profileIcon}
+            onPress={handleProfilePress}
+            activeOpacity={0.7}
+          >
             <ThemedText style={styles.profileIconText}>A</ThemedText>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.content}>
-          <ThemedText style={styles.title}>Historial Médico</ThemedText>
-          <ThemedText style={styles.subtitle}>
-            Revisa tus análisis y resultados anteriores
-          </ThemedText>
-          <ThemedText style={styles.description}>
-            Aquí encontrarás tu historial completo de análisis médicos y
-            resultados organizados por fecha.
+        <View style={styles.titleSection}>
+          <View style={styles.titleHeader}>
+            <ThemedText style={styles.title}>Historial médico</ThemedText>
+            <TouchableOpacity
+              onPress={handleViewAllResults}
+              activeOpacity={0.7}
+            >
+              <ThemedText style={styles.seeAllLink}>Ver todas</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.resultsList}>
+          {MOCK_MEDICAL_RESULTS.map(renderResultItem)}
+        </View>
+
+        <View style={styles.emptySpace}>
+          <ThemedText style={styles.emptyText}>
+            Más resultados aparecerán aquí conforme los agregues
           </ThemedText>
         </View>
       </ScrollView>
@@ -129,30 +294,89 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  content: {
-    flex: 1,
-    justifyContent: "center",
+  titleSection: {
+    paddingTop: 24,
+    paddingBottom: 16,
+  },
+  titleHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 60,
   },
   title: {
     fontSize: 24,
     fontWeight: "700",
     color: COLORS.BRAND_BLUE,
-    textAlign: "center",
-    marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 16,
-    color: COLORS.GRAY_600,
-    textAlign: "center",
-    marginBottom: 24,
+  seeAllLink: {
+    fontSize: 14,
+    color: COLORS.BRAND_BLUE,
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
-  description: {
+  resultsList: {
+    gap: 12,
+  },
+  resultItem: {
+    backgroundColor: COLORS.LIGHT_BLUE,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  resultIcon: {
+    width: 40,
+    height: 40,
+    backgroundColor: COLORS.WHITE,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  resultContent: {
+    flex: 1,
+  },
+  resultTitle: {
     fontSize: 16,
-    color: COLORS.GRAY_700,
+    fontWeight: "600",
+    color: COLORS.WHITE,
+    marginBottom: 4,
+  },
+  resultDescription: {
+    fontSize: 14,
+    color: COLORS.WHITE,
+    opacity: 0.9,
+  },
+  resultActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: COLORS.WHITE,
+  },
+  emptySpace: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 40,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: COLORS.GRAY_500,
     textAlign: "center",
-    lineHeight: 24,
-    paddingHorizontal: 20,
+    fontStyle: "italic",
   },
 });

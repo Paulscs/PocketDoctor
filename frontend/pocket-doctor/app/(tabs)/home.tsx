@@ -50,6 +50,10 @@ export default function HomeScreen() {
     console.log("Navigate to all activities");
   };
 
+  const handleProfilePress = () => {
+    router.push("/(tabs)/profile");
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
       {/* Custom Header */}
@@ -66,9 +70,13 @@ export default function HomeScreen() {
         </View>
         <View style={styles.headerRight}>
           <ThemedText style={styles.pageTitle}>Inicio</ThemedText>
-          <View style={styles.profileIcon}>
+          <TouchableOpacity
+            style={styles.profileIcon}
+            onPress={handleProfilePress}
+            activeOpacity={0.7}
+          >
             <ThemedText style={styles.profileIconText}>A</ThemedText>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 
