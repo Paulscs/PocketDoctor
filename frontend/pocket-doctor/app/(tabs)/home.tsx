@@ -13,28 +13,11 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-
-const COLORS = {
-  BRAND_BLUE: "#002D73",
-  LIGHT_BLUE: "#5A7BB5",
-  SUCCESS: "#34C759",
-  WARNING: "#FF9500",
-  WARNING_BG: "#FFF3CD",
-  WARNING_BORDER: "#FFEAA7",
-  MUTED: "#6B7280",
-  MEDICAL_BLUE: "#2563EB",
-  HEALTH_GREEN: "#059669",
-  PURPLE: "#8B5CF6",
-  TEAL: "#14B8A6",
-  WHITE: "#FFFFFF",
-  BLACK: "#111827",
-  LIGHT_GRAY: "#F8F9FA",
-  BORDER: "#E5E7EB",
-} as const;
+import { Colors } from "@/constants/theme";
 
 export default function HomeScreen() {
   const backgroundColor = useThemeColor(
-    { light: COLORS.WHITE, dark: "#000000" },
+    { light: Colors.light.white, dark: "#000000" },
     "background"
   );
 
@@ -47,7 +30,7 @@ export default function HomeScreen() {
   };
 
   const handleViewAllActivities = () => {
-    console.log("Navigate to all activities");
+    router.push("/(tabs)/history");
   };
 
   const handleProfilePress = () => {
@@ -115,13 +98,13 @@ export default function HomeScreen() {
                 <View
                   style={[
                     styles.quickActionIcon,
-                    { backgroundColor: COLORS.WHITE },
+                    { backgroundColor: Colors.light.white },
                   ]}
                 >
                   <IconSymbol
                     name="square.and.arrow.up"
                     size={28}
-                    color={COLORS.MEDICAL_BLUE}
+                    color={Colors.light.medicalBlue}
                   />
                 </View>
                 <View style={styles.cardBadge}>
@@ -134,13 +117,21 @@ export default function HomeScreen() {
                 </ThemedText>
                 <View style={styles.subtitleContainer}>
                   <View style={styles.featureTag}>
-                    <Ionicons name="flash" size={12} color={COLORS.WHITE} />
+                    <Ionicons
+                      name="flash"
+                      size={12}
+                      color={Colors.light.white}
+                    />
                     <ThemedText style={styles.featureText}>
                       Instantáneo
                     </ThemedText>
                   </View>
                   <View style={styles.featureTag}>
-                    <Ionicons name="bulb" size={12} color={COLORS.WHITE} />
+                    <Ionicons
+                      name="bulb"
+                      size={12}
+                      color={Colors.light.white}
+                    />
                     <ThemedText style={styles.featureText}>
                       IA Powered
                     </ThemedText>
@@ -154,7 +145,7 @@ export default function HomeScreen() {
                 <IconSymbol
                   name="chevron.right"
                   size={16}
-                  color={COLORS.WHITE}
+                  color={Colors.light.white}
                 />
               </View>
             </TouchableOpacity>
@@ -168,13 +159,13 @@ export default function HomeScreen() {
                 <View
                   style={[
                     styles.quickActionIcon,
-                    { backgroundColor: COLORS.WHITE },
+                    { backgroundColor: Colors.light.white },
                   ]}
                 >
                   <IconSymbol
                     name="message.fill"
                     size={28}
-                    color={COLORS.TEAL}
+                    color={Colors.light.teal}
                   />
                 </View>
                 <View style={styles.cardBadge}>
@@ -190,12 +181,16 @@ export default function HomeScreen() {
                     <IconSymbol
                       name="clock.fill"
                       size={12}
-                      color={COLORS.WHITE}
+                      color={Colors.light.white}
                     />
                     <ThemedText style={styles.featureText}>24/7</ThemedText>
                   </View>
                   <View style={styles.featureTag}>
-                    <Ionicons name="medical" size={12} color={COLORS.WHITE} />
+                    <Ionicons
+                      name="medical"
+                      size={12}
+                      color={Colors.light.white}
+                    />
                     <ThemedText style={styles.featureText}>Médico</ThemedText>
                   </View>
                 </View>
@@ -207,7 +202,7 @@ export default function HomeScreen() {
                 <IconSymbol
                   name="chevron.right"
                   size={16}
-                  color={COLORS.WHITE}
+                  color={Colors.light.white}
                 />
               </View>
             </TouchableOpacity>
@@ -229,7 +224,11 @@ export default function HomeScreen() {
             {/* Blood Test Result */}
             <View style={styles.activityItem}>
               <View style={styles.activityIcon}>
-                <Ionicons name="water" size={20} color={COLORS.BRAND_BLUE} />
+                <Ionicons
+                  name="water"
+                  size={20}
+                  color={Colors.light.brandBlue}
+                />
               </View>
               <View style={styles.activityContent}>
                 <ThemedText style={styles.activityTitle}>
@@ -240,7 +239,10 @@ export default function HomeScreen() {
                 </ThemedText>
               </View>
               <View
-                style={[styles.statusPill, { backgroundColor: COLORS.SUCCESS }]}
+                style={[
+                  styles.statusPill,
+                  { backgroundColor: Colors.light.success },
+                ]}
               >
                 <ThemedText style={styles.statusText}>Normal</ThemedText>
               </View>
@@ -249,7 +251,11 @@ export default function HomeScreen() {
             {/* Cardiac Analysis */}
             <View style={styles.activityItem}>
               <View style={styles.activityIcon}>
-                <Ionicons name="heart" size={20} color={COLORS.BRAND_BLUE} />
+                <Ionicons
+                  name="heart"
+                  size={20}
+                  color={Colors.light.brandBlue}
+                />
               </View>
               <View style={styles.activityContent}>
                 <ThemedText style={styles.activityTitle}>
@@ -260,7 +266,10 @@ export default function HomeScreen() {
                 </ThemedText>
               </View>
               <View
-                style={[styles.statusPill, { backgroundColor: COLORS.WARNING }]}
+                style={[
+                  styles.statusPill,
+                  { backgroundColor: Colors.light.warning },
+                ]}
               >
                 <ThemedText style={styles.statusText}>Elevado</ThemedText>
               </View>
@@ -272,7 +281,7 @@ export default function HomeScreen() {
                 <Ionicons
                   name="thermometer"
                   size={20}
-                  color={COLORS.BRAND_BLUE}
+                  color={Colors.light.brandBlue}
                 />
               </View>
               <View style={styles.activityContent}>
@@ -284,7 +293,10 @@ export default function HomeScreen() {
                 </ThemedText>
               </View>
               <View
-                style={[styles.statusPill, { backgroundColor: COLORS.SUCCESS }]}
+                style={[
+                  styles.statusPill,
+                  { backgroundColor: Colors.light.success },
+                ]}
               >
                 <ThemedText style={styles.statusText}>Normal</ThemedText>
               </View>
@@ -296,7 +308,7 @@ export default function HomeScreen() {
                 <Ionicons
                   name="add-circle"
                   size={20}
-                  color={COLORS.BRAND_BLUE}
+                  color={Colors.light.brandBlue}
                 />
               </View>
               <View style={styles.activityContent}>
@@ -308,7 +320,10 @@ export default function HomeScreen() {
                 </ThemedText>
               </View>
               <View
-                style={[styles.statusPill, { backgroundColor: COLORS.WARNING }]}
+                style={[
+                  styles.statusPill,
+                  { backgroundColor: Colors.light.warning },
+                ]}
               >
                 <ThemedText style={styles.statusText}>Elevado</ThemedText>
               </View>
@@ -320,7 +335,7 @@ export default function HomeScreen() {
         <View style={styles.warningSection}>
           <View style={styles.warningCard}>
             <View style={styles.warningIcon}>
-              <Ionicons name="warning" size={20} color={COLORS.WHITE} />
+              <Ionicons name="warning" size={20} color={Colors.light.white} />
             </View>
             <View style={styles.warningContent}>
               <ThemedText style={styles.warningTitle}>Advertencia</ThemedText>
@@ -347,7 +362,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.BORDER,
+    borderBottomColor: Colors.light.borderGray,
   },
   headerLeft: {
     flex: 1,
@@ -369,18 +384,18 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 12,
     fontWeight: "700",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     letterSpacing: 0.5,
   },
   pageTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
   },
   profileIcon: {
     width: 32,
     height: 32,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
@@ -388,7 +403,7 @@ const styles = StyleSheet.create({
   profileIconText: {
     fontSize: 14,
     fontWeight: "700",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
   scrollView: {
     flex: 1,
@@ -406,12 +421,12 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 24,
     fontWeight: "700",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     marginBottom: 4,
   },
   subGreeting: {
     fontSize: 16,
-    color: COLORS.MUTED,
+    color: Colors.light.muted,
     fontWeight: "400",
   },
 
@@ -420,7 +435,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   searchBar: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -435,7 +450,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     marginBottom: 16,
   },
   quickActionsGrid: {
@@ -454,10 +469,10 @@ const styles = StyleSheet.create({
     minHeight: 180,
   },
   uploadCard: {
-    backgroundColor: COLORS.MEDICAL_BLUE,
+    backgroundColor: Colors.light.medicalBlue,
   },
   consultationCard: {
-    backgroundColor: COLORS.HEALTH_GREEN,
+    backgroundColor: Colors.light.healthGreen,
   },
   cardHeader: {
     flexDirection: "row",
@@ -486,7 +501,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 10,
     fontWeight: "700",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
     letterSpacing: 0.5,
   },
   cardContent: {
@@ -496,7 +511,7 @@ const styles = StyleSheet.create({
   quickActionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
     marginBottom: 12,
     lineHeight: 22,
   },
@@ -517,7 +532,7 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: 11,
     fontWeight: "600",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
     letterSpacing: 0.3,
   },
   cardFooter: {
@@ -529,7 +544,7 @@ const styles = StyleSheet.create({
   },
   cardFooterText: {
     fontSize: 12,
-    color: COLORS.WHITE,
+    color: Colors.light.white,
     fontWeight: "600",
     flex: 1,
     marginRight: 12,
@@ -546,12 +561,12 @@ const styles = StyleSheet.create({
   },
   seeAllLink: {
     fontSize: 14,
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     fontWeight: "600",
     textDecorationLine: "underline",
   },
   activitiesList: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderRadius: 16,
     padding: 16,
     shadowColor: "#000",
@@ -565,12 +580,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.BORDER,
+    borderBottomColor: Colors.light.borderGray,
   },
   activityIcon: {
     width: 40,
     height: 40,
-    backgroundColor: COLORS.LIGHT_GRAY,
+    backgroundColor: Colors.light.lightGray,
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
@@ -582,12 +597,12 @@ const styles = StyleSheet.create({
   activityTitle: {
     fontSize: 16,
     fontWeight: "500",
-    color: COLORS.BLACK,
+    color: Colors.light.black,
     marginBottom: 2,
   },
   activityTime: {
     fontSize: 14,
-    color: COLORS.MUTED,
+    color: Colors.light.muted,
   },
   statusPill: {
     paddingHorizontal: 12,
@@ -597,7 +612,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontWeight: "600",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
 
   warningSection: {
@@ -605,18 +620,18 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   warningCard: {
-    backgroundColor: COLORS.WARNING_BG,
+    backgroundColor: Colors.light.warningBg,
     borderRadius: 12,
     padding: 16,
     flexDirection: "row",
     alignItems: "flex-start",
     borderWidth: 1,
-    borderColor: COLORS.WARNING_BORDER,
+    borderColor: Colors.light.warningBorder,
   },
   warningIcon: {
     width: 32,
     height: 32,
-    backgroundColor: COLORS.WARNING,
+    backgroundColor: Colors.light.warning,
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
@@ -628,7 +643,7 @@ const styles = StyleSheet.create({
   warningTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: COLORS.WARNING,
+    color: Colors.light.warning,
     marginBottom: 4,
   },
   warningText: {

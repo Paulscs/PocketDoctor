@@ -132,11 +132,6 @@ export default function HistoryScreen() {
     // TODO: Navigate to detailed result view
   };
 
-  const handleViewAllResults = () => {
-    console.log("Viewing all results");
-    // TODO: Navigate to comprehensive results view
-  };
-
   const handleProfilePress = () => {
     router.push("/(tabs)/profile");
   };
@@ -208,15 +203,7 @@ export default function HistoryScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.titleSection}>
-          <View style={styles.titleHeader}>
-            <ThemedText style={styles.title}>Historial médico</ThemedText>
-            <TouchableOpacity
-              onPress={handleViewAllResults}
-              activeOpacity={0.7}
-            >
-              <ThemedText style={styles.seeAllLink}>Ver todas</ThemedText>
-            </TouchableOpacity>
-          </View>
+          <ThemedText style={styles.title}>Historial médico</ThemedText>
         </View>
 
         <View style={styles.resultsList}>
@@ -298,21 +285,10 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 16,
   },
-  titleHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
   title: {
     fontSize: 24,
     fontWeight: "700",
     color: COLORS.BRAND_BLUE,
-  },
-  seeAllLink: {
-    fontSize: 14,
-    color: COLORS.BRAND_BLUE,
-    fontWeight: "600",
-    textDecorationLine: "underline",
   },
   resultsList: {
     gap: 12,

@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { View, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  ViewStyle,
+} from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useThemeColor } from "@/hooks/use-theme-color";
@@ -10,7 +16,7 @@ interface SearchBarProps {
   onChangeText?: (text: string) => void;
   onSearch?: (text: string) => void;
   onClear?: () => void;
-  style?: any;
+  style?: ViewStyle;
 }
 
 export function SearchBar({

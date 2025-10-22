@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity, StyleSheet, View } from "react-native";
+import { TouchableOpacity, StyleSheet, View, ViewStyle } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useThemeColor } from "@/hooks/use-theme-color";
@@ -8,7 +8,7 @@ interface CheckboxProps {
   checked: boolean;
   onPress: () => void;
   label: string;
-  style?: any;
+  style?: ViewStyle;
 }
 
 export function Checkbox({ checked, onPress, label, style }: CheckboxProps) {

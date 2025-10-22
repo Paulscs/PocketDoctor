@@ -12,6 +12,7 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { Colors } from "@/constants/theme";
 
 interface Message {
   id: string;
@@ -104,7 +105,7 @@ const MOCK_USER_PROFILE: UserProfile = {
 
 export default function ChatScreen() {
   const backgroundColor = useThemeColor(
-    { light: COLORS.WHITE, dark: "#000000" },
+    { light: Colors.light.white, dark: "#000000" },
     "background"
   );
 
@@ -234,7 +235,13 @@ export default function ChatScreen() {
 
   const generateContextualResponse = (
     actionId: string,
-    suggestion: any
+    suggestion: {
+      id: string;
+      title: string;
+      subtitle: string;
+      icon: string;
+      message: string;
+    }
   ): { text: string; followUpOptions: FollowUpOption[] } => {
     switch (actionId) {
       case "cholesterol":
@@ -546,7 +553,7 @@ export default function ChatScreen() {
                   <IconSymbol
                     name="person.fill"
                     size={16}
-                    color={COLORS.WHITE}
+                    color={Colors.light.white}
                   />
                 </View>
               )}
@@ -577,9 +584,9 @@ export default function ChatScreen() {
                     activeOpacity={0.7}
                   >
                     <Ionicons
-                      name={option.icon as any}
+                      name={option.icon as keyof typeof Ionicons.glyphMap}
                       size={16}
-                      color={COLORS.BRAND_BLUE}
+                      color={Colors.light.brandBlue}
                     />
                     <ThemedText style={styles.followUpText}>
                       {option.text}
@@ -602,9 +609,9 @@ export default function ChatScreen() {
               >
                 <View style={styles.cardIcon}>
                   <Ionicons
-                    name={suggestion.icon as any}
+                    name={suggestion.icon as keyof typeof Ionicons.glyphMap}
                     size={20}
-                    color={COLORS.BRAND_BLUE}
+                    color={Colors.light.brandBlue}
                   />
                 </View>
                 <View style={styles.cardContent}>
@@ -618,7 +625,7 @@ export default function ChatScreen() {
                 <IconSymbol
                   name="chevron.right"
                   size={16}
-                  color={COLORS.GRAY_400}
+                  color={Colors.light.gray}
                 />
               </TouchableOpacity>
             ))}
@@ -641,7 +648,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.GRAY_200,
+    borderBottomColor: Colors.light.borderGray,
   },
   headerLeft: {
     flex: 1,
@@ -663,18 +670,18 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 12,
     fontWeight: "700",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     letterSpacing: 0.5,
   },
   pageTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
   },
   profileIcon: {
     width: 32,
     height: 32,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
@@ -682,12 +689,12 @@ const styles = StyleSheet.create({
   profileIconText: {
     fontSize: 14,
     fontWeight: "700",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
 
   chatContainer: {
     flex: 1,
-    backgroundColor: COLORS.GRAY_50,
+    backgroundColor: Colors.light.lightGray,
   },
   chatContent: {
     paddingHorizontal: 20,
@@ -709,7 +716,7 @@ const styles = StyleSheet.create({
   aiIcon: {
     width: 32,
     height: 32,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
@@ -728,11 +735,11 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   userBubble: {
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderBottomRightRadius: 4,
   },
   aiBubble: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderBottomLeftRadius: 4,
   },
   messageText: {
@@ -740,10 +747,10 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   userText: {
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
   aiText: {
-    color: COLORS.GRAY_700,
+    color: Colors.light.textGray,
   },
 
   suggestedActions: {
@@ -751,7 +758,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   suggestedCard: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
     padding: 16,
     flexDirection: "row",
@@ -765,7 +772,7 @@ const styles = StyleSheet.create({
   cardIcon: {
     width: 40,
     height: 40,
-    backgroundColor: COLORS.GRAY_100,
+    backgroundColor: Colors.light.lightGray,
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
@@ -777,12 +784,12 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.GRAY_800,
+    color: Colors.light.textGray,
     marginBottom: 4,
   },
   cardSubtitle: {
     fontSize: 14,
-    color: COLORS.GRAY_500,
+    color: Colors.light.lightGray,
     lineHeight: 18,
   },
 
@@ -795,12 +802,12 @@ const styles = StyleSheet.create({
   followUpOption: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: COLORS.BRAND_BLUE,
+    borderColor: Colors.light.brandBlue,
     gap: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -810,7 +817,7 @@ const styles = StyleSheet.create({
   },
   followUpText: {
     fontSize: 14,
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     fontWeight: "500",
   },
 });

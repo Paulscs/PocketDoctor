@@ -1,5 +1,5 @@
-import React from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useMemo } from "react";
+import { View, StyleSheet, TouchableOpacity, ViewStyle } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
@@ -8,7 +8,7 @@ interface CardProps {
   title?: string;
   subtitle?: string;
   onPress?: () => void;
-  style?: any;
+  style?: ViewStyle;
   variant?: "default" | "elevated" | "outlined";
 }
 
@@ -33,7 +33,7 @@ export function Card({
     "icon"
   );
 
-  const getCardStyle = () => {
+  const cardStyle = useMemo(() => {
     const baseStyle = [styles.card, { backgroundColor }];
 
     switch (variant) {
@@ -44,13 +44,13 @@ export function Card({
       default:
         return baseStyle;
     }
-  };
+  }, [variant, backgroundColor, borderColor]);
 
   const CardComponent = onPress ? TouchableOpacity : View;
 
   return (
     <CardComponent
-      style={[...getCardStyle(), style]}
+      style={[...cardStyle, style]}
       onPress={onPress}
       activeOpacity={onPress ? 0.95 : 1}
     >

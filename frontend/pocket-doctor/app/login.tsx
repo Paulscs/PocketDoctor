@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -8,27 +8,14 @@ import {
   Image,
   Alert,
   ScrollView,
+  ImageSourcePropType,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-
-const COLORS = {
-  BRAND_BLUE: "#002D73",
-  LIGHT_BLUE: "#5A7BB5",
-  BORDER: "#D1D5DB",
-  MUTED: "#6B7280",
-  WHITE: "#FFFFFF",
-  BLACK: "#111827",
-  PLACEHOLDER: "#9CA3AF",
-  DIVIDER: "#E5E7EB",
-  FRIENDLY_BLUE: "#3B82F6",
-  FRIENDLY_BLUE_BG: "#EFF6FF",
-  FRIENDLY_BLUE_BORDER: "#BFDBFE",
-  FRIENDLY_GREEN: "#10B981",
-  FRIENDLY_GREEN_BG: "#ECFDF5",
-  FRIENDLY_GREEN_BORDER: "#A7F3D0",
-} as const;
+import { Colors } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { useAuthStore } from "@/src/store";
 
 const SIZES = {
   ICON: 18,
@@ -36,12 +23,301 @@ const SIZES = {
   PADDING: 24,
 } as const;
 
+interface ThemeColors {
+  brandBlue: string;
+  muted: string;
+  white: string;
+  black: string;
+  placeholder: string;
+  border: string;
+  divider: string;
+  friendlyBlue: string;
+  friendlyBlueBg: string;
+  friendlyBlueBorder: string;
+  friendlyGreen: string;
+  friendlyGreenBg: string;
+  friendlyGreenBorder: string;
+}
+
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.white },
+    content: { flexGrow: 1, padding: SIZES.PADDING },
+
+    header: { alignItems: "center", marginTop: 40, marginBottom: 20 },
+    logo: { width: 100, height: 80 },
+    title: {
+      fontSize: 26,
+      fontWeight: "700",
+      color: colors.brandBlue,
+      marginTop: 8,
+    },
+    subtitle: {
+      color: colors.muted,
+      fontSize: 14,
+      textAlign: "center",
+      marginTop: 4,
+    },
+
+    form: { marginTop: 12 },
+    label: {
+      color: colors.brandBlue,
+      fontWeight: "600",
+      fontSize: 15,
+      marginBottom: 6,
+    },
+    inputRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: SIZES.BORDER_RADIUS,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      marginBottom: 14,
+    },
+    input: {
+      flex: 1,
+      fontSize: 15,
+      color: colors.black,
+      marginLeft: 8,
+    },
+
+    optionsRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 18,
+    },
+    rememberRow: { flexDirection: "row", alignItems: "center" },
+    checkbox: {
+      width: 16,
+      height: 16,
+      borderWidth: 1.3,
+      borderColor: colors.border,
+      borderRadius: 4,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: colors.white,
+      marginRight: 6,
+    },
+    checkboxChecked: {
+      backgroundColor: colors.brandBlue,
+      borderColor: colors.brandBlue,
+    },
+    rememberText: { color: colors.black, fontSize: 13, marginTop: -1 },
+    forgotText: {
+      color: colors.brandBlue,
+      fontSize: 13,
+      marginTop: -1,
+    },
+
+    button: {
+      backgroundColor: colors.brandBlue,
+      borderRadius: 10,
+      paddingVertical: 14,
+      alignItems: "center",
+      marginBottom: 24,
+    },
+    buttonDisabled: { opacity: 0.7 },
+    buttonText: { color: colors.white, fontSize: 16, fontWeight: "600" },
+
+    divider: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 24,
+    },
+    line: { flex: 1, height: 1, backgroundColor: colors.divider },
+    dividerText: { color: colors.placeholder, marginHorizontal: 10 },
+
+    socialRow: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 20,
+      marginBottom: 24,
+    },
+    socialButton: { padding: 4 },
+    socialIcon: { width: 40, height: 40 },
+
+    signUpRow: {
+      flexDirection: "row",
+      justifyContent: "center",
+      marginBottom: 16,
+    },
+    signUpText: { color: colors.muted, fontSize: 14 },
+    signUpLink: {
+      color: colors.brandBlue,
+      fontWeight: "600",
+      fontSize: 14,
+    },
+
+    footerWarnings: {
+      flexDirection: "row",
+      gap: 8,
+      marginBottom: 20,
+    },
+    warningCard: {
+      flex: 1,
+      borderRadius: 8,
+      padding: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1,
+    },
+    warningIcon: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 8,
+    },
+    warningContent: {
+      flex: 1,
+    },
+    warningTitle: {
+      fontSize: 10,
+      fontWeight: "700",
+      marginBottom: 1,
+    },
+    warningText: {
+      fontSize: 9,
+      lineHeight: 11,
+    },
+
+    // Medical card styles (friendly blue)
+    medicalCard: {
+      backgroundColor: colors.friendlyBlueBg,
+      borderColor: colors.friendlyBlueBorder,
+    },
+    medicalIcon: {
+      backgroundColor: colors.friendlyBlue,
+    },
+    medicalTitle: {
+      color: colors.friendlyBlue,
+    },
+    medicalText: {
+      color: "#1E40AF",
+    },
+
+    // Security card styles (friendly green)
+    securityCard: {
+      backgroundColor: colors.friendlyGreenBg,
+      borderColor: colors.friendlyGreenBorder,
+    },
+    securityIcon: {
+      backgroundColor: colors.friendlyGreen,
+    },
+    securityTitle: {
+      color: colors.friendlyGreen,
+    },
+    securityText: {
+      color: "#047857",
+    },
+  });
+
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  // Global state
+  const { login, isLoading, error, clearError } = useAuthStore();
+
+  // Theme colors
+  const brandBlue = useThemeColor(
+    { light: Colors.light.brandBlue, dark: Colors.dark.brandBlue },
+    "brandBlue"
+  );
+  const muted = useThemeColor(
+    { light: Colors.light.muted, dark: Colors.dark.muted },
+    "muted"
+  );
+  const white = useThemeColor(
+    { light: Colors.light.white, dark: Colors.dark.white },
+    "white"
+  );
+  const black = useThemeColor(
+    { light: Colors.light.black, dark: Colors.dark.black },
+    "black"
+  );
+  const placeholder = useThemeColor(
+    { light: Colors.light.placeholder, dark: Colors.dark.placeholder },
+    "placeholder"
+  );
+  const border = useThemeColor(
+    { light: Colors.light.borderGray, dark: Colors.dark.borderGray },
+    "border"
+  );
+  const divider = useThemeColor(
+    { light: Colors.light.divider, dark: Colors.dark.divider },
+    "divider"
+  );
+  const friendlyBlue = useThemeColor(
+    { light: Colors.light.friendlyBlue, dark: Colors.dark.friendlyBlue },
+    "friendlyBlue"
+  );
+  const friendlyBlueBg = useThemeColor(
+    { light: Colors.light.friendlyBlueBg, dark: Colors.dark.friendlyBlueBg },
+    "friendlyBlueBg"
+  );
+  const friendlyBlueBorder = useThemeColor(
+    {
+      light: Colors.light.friendlyBlueBorder,
+      dark: Colors.dark.friendlyBlueBorder,
+    },
+    "friendlyBlueBorder"
+  );
+  const friendlyGreen = useThemeColor(
+    { light: Colors.light.friendlyGreen, dark: Colors.dark.friendlyGreen },
+    "friendlyGreen"
+  );
+  const friendlyGreenBg = useThemeColor(
+    { light: Colors.light.friendlyGreenBg, dark: Colors.dark.friendlyGreenBg },
+    "friendlyGreenBg"
+  );
+  const friendlyGreenBorder = useThemeColor(
+    {
+      light: Colors.light.friendlyGreenBorder,
+      dark: Colors.dark.friendlyGreenBorder,
+    },
+    "friendlyGreenBorder"
+  );
+
+  const styles = useMemo(
+    () =>
+      createStyles({
+        brandBlue,
+        muted,
+        white,
+        black,
+        placeholder,
+        border,
+        divider,
+        friendlyBlue,
+        friendlyBlueBg,
+        friendlyBlueBorder,
+        friendlyGreen,
+        friendlyGreenBg,
+        friendlyGreenBorder,
+      }),
+    [
+      brandBlue,
+      muted,
+      white,
+      black,
+      placeholder,
+      border,
+      divider,
+      friendlyBlue,
+      friendlyBlueBg,
+      friendlyBlueBorder,
+      friendlyGreen,
+      friendlyGreenBg,
+      friendlyGreenBorder,
+    ]
+  );
 
   const validate = useCallback(() => {
     if (!email.trim() || !password.trim()) {
@@ -58,21 +334,19 @@ export default function LoginScreen() {
 
   const handleLogin = useCallback(async () => {
     if (!validate()) return;
-    setLoading(true);
+    clearError();
     try {
-      await new Promise(r => setTimeout(r, 1000));
+      await login(email, password);
       router.push("/(tabs)/home");
-    } catch {
-      Alert.alert("Error", "No se pudo iniciar sesión. Intenta de nuevo.");
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      // Error is handled by the store
     }
-  }, [validate]);
+  }, [validate, login, email, password, clearError]);
 
   const navigateToForgotPassword = () => router.push("/forgot-password");
   const navigateToRegister = () => router.push("/register");
 
-  const renderSocial = (src: any, key: string) => (
+  const renderSocial = (src: ImageSourcePropType, key: string) => (
     <TouchableOpacity key={key} style={styles.socialButton}>
       <Image source={src} style={styles.socialIcon} resizeMode="contain" />
     </TouchableOpacity>
@@ -103,19 +377,15 @@ export default function LoginScreen() {
           {/* Email */}
           <Text style={styles.label}>Correo electrónico</Text>
           <View style={styles.inputRow}>
-            <Ionicons
-              name="mail-outline"
-              size={SIZES.ICON}
-              color={COLORS.MUTED}
-            />
+            <Ionicons name="mail-outline" size={SIZES.ICON} color={muted} />
             <TextInput
               style={styles.input}
               placeholder="ejemplo@gmail.com"
-              placeholderTextColor={COLORS.PLACEHOLDER}
+              placeholderTextColor={placeholder}
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
-              editable={!loading}
+              editable={!isLoading}
               value={email}
               onChangeText={setEmail}
             />
@@ -127,15 +397,15 @@ export default function LoginScreen() {
             <Ionicons
               name="lock-closed-outline"
               size={SIZES.ICON}
-              color={COLORS.MUTED}
+              color={muted}
             />
             <TextInput
               style={styles.input}
               placeholder="Introduzca su contraseña"
-              placeholderTextColor={COLORS.PLACEHOLDER}
+              placeholderTextColor={placeholder}
               secureTextEntry={!showPassword}
               autoComplete="password"
-              editable={!loading}
+              editable={!isLoading}
               value={password}
               onChangeText={setPassword}
             />
@@ -143,7 +413,7 @@ export default function LoginScreen() {
               <Ionicons
                 name={showPassword ? "eye-off-outline" : "eye-outline"}
                 size={SIZES.ICON}
-                color={COLORS.MUTED}
+                color={muted}
               />
             </TouchableOpacity>
           </View>
@@ -159,7 +429,7 @@ export default function LoginScreen() {
                 style={[styles.checkbox, remember && styles.checkboxChecked]}
               >
                 {remember && (
-                  <Ionicons name="checkmark" size={12} color={COLORS.WHITE} />
+                  <Ionicons name="checkmark" size={12} color={white} />
                 )}
               </View>
               <Text style={styles.rememberText}>Recordarme</Text>
@@ -172,12 +442,12 @@ export default function LoginScreen() {
 
           {/* Button */}
           <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={[styles.button, isLoading && styles.buttonDisabled]}
             onPress={handleLogin}
-            disabled={loading}
+            disabled={isLoading}
           >
             <Text style={styles.buttonText}>
-              {loading ? "Iniciando..." : "Iniciar Sesión"}
+              {isLoading ? "Iniciando..." : "Iniciar Sesión"}
             </Text>
           </TouchableOpacity>
 
@@ -209,11 +479,7 @@ export default function LoginScreen() {
           <View style={styles.footerWarnings}>
             <View style={[styles.warningCard, styles.medicalCard]}>
               <View style={[styles.warningIcon, styles.medicalIcon]}>
-                <Ionicons
-                  name="medical-outline"
-                  size={12}
-                  color={COLORS.WHITE}
-                />
+                <Ionicons name="medical-outline" size={12} color={white} />
               </View>
               <View style={styles.warningContent}>
                 <Text style={[styles.warningTitle, styles.medicalTitle]}>
@@ -227,11 +493,7 @@ export default function LoginScreen() {
 
             <View style={[styles.warningCard, styles.securityCard]}>
               <View style={[styles.warningIcon, styles.securityIcon]}>
-                <Ionicons
-                  name="shield-checkmark"
-                  size={12}
-                  color={COLORS.WHITE}
-                />
+                <Ionicons name="shield-checkmark" size={12} color={white} />
               </View>
               <View style={styles.warningContent}>
                 <Text style={[styles.warningTitle, styles.securityTitle]}>
@@ -248,179 +510,3 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.WHITE },
-  content: { flexGrow: 1, padding: SIZES.PADDING },
-
-  header: { alignItems: "center", marginTop: 40, marginBottom: 20 },
-  logo: { width: 100, height: 80 },
-  title: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: COLORS.BRAND_BLUE,
-    marginTop: 8,
-  },
-  subtitle: {
-    color: COLORS.MUTED,
-    fontSize: 14,
-    textAlign: "center",
-    marginTop: 4,
-  },
-
-  form: { marginTop: 12 },
-  label: {
-    color: COLORS.BRAND_BLUE,
-    fontWeight: "600",
-    fontSize: 15,
-    marginBottom: 6,
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: COLORS.BORDER,
-    borderRadius: SIZES.BORDER_RADIUS,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 14,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: COLORS.BLACK,
-    marginLeft: 8,
-  },
-
-  optionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 18,
-  },
-  rememberRow: { flexDirection: "row", alignItems: "center" },
-  checkbox: {
-    width: 16,
-    height: 16,
-    borderWidth: 1.3,
-    borderColor: COLORS.BORDER,
-    borderRadius: 4,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: COLORS.WHITE,
-    marginRight: 6,
-  },
-  checkboxChecked: {
-    backgroundColor: COLORS.BRAND_BLUE,
-    borderColor: COLORS.BRAND_BLUE,
-  },
-  rememberText: { color: COLORS.BLACK, fontSize: 13, marginTop: -1 },
-  forgotText: {
-    color: COLORS.BRAND_BLUE,
-    fontSize: 13,
-    marginTop: -1,
-  },
-
-  button: {
-    backgroundColor: COLORS.BRAND_BLUE,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  buttonDisabled: { opacity: 0.7 },
-  buttonText: { color: COLORS.WHITE, fontSize: 16, fontWeight: "600" },
-
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  line: { flex: 1, height: 1, backgroundColor: COLORS.DIVIDER },
-  dividerText: { color: COLORS.PLACEHOLDER, marginHorizontal: 10 },
-
-  socialRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 20,
-    marginBottom: 24,
-  },
-  socialButton: { padding: 4 },
-  socialIcon: { width: 40, height: 40 },
-
-  signUpRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  signUpText: { color: COLORS.MUTED, fontSize: 14 },
-  signUpLink: {
-    color: COLORS.BRAND_BLUE,
-    fontWeight: "600",
-    fontSize: 14,
-  },
-
-  footerWarnings: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 20,
-  },
-  warningCard: {
-    flex: 1,
-    borderRadius: 8,
-    padding: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-  },
-  warningIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
-  },
-  warningContent: {
-    flex: 1,
-  },
-  warningTitle: {
-    fontSize: 10,
-    fontWeight: "700",
-    marginBottom: 1,
-  },
-  warningText: {
-    fontSize: 9,
-    lineHeight: 11,
-  },
-
-  // Medical card styles (friendly blue)
-  medicalCard: {
-    backgroundColor: COLORS.FRIENDLY_BLUE_BG,
-    borderColor: COLORS.FRIENDLY_BLUE_BORDER,
-  },
-  medicalIcon: {
-    backgroundColor: COLORS.FRIENDLY_BLUE,
-  },
-  medicalTitle: {
-    color: COLORS.FRIENDLY_BLUE,
-  },
-  medicalText: {
-    color: "#1E40AF",
-  },
-
-  // Security card styles (friendly green)
-  securityCard: {
-    backgroundColor: COLORS.FRIENDLY_GREEN_BG,
-    borderColor: COLORS.FRIENDLY_GREEN_BORDER,
-  },
-  securityIcon: {
-    backgroundColor: COLORS.FRIENDLY_GREEN,
-  },
-  securityTitle: {
-    color: COLORS.FRIENDLY_GREEN,
-  },
-  securityText: {
-    color: "#047857",
-  },
-});

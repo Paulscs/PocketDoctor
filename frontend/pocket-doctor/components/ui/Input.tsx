@@ -1,5 +1,5 @@
 import React from "react";
-import { View, TextInput, StyleSheet } from "react-native";
+import { View, TextInput, StyleSheet, ViewStyle } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useThemeColor } from "@/hooks/use-theme-color";
@@ -13,8 +13,8 @@ interface InputProps {
   keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
   icon?: string;
   error?: string;
-  style?: any;
-  rightComponent?: React.ReactNode; // <-- agregado
+  style?: ViewStyle;
+  rightComponent?: React.ReactNode;
 }
 
 export function Input({
@@ -55,7 +55,11 @@ export function Input({
       <ThemedText style={styles.label}>{label}</ThemedText>
       <View style={[styles.inputContainer, { backgroundColor, borderColor }]}>
         {icon && (
-          <IconSymbol name={icon as any} size={20} color={placeholderColor} />
+          <IconSymbol
+            name={icon as keyof typeof IconSymbol}
+            size={20}
+            color={placeholderColor}
+          />
         )}
         <TextInput
           style={[styles.input, { color: textColor }]}
