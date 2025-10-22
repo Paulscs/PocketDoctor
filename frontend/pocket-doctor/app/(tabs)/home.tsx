@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -13,34 +13,52 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Colors } from "@/constants/theme";
+import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { useAuthStore } from "@/src/store";
 
 export default function HomeScreen() {
   const backgroundColor = useThemeColor(
-    { light: Colors.light.white, dark: "#000000" },
+    { light: Colors.light.white, dark: Colors.dark.background },
     "background"
   );
 
-  const handleUploadResults = () => {
+  const { user } = useAuthStore();
+
+  const containerStyle = useMemo(
+    () => [styles.container, { backgroundColor }],
+    [backgroundColor]
+  );
+
+  const headerStyle = useMemo(
+    () => [styles.header, { borderBottomColor: Colors.light.borderGray }],
+    []
+  );
+
+  const greetingText = useMemo(
+    () => `Hola, ${user?.firstName || "Usuario"}`,
+    [user?.firstName]
+  );
+
+  const handleUploadResults = useCallback(() => {
     router.push("/upload");
-  };
+  }, []);
 
-  const handleAIConsultation = () => {
+  const handleAIConsultation = useCallback(() => {
     router.push("/(tabs)/chat");
-  };
+  }, []);
 
-  const handleViewAllActivities = () => {
+  const handleViewAllActivities = useCallback(() => {
     router.push("/(tabs)/history");
-  };
+  }, []);
 
-  const handleProfilePress = () => {
+  const handleProfilePress = useCallback(() => {
     router.push("/(tabs)/profile");
-  };
+  }, []);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]}>
+    <SafeAreaView style={containerStyle}>
       {/* Custom Header */}
-      <View style={styles.header}>
+      <View style={headerStyle}>
         <View style={styles.headerLeft}>
           <View style={styles.logoContainer}>
             <Image
@@ -57,6 +75,9 @@ export default function HomeScreen() {
             style={styles.profileIcon}
             onPress={handleProfilePress}
             activeOpacity={0.7}
+            accessibilityLabel="Ir al perfil"
+            accessibilityRole="button"
+            accessibilityHint="Navega a la pantalla de perfil"
           >
             <ThemedText style={styles.profileIconText}>A</ThemedText>
           </TouchableOpacity>
@@ -70,7 +91,7 @@ export default function HomeScreen() {
       >
         {/* Greeting Section */}
         <View style={styles.greetingSection}>
-          <ThemedText style={styles.greeting}>Hola, Ethan</ThemedText>
+          <ThemedText style={styles.greeting}>{greetingText}</ThemedText>
           <ThemedText style={styles.subGreeting}>
             ¿Cómo puedo ayudarte hoy?
           </ThemedText>
@@ -93,6 +114,9 @@ export default function HomeScreen() {
               style={[styles.quickActionCard, styles.uploadCard]}
               onPress={handleUploadResults}
               activeOpacity={0.7}
+              accessibilityLabel="Cargar resultados médicos"
+              accessibilityRole="button"
+              accessibilityHint="Sube tus resultados de laboratorio para análisis con IA"
             >
               <View style={styles.cardHeader}>
                 <View
@@ -154,6 +178,9 @@ export default function HomeScreen() {
               style={[styles.quickActionCard, styles.consultationCard]}
               onPress={handleAIConsultation}
               activeOpacity={0.7}
+              accessibilityLabel="Consulta con IA médica"
+              accessibilityRole="button"
+              accessibilityHint="Inicia una consulta médica con inteligencia artificial"
             >
               <View style={styles.cardHeader}>
                 <View
@@ -215,7 +242,12 @@ export default function HomeScreen() {
             <ThemedText style={styles.sectionTitle}>
               Actividades recientes
             </ThemedText>
-            <TouchableOpacity onPress={handleViewAllActivities}>
+            <TouchableOpacity
+              onPress={handleViewAllActivities}
+              accessibilityLabel="Ver todas las actividades"
+              accessibilityRole="button"
+              accessibilityHint="Navega a la pantalla de historial completo"
+            >
               <ThemedText style={styles.seeAllLink}>Ver todas</ThemedText>
             </TouchableOpacity>
           </View>
@@ -340,8 +372,9 @@ export default function HomeScreen() {
             <View style={styles.warningContent}>
               <ThemedText style={styles.warningTitle}>Advertencia</ThemedText>
               <ThemedText style={styles.warningText}>
-                Esta herramienta no reemplaza el diagnóstico médico profesional.
-                Consulta siempre a un médico
+                Esta aplicación es solo para fines informativos y no reemplaza
+                el diagnóstico médico profesional. Siempre consulte con un
+                médico calificado para obtener asesoramiento médico adecuado.
               </ThemedText>
             </View>
           </View>
@@ -359,8 +392,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.borderGray,
   },
@@ -370,12 +403,12 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: Spacing.md,
   },
   logoContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: Spacing.sm,
   },
   logo: {
     width: 32,
@@ -409,14 +442,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.lg,
   },
 
   greetingSection: {
-    paddingTop: 24,
-    paddingBottom: 12,
-    paddingHorizontal: 8,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.md,
+    paddingHorizontal: Spacing.sm,
   },
   greeting: {
     fontSize: 24,
@@ -431,13 +464,13 @@ const styles = StyleSheet.create({
   },
 
   searchSection: {
-    marginBottom: 24,
-    marginTop: 8,
+    marginBottom: Spacing.xl,
+    marginTop: Spacing.sm,
   },
   searchBar: {
     backgroundColor: Colors.light.white,
-    borderRadius: 12,
-    shadowColor: "#000",
+    borderRadius: BorderRadius.md,
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -445,23 +478,23 @@ const styles = StyleSheet.create({
   },
 
   quickActionsSection: {
-    marginBottom: 32,
+    marginBottom: Spacing.xxl,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: Colors.light.brandBlue,
-    marginBottom: 16,
+    marginBottom: Spacing.md,
   },
   quickActionsGrid: {
     flexDirection: "row",
-    gap: 16,
+    gap: Spacing.md,
   },
   quickActionCard: {
     flex: 1,
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: "#000",
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -478,15 +511,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 16,
+    marginBottom: Spacing.md,
   },
   quickActionIcon: {
     width: 56,
     height: 56,
-    borderRadius: 16,
+    borderRadius: BorderRadius.md,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -494,9 +527,9 @@ const styles = StyleSheet.create({
   },
   cardBadge: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
   },
   badgeText: {
     fontSize: 10,
@@ -512,22 +545,22 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: Colors.light.white,
-    marginBottom: 12,
+    marginBottom: Spacing.md,
     lineHeight: 22,
   },
   subtitleContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: Spacing.sm,
   },
   featureTag: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.15)",
-    borderRadius: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    gap: 4,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    gap: Spacing.xs,
   },
   featureText: {
     fontSize: 11,
@@ -538,9 +571,9 @@ const styles = StyleSheet.create({
   cardFooter: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 16,
-    paddingHorizontal: 8,
-    paddingBottom: 4,
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    paddingBottom: Spacing.xs,
   },
   cardFooterText: {
     fontSize: 12,
@@ -551,13 +584,13 @@ const styles = StyleSheet.create({
   },
 
   activitiesSection: {
-    marginBottom: 24,
+    marginBottom: Spacing.xl,
   },
   activitiesHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: Spacing.md,
   },
   seeAllLink: {
     fontSize: 14,
@@ -567,9 +600,9 @@ const styles = StyleSheet.create({
   },
   activitiesList: {
     backgroundColor: Colors.light.white,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: "#000",
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -578,7 +611,7 @@ const styles = StyleSheet.create({
   activityItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.borderGray,
   },
@@ -586,10 +619,10 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     backgroundColor: Colors.light.lightGray,
-    borderRadius: 20,
+    borderRadius: BorderRadius.xl,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: Spacing.md,
   },
   activityContent: {
     flex: 1,
@@ -605,9 +638,9 @@ const styles = StyleSheet.create({
     color: Colors.light.muted,
   },
   statusPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.md,
   },
   statusText: {
     fontSize: 12,
@@ -617,12 +650,12 @@ const styles = StyleSheet.create({
 
   warningSection: {
     marginTop: "auto",
-    paddingTop: 20,
+    paddingTop: Spacing.lg,
   },
   warningCard: {
     backgroundColor: Colors.light.warningBg,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
     flexDirection: "row",
     alignItems: "flex-start",
     borderWidth: 1,
@@ -632,10 +665,10 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     backgroundColor: Colors.light.warning,
-    borderRadius: 16,
+    borderRadius: BorderRadius.lg,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: Spacing.md,
   },
   warningContent: {
     flex: 1,
@@ -648,7 +681,7 @@ const styles = StyleSheet.create({
   },
   warningText: {
     fontSize: 12,
-    color: "#856404",
+    color: Colors.light.warningText,
     lineHeight: 16,
   },
 });

@@ -98,6 +98,7 @@ export const Colors = {
     healthGreen: "#059669",
     purple: "#8B5CF6",
     teal: "#14B8A6",
+    warningText: "#856404",
   },
   dark: {
     text: "#ECEDEE",
@@ -143,6 +144,7 @@ export const Colors = {
     healthGreen: "#059669",
     purple: "#8B5CF6",
     teal: "#14B8A6",
+    warningText: "#856404",
   },
 };
 

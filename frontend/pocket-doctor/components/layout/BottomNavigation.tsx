@@ -4,18 +4,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 
 interface TabItem {
-  id: string;
-  label: string;
-  icon: string;
-  route: string;
+  readonly id: string;
+  readonly label: string;
+  readonly icon: string;
+  readonly route: string;
 }
 
 interface BottomNavigationProps {
-  activeTab: string;
-  onTabPress: (tabId: string) => void;
-  tabs: TabItem[];
+  readonly activeTab: string;
+  readonly onTabPress: (tabId: string) => void;
+  readonly tabs: readonly TabItem[];
 }
 
 export function BottomNavigation({
@@ -24,23 +25,20 @@ export function BottomNavigation({
   tabs,
 }: BottomNavigationProps) {
   const backgroundColor = useThemeColor(
-    { light: "#ffffff", dark: "#1a1a1a" },
+    { light: Colors.light.white, dark: Colors.dark.surface },
     "background"
   );
   const activeColor = useThemeColor(
-    { light: "#007AFF", dark: "#0A84FF" },
+    { light: Colors.light.brandBlue, dark: Colors.dark.brandBlue },
     "tint"
   );
   const inactiveColor = useThemeColor(
-    { light: "#8E8E93", dark: "#8E8E93" },
+    { light: Colors.light.muted, dark: Colors.dark.muted },
     "icon"
   );
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor }]}
-      edges={["bottom"]}
-    >
+    <View style={[styles.container, { backgroundColor }]}>
       <View style={styles.navigation}>
         {tabs.map(tab => {
           const isActive = activeTab === tab.id;
@@ -52,6 +50,10 @@ export function BottomNavigation({
               style={[styles.tab, isActive && styles.activeTab]}
               onPress={() => onTabPress(tab.id)}
               activeOpacity={0.7}
+              accessibilityLabel={tab.label}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
+              accessibilityHint={`Navegar a ${tab.label}`}
             >
               <IconSymbol name={tab.icon as any} size={24} color={color} />
               <ThemedText
@@ -67,33 +69,30 @@ export function BottomNavigation({
           );
         })}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e0e0e0",
-  },
+  container: {},
   navigation: {
     flexDirection: "row",
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.sm,
   },
   tab: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderRadius: 8,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+    borderRadius: BorderRadius.sm,
   },
   activeTab: {
-    backgroundColor: "rgba(0, 122, 255, 0.1)",
+    backgroundColor: Colors.light.friendlyBlueBg,
   },
   tabLabel: {
     fontSize: 12,
-    marginTop: 4,
+    marginTop: Spacing.xs,
     fontWeight: "500",
   },
   activeTabLabel: {

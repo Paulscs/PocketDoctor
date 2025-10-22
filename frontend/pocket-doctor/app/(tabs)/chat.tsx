@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -9,386 +9,44 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Colors } from "@/constants/theme";
-
-interface Message {
-  id: string;
-  text: string;
-  isUser: boolean;
-  timestamp: Date;
-  followUpOptions?: FollowUpOption[];
-}
-
-interface FollowUpOption {
-  id: string;
-  text: string;
-  icon: string;
-}
-
-interface MedicalData {
-  id: string;
-  name: string;
-  value: string;
-  normalRange: string;
-  status: "normal" | "elevated" | "low";
-}
-
-interface UserProfile {
-  name: string;
-  age: number;
-  gender: string;
-  bloodType: string;
-  allergies: string[];
-  conditions: string[];
-  medicalHistory: MedicalData[];
-}
-
-const COLORS = {
-  BRAND_BLUE: "#002D73",
-  LIGHT_BLUE: "#5A7BB5",
-  MEDICAL_BLUE: "#1E40AF",
-  HEALTH_GREEN: "#059669",
-  WHITE: "#FFFFFF",
-  GRAY_50: "#F9FAFB",
-  GRAY_100: "#F3F4F6",
-  GRAY_200: "#E5E7EB",
-  GRAY_300: "#D1D5DB",
-  GRAY_400: "#9CA3AF",
-  GRAY_500: "#6B7280",
-  GRAY_600: "#4B5563",
-  GRAY_700: "#374151",
-  GRAY_800: "#1F2937",
-  GRAY_900: "#111827",
-} as const;
-
-const MOCK_USER_PROFILE: UserProfile = {
-  name: "Ethan",
-  age: 28,
-  gender: "Masculino",
-  bloodType: "O+",
-  allergies: ["Penicilina", "Polen"],
-  conditions: ["Hipertensión leve"],
-  medicalHistory: [
-    {
-      id: "1",
-      name: "Hemoglobina",
-      value: "12.5 g/dL",
-      normalRange: "12.0-15.5 g/dL",
-      status: "normal",
-    },
-    {
-      id: "2",
-      name: "Células blancas",
-      value: "8.2 K/μL",
-      normalRange: "4.0-11.0 K/μL",
-      status: "normal",
-    },
-    {
-      id: "3",
-      name: "Colesterol",
-      value: "245 mg/dL",
-      normalRange: "<200 mg/dL",
-      status: "elevated",
-    },
-    {
-      id: "4",
-      name: "Creatinina",
-      value: "0.9 mg/dL",
-      normalRange: "0.6-1.2 mg/dL",
-      status: "normal",
-    },
-  ],
-};
+import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { useChatStore, FollowUpOption } from "@/src/store";
 
 export default function ChatScreen() {
   const backgroundColor = useThemeColor(
-    { light: Colors.light.white, dark: "#000000" },
+    { light: Colors.light.white, dark: Colors.dark.background },
     "background"
   );
 
-  const handleProfilePress = () => {
+  const { messages, addUserMessage, addAIMessage } = useChatStore();
+
+  const containerStyle = useMemo(
+    () => [styles.container, { backgroundColor }],
+    [backgroundColor]
+  );
+
+  const headerStyle = useMemo(
+    () => [styles.header, { borderBottomColor: Colors.light.borderGray }],
+    []
+  );
+
+  const handleProfilePress = useCallback(() => {
     router.push("/(tabs)/profile");
-  };
+  }, []);
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: `Hola ${MOCK_USER_PROFILE.name}! 👋 Soy tu asistente médico con IA. He revisado tu historial médico y veo que tienes algunos valores que requieren atención, especialmente tu colesterol elevado (245 mg/dL). ¿Te gustaría que analicemos estos resultados juntos?`,
-      isUser: false,
-      timestamp: new Date(),
-      followUpOptions: [
-        {
-          id: "analyze-cholesterol",
-          text: "Analizar mi colesterol elevado",
-          icon: "heart-outline",
-        },
-        {
-          id: "review-all-results",
-          text: "Revisar todos mis resultados",
-          icon: "document-text-outline",
-        },
-        {
-          id: "get-recommendations",
-          text: "Obtener recomendaciones",
-          icon: "bulb-outline",
-        },
-      ],
-    },
-  ]);
-
-  const getContextualSuggestions = () => {
-    const elevatedValues = MOCK_USER_PROFILE.medicalHistory.filter(
-      data => data.status === "elevated"
-    );
-    const suggestions = [];
-
-    if (
-      elevatedValues.some(data =>
-        data.name.toLowerCase().includes("colesterol")
-      )
-    ) {
-      suggestions.push({
-        id: "cholesterol",
-        title: "Manejo del Colesterol",
-        subtitle:
-          "Tu colesterol está elevado (245 mg/dL). Te ayudo a entender qué hacer.",
-        icon: "heart-outline",
-        message:
-          "Mi colesterol está en 245 mg/dL, que está por encima del rango normal. ¿Qué puedo hacer para bajarlo de forma natural?",
-      });
-    }
-
-    if (MOCK_USER_PROFILE.conditions.includes("Hipertensión leve")) {
-      suggestions.push({
-        id: "hypertension",
-        title: "Control de Hipertensión",
-        subtitle: "Gestión de tu presión arterial elevada",
-        icon: "pulse-outline",
-        message:
-          "Tengo hipertensión leve. ¿Qué cambios en mi estilo de vida me recomiendas para controlarla mejor?",
-      });
-    }
-
-    if (MOCK_USER_PROFILE.allergies.length > 0) {
-      suggestions.push({
-        id: "allergies",
-        title: "Gestión de Alergias",
-        subtitle: `Alergias: ${MOCK_USER_PROFILE.allergies.join(", ")}`,
-        icon: "medical-outline",
-        message: `Tengo alergias a ${MOCK_USER_PROFILE.allergies.join(" y ")}. ¿Cómo puedo manejarlas mejor en mi día a día?`,
-      });
-    }
-
-    suggestions.push({
-      id: "general-health",
-      title: "Salud General",
-      subtitle: "Recomendaciones personalizadas para tu perfil",
-      icon: "fitness-outline",
-      message:
-        "Basándote en mi perfil médico, ¿qué recomendaciones generales tienes para mejorar mi salud?",
-    });
-
-    suggestions.push({
-      id: "specialists",
-      title: "Especialistas Recomendados",
-      subtitle: "Encuentra médicos especializados en tu área",
-      icon: "business-outline",
-      message:
-        "¿Qué especialistas me recomiendas consultar basándote en mis resultados médicos?",
-    });
-
-    return suggestions;
-  };
-
-  const handleSuggestedAction = (actionId: string) => {
-    const suggestions = getContextualSuggestions();
-    const selectedSuggestion = suggestions.find(s => s.id === actionId);
-
-    if (selectedSuggestion) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        text: selectedSuggestion.message,
-        isUser: true,
-        timestamp: new Date(),
-      };
-      setMessages([...messages, newMessage]);
+  const handleFollowUpOption = useCallback(
+    (option: FollowUpOption, messageId: string) => {
+      addUserMessage(option.text);
 
       setTimeout(() => {
-        const contextualResponse = generateContextualResponse(
-          actionId,
-          selectedSuggestion
-        );
-        const aiResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          text: contextualResponse.text,
-          isUser: false,
-          timestamp: new Date(),
-          followUpOptions: contextualResponse.followUpOptions,
-        };
-        setMessages(prev => [...prev, aiResponse]);
+        const followUpResponse = generateFollowUpResponse(option.id);
+        addAIMessage(followUpResponse.text, followUpResponse.followUpOptions);
       }, 1000);
-    }
-  };
-
-  const generateContextualResponse = (
-    actionId: string,
-    suggestion: {
-      id: string;
-      title: string;
-      subtitle: string;
-      icon: string;
-      message: string;
-    }
-  ): { text: string; followUpOptions: FollowUpOption[] } => {
-    switch (actionId) {
-      case "cholesterol":
-        return {
-          text: `Entiendo tu preocupación por el colesterol elevado. Con 245 mg/dL, es importante tomar medidas. Te recomiendo:\n\n• Reducir grasas saturadas y trans\n• Aumentar fibra soluble (avena, legumbres)\n• Ejercicio regular (30 min/día)\n• Considerar omega-3`,
-          followUpOptions: [
-            {
-              id: "diet-plan",
-              text: "Crear plan de dieta específico",
-              icon: "restaurant-outline",
-            },
-            {
-              id: "exercise-routine",
-              text: "Rutina de ejercicio personalizada",
-              icon: "fitness-outline",
-            },
-            {
-              id: "supplements",
-              text: "Información sobre suplementos",
-              icon: "medical-outline",
-            },
-          ],
-        };
-
-      case "hypertension":
-        return {
-          text: `Para tu hipertensión leve, estos cambios pueden ayudar:\n\n• Reducir sodio a <2g/día\n• Ejercicio aeróbico regular\n• Técnicas de relajación\n• Controlar el peso\n• Limitar alcohol`,
-          followUpOptions: [
-            {
-              id: "hypertension-plan",
-              text: "Crear plan específico para hipertensión",
-              icon: "calendar-outline",
-            },
-            {
-              id: "stress-management",
-              text: "Técnicas de manejo del estrés",
-              icon: "leaf-outline",
-            },
-            {
-              id: "monitoring",
-              text: "Cómo monitorear mi presión",
-              icon: "pulse-outline",
-            },
-          ],
-        };
-
-      case "allergies":
-        return {
-          text: `Para manejar tus alergias a ${MOCK_USER_PROFILE.allergies.join(" y ")}:\n\n• Evitar exposición conocida\n• Antihistamínicos según prescripción\n• Purificador de aire en casa\n• Consultar alergólogo`,
-          followUpOptions: [
-            {
-              id: "allergy-calendar",
-              text: "Calendario de alergias estacionales",
-              icon: "calendar-outline",
-            },
-            {
-              id: "emergency-plan",
-              text: "Plan de emergencia para alergias",
-              icon: "medical-outline",
-            },
-            {
-              id: "home-tips",
-              text: "Consejos para el hogar",
-              icon: "home-outline",
-            },
-          ],
-        };
-
-      case "general-health":
-        return {
-          text: `Basándome en tu perfil (${MOCK_USER_PROFILE.age} años, ${MOCK_USER_PROFILE.gender}, ${MOCK_USER_PROFILE.bloodType}):\n\n• Colesterol elevado requiere atención\n• Hipertensión leve necesita monitoreo\n• Ejercicio cardiovascular regular\n• Dieta mediterránea recomendada`,
-          followUpOptions: [
-            {
-              id: "health-plan",
-              text: "Crear plan de salud completo",
-              icon: "clipboard-outline",
-            },
-            {
-              id: "lifestyle-changes",
-              text: "Cambios de estilo de vida",
-              icon: "trending-up-outline",
-            },
-            {
-              id: "prevention",
-              text: "Estrategias de prevención",
-              icon: "shield-outline",
-            },
-          ],
-        };
-
-      case "specialists":
-        return {
-          text: `Basándome en tus resultados, te recomiendo consultar:\n\n• Cardiólogo (colesterol + hipertensión)\n• Nutricionista (plan alimentario)\n• Alergólogo (${MOCK_USER_PROFILE.allergies.join(", ")})`,
-          followUpOptions: [
-            {
-              id: "find-cardiologist",
-              text: "Buscar cardiólogo cerca",
-              icon: "location-outline",
-            },
-            {
-              id: "find-nutritionist",
-              text: "Buscar nutricionista",
-              icon: "restaurant-outline",
-            },
-            {
-              id: "find-allergist",
-              text: "Buscar alergólogo",
-              icon: "medical-outline",
-            },
-          ],
-        };
-
-      default:
-        return {
-          text: "Gracias por tu consulta. Estoy analizando tu información médica para darte la mejor respuesta personalizada.",
-          followUpOptions: [
-            {
-              id: "more-info",
-              text: "Necesito más información",
-              icon: "help-circle-outline",
-            },
-          ],
-        };
-    }
-  };
-
-  const handleFollowUpOption = (option: FollowUpOption, messageId: string) => {
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: option.text,
-      isUser: true,
-      timestamp: new Date(),
-    };
-    setMessages(prev => [...prev, userMessage]);
-
-    setTimeout(() => {
-      const followUpResponse = generateFollowUpResponse(option.id);
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: followUpResponse.text,
-        isUser: false,
-        timestamp: new Date(),
-        followUpOptions: followUpResponse.followUpOptions,
-      };
-      setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
-  };
+    },
+    [addUserMessage, addAIMessage]
+  );
 
   const generateFollowUpResponse = (
     optionId: string
@@ -408,6 +66,26 @@ export default function ChatScreen() {
               text: "Ejercicios específicos",
               icon: "fitness-outline",
             },
+            {
+              id: "cholesterol-medication",
+              text: "Información sobre medicamentos",
+              icon: "medical-outline",
+            },
+            {
+              id: "cholesterol-monitoring",
+              text: "Programa de seguimiento",
+              icon: "analytics-outline",
+            },
+            {
+              id: "cholesterol-risks",
+              text: "Factores de riesgo cardiovascular",
+              icon: "warning-outline",
+            },
+            {
+              id: "cholesterol-timeline",
+              text: "Cronograma de mejora",
+              icon: "calendar-outline",
+            },
           ],
         };
 
@@ -424,6 +102,26 @@ export default function ChatScreen() {
               id: "tracking-tools",
               text: "Herramientas de seguimiento",
               icon: "analytics-outline",
+            },
+            {
+              id: "blood-pressure-monitoring",
+              text: "Monitoreo de presión arterial",
+              icon: "pulse-outline",
+            },
+            {
+              id: "stress-management",
+              text: "Técnicas de manejo del estrés",
+              icon: "leaf-outline",
+            },
+            {
+              id: "medication-schedule",
+              text: "Horario de medicamentos",
+              icon: "time-outline",
+            },
+            {
+              id: "lifestyle-changes",
+              text: "Cambios en estilo de vida",
+              icon: "fitness-outline",
             },
           ],
         };
@@ -442,6 +140,26 @@ export default function ChatScreen() {
               text: "Lista de compras saludables",
               icon: "list-outline",
             },
+            {
+              id: "nutrition-tracking",
+              text: "Seguimiento nutricional",
+              icon: "analytics-outline",
+            },
+            {
+              id: "healthy-recipes",
+              text: "Recetas saludables",
+              icon: "book-outline",
+            },
+            {
+              id: "portion-control",
+              text: "Control de porciones",
+              icon: "scale-outline",
+            },
+            {
+              id: "supplement-guide",
+              text: "Guía de suplementos",
+              icon: "medical-outline",
+            },
           ],
         };
 
@@ -458,6 +176,26 @@ export default function ChatScreen() {
               id: "medication-schedule",
               text: "Horario de medicamentos",
               icon: "time-outline",
+            },
+            {
+              id: "allergy-tracking",
+              text: "Registro de síntomas",
+              icon: "document-outline",
+            },
+            {
+              id: "environmental-controls",
+              text: "Control ambiental",
+              icon: "home-outline",
+            },
+            {
+              id: "emergency-preparation",
+              text: "Preparación para emergencias",
+              icon: "warning-outline",
+            },
+            {
+              id: "specialist-referral",
+              text: "Referencia a especialista",
+              icon: "person-outline",
             },
           ],
         };
@@ -476,6 +214,26 @@ export default function ChatScreen() {
               text: "Registrar síntomas",
               icon: "document-outline",
             },
+            {
+              id: "medication-kit",
+              text: "Kit de medicamentos de emergencia",
+              icon: "medical-outline",
+            },
+            {
+              id: "hospital-locations",
+              text: "Ubicaciones de hospitales cercanos",
+              icon: "location-outline",
+            },
+            {
+              id: "emergency-procedures",
+              text: "Procedimientos de emergencia",
+              icon: "warning-outline",
+            },
+            {
+              id: "family-training",
+              text: "Capacitación familiar",
+              icon: "people-outline",
+            },
           ],
         };
 
@@ -493,6 +251,26 @@ export default function ChatScreen() {
               text: "Monitorear calidad del aire",
               icon: "leaf-outline",
             },
+            {
+              id: "home-improvements",
+              text: "Mejoras en el hogar",
+              icon: "construct-outline",
+            },
+            {
+              id: "product-recommendations",
+              text: "Recomendaciones de productos",
+              icon: "list-outline",
+            },
+            {
+              id: "maintenance-checklist",
+              text: "Lista de mantenimiento",
+              icon: "checkmark-outline",
+            },
+            {
+              id: "cost-estimates",
+              text: "Estimaciones de costos",
+              icon: "calculator-outline",
+            },
           ],
         };
 
@@ -505,14 +283,39 @@ export default function ChatScreen() {
               text: "Más detalles",
               icon: "information-circle-outline",
             },
+            {
+              id: "schedule-appointment",
+              text: "Programar cita médica",
+              icon: "calendar-outline",
+            },
+            {
+              id: "emergency-help",
+              text: "Ayuda de emergencia",
+              icon: "call-outline",
+            },
+            {
+              id: "second-opinion",
+              text: "Segunda opinión",
+              icon: "person-outline",
+            },
+            {
+              id: "research-resources",
+              text: "Recursos de investigación",
+              icon: "book-outline",
+            },
+            {
+              id: "support-groups",
+              text: "Grupos de apoyo",
+              icon: "people-outline",
+            },
           ],
         };
     }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]}>
-      <View style={styles.header}>
+    <SafeAreaView style={containerStyle}>
+      <View style={headerStyle}>
         <View style={styles.headerLeft}>
           <View style={styles.logoContainer}>
             <Image
@@ -529,6 +332,9 @@ export default function ChatScreen() {
             style={styles.profileIcon}
             onPress={handleProfilePress}
             activeOpacity={0.7}
+            accessibilityLabel="Ir al perfil"
+            accessibilityRole="button"
+            accessibilityHint="Navega a la pantalla de perfil"
           >
             <ThemedText style={styles.profileIconText}>A</ThemedText>
           </TouchableOpacity>
@@ -550,10 +356,10 @@ export default function ChatScreen() {
             >
               {!message.isUser && (
                 <View style={styles.aiIcon}>
-                  <IconSymbol
-                    name="person.fill"
-                    size={16}
-                    color={Colors.light.white}
+                  <Image
+                    source={require("@/assets/images/logoBlue.png")}
+                    style={styles.aiLogo}
+                    resizeMode="contain"
                   />
                 </View>
               )}
@@ -582,6 +388,9 @@ export default function ChatScreen() {
                     style={styles.followUpOption}
                     onPress={() => handleFollowUpOption(option, message.id)}
                     activeOpacity={0.7}
+                    accessibilityLabel={option.text}
+                    accessibilityRole="button"
+                    accessibilityHint="Selecciona esta opción para continuar la conversación"
                   >
                     <Ionicons
                       name={option.icon as keyof typeof Ionicons.glyphMap}
@@ -598,39 +407,22 @@ export default function ChatScreen() {
           </View>
         ))}
 
-        {messages.length === 1 && (
-          <View style={styles.suggestedActions}>
-            {getContextualSuggestions().map(suggestion => (
-              <TouchableOpacity
-                key={suggestion.id}
-                style={styles.suggestedCard}
-                onPress={() => handleSuggestedAction(suggestion.id)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.cardIcon}>
-                  <Ionicons
-                    name={suggestion.icon as keyof typeof Ionicons.glyphMap}
-                    size={20}
-                    color={Colors.light.brandBlue}
-                  />
-                </View>
-                <View style={styles.cardContent}>
-                  <ThemedText style={styles.cardTitle}>
-                    {suggestion.title}
-                  </ThemedText>
-                  <ThemedText style={styles.cardSubtitle}>
-                    {suggestion.subtitle}
-                  </ThemedText>
-                </View>
-                <IconSymbol
-                  name="chevron.right"
-                  size={16}
-                  color={Colors.light.gray}
-                />
-              </TouchableOpacity>
-            ))}
+        {/* Medical Disclaimer Inside Chat */}
+        <View style={styles.warningSection}>
+          <View style={styles.warningCard}>
+            <View style={styles.warningIcon}>
+              <Ionicons name="warning" size={20} color={Colors.light.white} />
+            </View>
+            <View style={styles.warningContent}>
+              <ThemedText style={styles.warningTitle}>Advertencia</ThemedText>
+              <ThemedText style={styles.warningText}>
+                Esta aplicación es solo para fines informativos y no reemplaza
+                el diagnóstico médico profesional. Siempre consulte con un
+                médico calificado para obtener asesoramiento médico adecuado.
+              </ThemedText>
+            </View>
           </View>
-        )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -645,8 +437,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.borderGray,
   },
@@ -656,12 +448,12 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: Spacing.md,
   },
   logoContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: Spacing.sm,
   },
   logo: {
     width: 32,
@@ -697,14 +489,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.lightGray,
   },
   chatContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    paddingBottom: 100,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    paddingBottom: Spacing.sm,
   },
 
   messageContainer: {
     flexDirection: "row",
-    marginBottom: 12,
+    marginBottom: Spacing.md,
     alignItems: "flex-start",
   },
   userMessage: {
@@ -716,19 +508,25 @@ const styles = StyleSheet.create({
   aiIcon: {
     width: 32,
     height: 32,
-    backgroundColor: Colors.light.brandBlue,
-    borderRadius: 16,
+    backgroundColor: Colors.light.white,
+    borderRadius: BorderRadius.lg,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
-    marginTop: 4,
+    marginRight: Spacing.md,
+    marginTop: Spacing.xs,
+    borderWidth: 1,
+    borderColor: Colors.light.brandBlue,
+  },
+  aiLogo: {
+    width: 20,
+    height: 20,
   },
   messageBubble: {
     maxWidth: "80%",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: "#000",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.xl,
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -753,63 +551,23 @@ const styles = StyleSheet.create({
     color: Colors.light.textGray,
   },
 
-  suggestedActions: {
-    marginTop: 20,
-    gap: 12,
-  },
-  suggestedCard: {
-    backgroundColor: Colors.light.white,
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardIcon: {
-    width: 40,
-    height: 40,
-    backgroundColor: Colors.light.lightGray,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  cardContent: {
-    flex: 1,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.textGray,
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 14,
-    color: Colors.light.lightGray,
-    lineHeight: 18,
-  },
-
   followUpContainer: {
-    marginTop: 8,
+    marginTop: Spacing.sm,
     marginLeft: 44,
-    marginBottom: 8,
-    gap: 6,
+    marginBottom: Spacing.sm,
+    gap: Spacing.xs,
   },
   followUpOption: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.light.white,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    borderRadius: BorderRadius.xl,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
     borderWidth: 1,
     borderColor: Colors.light.brandBlue,
-    gap: 8,
-    shadowColor: "#000",
+    gap: Spacing.sm,
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -819,5 +577,42 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.light.brandBlue,
     fontWeight: "500",
+  },
+
+  warningSection: {
+    marginTop: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  warningCard: {
+    backgroundColor: Colors.light.warningBg,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    borderWidth: 1,
+    borderColor: Colors.light.warningBorder,
+  },
+  warningIcon: {
+    width: 32,
+    height: 32,
+    backgroundColor: Colors.light.warning,
+    borderRadius: BorderRadius.lg,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: Spacing.md,
+  },
+  warningContent: {
+    flex: 1,
+  },
+  warningTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: Colors.light.warning,
+    marginBottom: 4,
+  },
+  warningText: {
+    fontSize: 12,
+    color: Colors.light.warningText,
+    lineHeight: 16,
   },
 });
