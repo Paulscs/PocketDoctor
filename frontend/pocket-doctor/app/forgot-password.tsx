@@ -12,25 +12,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { useAuth } from "@/hooks/useAuth";
-
-const COLORS = {
-  BRAND_BLUE: "#002D73",
-  LIGHT_BLUE: "#5A7BB5",
-  BORDER: "#D1D5DB",
-  MUTED: "#6B7280",
-  WHITE: "#FFFFFF",
-  BLACK: "#111827",
-  PLACEHOLDER: "#9CA3AF",
-  DIVIDER: "#E5E7EB",
-  SUCCESS: "#34C759",
-} as const;
-
-const SIZES = {
-  ICON: 18,
-  BORDER_RADIUS: 8,
-  PADDING: 24,
-} as const;
 
 type Step = "email" | "code" | "password" | "success";
 
@@ -163,7 +146,7 @@ export default function ForgotPasswordScreen() {
           <TextInput
             style={styles.input}
             placeholder="ejemplo@correo.com"
-            placeholderTextColor={COLORS.PLACEHOLDER}
+            placeholderTextColor={Colors.light.placeholderGray}
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
@@ -171,11 +154,7 @@ export default function ForgotPasswordScreen() {
             value={email}
             onChangeText={setEmail}
           />
-          <Ionicons
-            name="mail-outline"
-            size={SIZES.ICON}
-            color={COLORS.MUTED}
-          />
+          <Ionicons name="mail-outline" size={18} color={Colors.light.gray} />
         </View>
 
         <TouchableOpacity
@@ -217,7 +196,11 @@ export default function ForgotPasswordScreen() {
           style={styles.backButton}
           onPress={() => setCurrentStep("email")}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.BRAND_BLUE} />
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color={Colors.light.brandBlue}
+          />
         </TouchableOpacity>
         <Text style={styles.title}>Ingresa el código</Text>
         <Text style={styles.subtitle}>
@@ -271,7 +254,11 @@ export default function ForgotPasswordScreen() {
           style={styles.backButton}
           onPress={() => setCurrentStep("code")}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.BRAND_BLUE} />
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color={Colors.light.brandBlue}
+          />
         </TouchableOpacity>
         <Text style={styles.title}>Crear nueva contraseña</Text>
         <Text style={styles.subtitle}>
@@ -285,7 +272,7 @@ export default function ForgotPasswordScreen() {
           <TextInput
             style={styles.input}
             placeholder="Mínimo 8 caracteres"
-            placeholderTextColor={COLORS.PLACEHOLDER}
+            placeholderTextColor={Colors.light.placeholderGray}
             secureTextEntry={!showPassword}
             autoComplete="new-password"
             editable={!loading}
@@ -295,8 +282,8 @@ export default function ForgotPasswordScreen() {
           <TouchableOpacity onPress={() => setShowPassword(p => !p)}>
             <Ionicons
               name={showPassword ? "eye-off-outline" : "eye-outline"}
-              size={SIZES.ICON}
-              color={COLORS.MUTED}
+              size={18}
+              color={Colors.light.gray}
             />
           </TouchableOpacity>
         </View>
@@ -306,7 +293,7 @@ export default function ForgotPasswordScreen() {
           <TextInput
             style={styles.input}
             placeholder="Confirma tu contraseña"
-            placeholderTextColor={COLORS.PLACEHOLDER}
+            placeholderTextColor={Colors.light.placeholderGray}
             secureTextEntry={!showConfirmPassword}
             autoComplete="new-password"
             editable={!loading}
@@ -316,8 +303,8 @@ export default function ForgotPasswordScreen() {
           <TouchableOpacity onPress={() => setShowConfirmPassword(p => !p)}>
             <Ionicons
               name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
-              size={SIZES.ICON}
-              color={COLORS.MUTED}
+              size={18}
+              color={Colors.light.gray}
             />
           </TouchableOpacity>
         </View>
@@ -352,7 +339,7 @@ export default function ForgotPasswordScreen() {
             <Ionicons
               name="checkmark-circle"
               size={48}
-              color={COLORS.SUCCESS}
+              color={Colors.light.success}
             />
           </View>
           <Text style={styles.modalTitle}>¡Listo!</Text>
@@ -388,14 +375,14 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.WHITE },
+  container: { flex: 1, backgroundColor: Colors.light.white },
   content: { flexGrow: 1 },
 
   header: {
     alignItems: "flex-start",
     marginTop: 40,
     marginBottom: 20,
-    paddingHorizontal: SIZES.PADDING,
+    paddingHorizontal: 24,
   },
   backButton: {
     marginBottom: 16,
@@ -404,12 +391,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: "700",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     marginBottom: 8,
     textAlign: "left",
   },
   subtitle: {
-    color: COLORS.MUTED,
+    color: Colors.light.gray,
     fontSize: 14,
     textAlign: "left",
     lineHeight: 20,
@@ -417,10 +404,10 @@ const styles = StyleSheet.create({
 
   form: {
     marginTop: 12,
-    paddingHorizontal: SIZES.PADDING,
+    paddingHorizontal: 24,
   },
   label: {
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     fontWeight: "600",
     fontSize: 15,
     marginBottom: 6,
@@ -429,14 +416,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.BORDER,
+    borderBottomColor: Colors.light.borderGray,
     paddingVertical: 8,
     marginBottom: 14,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    color: COLORS.BLACK,
+    color: Colors.light.textGray,
     paddingVertical: 4,
   },
   hiddenInput: {
@@ -455,31 +442,31 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderWidth: 1,
-    borderColor: COLORS.BORDER,
+    borderColor: Colors.light.borderGray,
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
   },
   codeText: {
     fontSize: 20,
     fontWeight: "600",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
   },
 
   button: {
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",
     marginBottom: 24,
   },
   buttonDisabled: {
-    backgroundColor: COLORS.LIGHT_BLUE,
+    backgroundColor: Colors.light.lightBlue,
     opacity: 0.7,
   },
   buttonText: {
-    color: COLORS.WHITE,
+    color: Colors.light.white,
     fontSize: 16,
     fontWeight: "600",
   },
@@ -490,7 +477,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   linkText: {
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     fontSize: 13,
     textDecorationLine: "underline",
   },
@@ -498,10 +485,10 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: "auto",
     paddingTop: 20,
-    paddingHorizontal: SIZES.PADDING,
+    paddingHorizontal: 24,
   },
   footerText: {
-    color: COLORS.MUTED,
+    color: Colors.light.gray,
     fontSize: 12,
     textAlign: "center",
     lineHeight: 16,
@@ -515,7 +502,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderRadius: 16,
     padding: 24,
     alignItems: "center",
@@ -528,24 +515,18 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: COLORS.BLACK,
+    color: Colors.light.textGray,
     marginBottom: 8,
-  },
-  modalSubtitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.BRAND_BLUE,
-    marginBottom: 12,
   },
   modalMessage: {
     fontSize: 14,
-    color: COLORS.MUTED,
+    color: Colors.light.gray,
     textAlign: "center",
     lineHeight: 20,
     marginBottom: 24,
   },
   modalButton: {
-    backgroundColor: COLORS.LIGHT_BLUE,
+    backgroundColor: Colors.light.lightBlue,
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 32,
@@ -553,7 +534,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalButtonText: {
-    color: COLORS.WHITE,
+    color: Colors.light.white,
     fontSize: 16,
     fontWeight: "600",
   },

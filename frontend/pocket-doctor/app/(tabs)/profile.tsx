@@ -13,6 +13,7 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 
 interface UserProfile {
   firstName: string;
@@ -21,27 +22,6 @@ interface UserProfile {
   phone: string;
   profileImage?: string;
 }
-
-const COLORS = {
-  BRAND_BLUE: "#002D73",
-  LIGHT_BLUE: "#5A7BB5",
-  MEDICAL_BLUE: "#1E40AF",
-  HEALTH_GREEN: "#059669",
-  SUCCESS: "#34C759",
-  WARNING: "#FF9500",
-  ERROR: "#FF3B30",
-  WHITE: "#FFFFFF",
-  GRAY_50: "#F9FAFB",
-  GRAY_100: "#F3F4F6",
-  GRAY_200: "#E5E7EB",
-  GRAY_300: "#D1D5DB",
-  GRAY_400: "#9CA3AF",
-  GRAY_500: "#6B7280",
-  GRAY_600: "#4B5563",
-  GRAY_700: "#374151",
-  GRAY_800: "#1F2937",
-  GRAY_900: "#111827",
-} as const;
 
 const INITIAL_PROFILE: UserProfile = {
   firstName: "Ethan",
@@ -52,7 +32,7 @@ const INITIAL_PROFILE: UserProfile = {
 
 export default function ProfileScreen() {
   const backgroundColor = useThemeColor(
-    { light: COLORS.WHITE, dark: "#000000" },
+    { light: Colors.light.white, dark: Colors.dark.background },
     "background"
   );
 
@@ -118,14 +98,18 @@ export default function ProfileScreen() {
         <View style={styles.profilePictureSection}>
           <View style={styles.profilePictureContainer}>
             <View style={styles.profilePicture}>
-              <Ionicons name="person" size={40} color={COLORS.GRAY_400} />
+              <Ionicons
+                name="person"
+                size={40}
+                color={Colors.light.placeholderGray}
+              />
             </View>
             <TouchableOpacity
               style={styles.editPictureButton}
               onPress={handleEditProfile}
               activeOpacity={0.7}
             >
-              <Ionicons name="pencil" size={12} color={COLORS.WHITE} />
+              <Ionicons name="pencil" size={12} color={Colors.light.white} />
             </TouchableOpacity>
           </View>
           <ThemedText style={styles.fullName}>
@@ -147,7 +131,7 @@ export default function ProfileScreen() {
                 onChangeText={text => updateProfile("firstName", text)}
                 editable={isEditing}
                 placeholder="Nombres"
-                placeholderTextColor={COLORS.GRAY_400}
+                placeholderTextColor={Colors.light.placeholderGray}
               />
             </View>
             <View style={styles.inputContainer}>
@@ -158,7 +142,7 @@ export default function ProfileScreen() {
                 onChangeText={text => updateProfile("lastName", text)}
                 editable={isEditing}
                 placeholder="Apellidos"
-                placeholderTextColor={COLORS.GRAY_400}
+                placeholderTextColor={Colors.light.placeholderGray}
               />
             </View>
           </View>
@@ -176,7 +160,7 @@ export default function ProfileScreen() {
               onChangeText={text => updateProfile("email", text)}
               editable={isEditing}
               placeholder="Correo electrónico"
-              placeholderTextColor={COLORS.GRAY_400}
+              placeholderTextColor={Colors.light.placeholderGray}
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -193,7 +177,7 @@ export default function ProfileScreen() {
               onChangeText={text => updateProfile("phone", text)}
               editable={isEditing}
               placeholder="Teléfono"
-              placeholderTextColor={COLORS.GRAY_400}
+              placeholderTextColor={Colors.light.placeholderGray}
               keyboardType="phone-pad"
             />
           </View>
@@ -214,7 +198,11 @@ export default function ProfileScreen() {
           onPress={handleLogout}
           activeOpacity={0.7}
         >
-          <Ionicons name="log-out-outline" size={16} color={COLORS.ERROR} />
+          <Ionicons
+            name="log-out-outline"
+            size={16}
+            color={Colors.light.error}
+          />
           <ThemedText style={styles.logoutButtonText}>Cerrar Sesión</ThemedText>
         </TouchableOpacity>
       </ScrollView>
@@ -233,7 +221,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.GRAY_200,
+    borderBottomColor: Colors.light.borderGray,
   },
   headerLeft: {
     flex: 1,
@@ -255,18 +243,18 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 12,
     fontWeight: "700",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     letterSpacing: 0.5,
   },
   pageTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
   },
   profileIcon: {
     width: 32,
     height: 32,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
@@ -274,7 +262,7 @@ const styles = StyleSheet.create({
   profileIconText: {
     fontSize: 14,
     fontWeight: "700",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
   scrollView: {
     flex: 1,
@@ -296,11 +284,11 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: COLORS.GRAY_100,
+    backgroundColor: Colors.light.lightGray,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: COLORS.GRAY_200,
+    borderColor: Colors.light.borderGray,
   },
   editPictureButton: {
     position: "absolute",
@@ -309,16 +297,16 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: COLORS.WHITE,
+    borderColor: Colors.light.white,
   },
   fullName: {
     fontSize: 20,
     fontWeight: "700",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     textAlign: "center",
   },
   section: {
@@ -327,7 +315,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     marginBottom: 12,
   },
   inputRow: {
@@ -340,32 +328,32 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: "500",
-    color: COLORS.GRAY_700,
+    color: Colors.light.textGray,
     marginBottom: 8,
   },
   textInput: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 16,
-    color: COLORS.GRAY_800,
+    color: Colors.light.textGray,
     borderWidth: 1,
-    borderColor: COLORS.GRAY_200,
-    shadowColor: "#000",
+    borderColor: Colors.light.borderGray,
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
   },
   saveButton: {
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: "center",
     marginTop: 20,
-    shadowColor: "#000",
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -374,17 +362,17 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
   logoutButton: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: "center",
     marginTop: 12,
     borderWidth: 1,
-    borderColor: COLORS.ERROR,
+    borderColor: Colors.light.error,
     flexDirection: "row",
     justifyContent: "center",
     gap: 8,
@@ -392,6 +380,6 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.ERROR,
+    color: Colors.light.error,
   },
 });

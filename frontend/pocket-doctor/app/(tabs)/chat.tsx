@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -9,10 +9,17 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
-import { useChatStore, FollowUpOption } from "@/src/store";
+import {
+  useChatStore,
+  useActiveSessionMessages,
+  useChatSessions,
+  FollowUpOption,
+} from "@/src/store";
+import { SideMenu } from "@/components/layout/SideMenu";
 
 export default function ChatScreen() {
   const backgroundColor = useThemeColor(
@@ -20,7 +27,19 @@ export default function ChatScreen() {
     "background"
   );
 
-  const { messages, addUserMessage, addAIMessage } = useChatStore();
+  const [isSideMenuVisible, setIsSideMenuVisible] = useState(false);
+
+  const {
+    activeSessionId,
+    addUserMessage,
+    addAIMessage,
+    createNewSession,
+    setActiveSession,
+    deleteSession,
+  } = useChatStore();
+
+  const sessions = useChatSessions();
+  const messages = useActiveSessionMessages();
 
   const containerStyle = useMemo(
     () => [styles.container, { backgroundColor }],
@@ -36,16 +55,50 @@ export default function ChatScreen() {
     router.push("/(tabs)/profile");
   }, []);
 
+  const handleMenuPress = useCallback(() => {
+    setIsSideMenuVisible(true);
+  }, []);
+
+  const handleCloseSideMenu = useCallback(() => {
+    setIsSideMenuVisible(false);
+  }, []);
+
+  const handleSelectSession = useCallback(
+    (sessionId: string) => {
+      setActiveSession(sessionId);
+      setIsSideMenuVisible(false);
+    },
+    [setActiveSession]
+  );
+
+  const handleCreateNewChat = useCallback(() => {
+    createNewSession();
+    setIsSideMenuVisible(false);
+  }, [createNewSession]);
+
+  const handleDeleteSession = useCallback(
+    (sessionId: string) => {
+      deleteSession(sessionId);
+    },
+    [deleteSession]
+  );
+
   const handleFollowUpOption = useCallback(
     (option: FollowUpOption, messageId: string) => {
-      addUserMessage(option.text);
+      if (!activeSessionId) return;
+
+      addUserMessage(activeSessionId, option.text);
 
       setTimeout(() => {
         const followUpResponse = generateFollowUpResponse(option.id);
-        addAIMessage(followUpResponse.text, followUpResponse.followUpOptions);
+        addAIMessage(
+          activeSessionId,
+          followUpResponse.text,
+          followUpResponse.followUpOptions
+        );
       }, 1000);
     },
-    [addUserMessage, addAIMessage]
+    [activeSessionId, addUserMessage, addAIMessage]
   );
 
   const generateFollowUpResponse = (
@@ -317,6 +370,19 @@ export default function ChatScreen() {
     <SafeAreaView style={containerStyle}>
       <View style={headerStyle}>
         <View style={styles.headerLeft}>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={handleMenuPress}
+            activeOpacity={0.7}
+            accessibilityLabel="Abrir menú de conversaciones"
+            accessibilityRole="button"
+          >
+            <IconSymbol
+              name="line.3.horizontal"
+              size={20}
+              color={Colors.light.brandBlue}
+            />
+          </TouchableOpacity>
           <View style={styles.logoContainer}>
             <Image
               source={require("@/assets/images/logoBlue.png")}
@@ -424,6 +490,22 @@ export default function ChatScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Side Menu */}
+      <SideMenu
+        isVisible={isSideMenuVisible}
+        onClose={handleCloseSideMenu}
+        chatSessions={sessions.map(session => ({
+          id: session.id,
+          title: session.title,
+          timestamp: session.updatedAt,
+          messageCount: session.messages.length,
+          isActive: session.id === activeSessionId,
+        }))}
+        onSelectSession={handleSelectSession}
+        onCreateNewChat={handleCreateNewChat}
+        onDeleteSession={handleDeleteSession}
+      />
     </SafeAreaView>
   );
 }
@@ -444,6 +526,17 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  menuButton: {
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.light.lightGray,
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerRight: {
     flexDirection: "row",

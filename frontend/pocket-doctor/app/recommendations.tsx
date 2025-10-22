@@ -12,37 +12,11 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { router } from "expo-router";
-
-const COLORS = {
-  BRAND_BLUE: "#002D73",
-  LIGHT_BLUE: "#5A7BB5",
-  MEDICAL_BLUE: "#1E40AF",
-  HEALTH_GREEN: "#059669",
-  WARNING: "#F59E0B",
-  WARNING_BG: "#FEF3C7",
-  WARNING_BORDER: "#FCD34D",
-  SUCCESS: "#10B981",
-  SUCCESS_BG: "#D1FAE5",
-  SUCCESS_BORDER: "#6EE7B7",
-  DANGER: "#EF4444",
-  DANGER_BG: "#FEE2E2",
-  DANGER_BORDER: "#FCA5A5",
-  WHITE: "#FFFFFF",
-  GRAY_50: "#F9FAFB",
-  GRAY_100: "#F3F4F6",
-  GRAY_200: "#E5E7EB",
-  GRAY_300: "#D1D5DB",
-  GRAY_400: "#9CA3AF",
-  GRAY_500: "#6B7280",
-  GRAY_600: "#4B5563",
-  GRAY_700: "#374151",
-  GRAY_800: "#1F2937",
-  GRAY_900: "#111827",
-};
+import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 
 export default function RecommendationsScreen() {
   const backgroundColor = useThemeColor(
-    { light: COLORS.WHITE, dark: "#000000" },
+    { light: Colors.light.white, dark: Colors.dark.background },
     "background"
   );
 
@@ -67,7 +41,7 @@ export default function RecommendationsScreen() {
           onPress={handleBack}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.GRAY_700} />
+          <Ionicons name="arrow-back" size={24} color={Colors.light.textGray} />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
@@ -98,7 +72,7 @@ export default function RecommendationsScreen() {
               <Ionicons
                 name="information-circle"
                 size={40}
-                color={COLORS.WHITE}
+                color={Colors.light.white}
               />
             </View>
             <ThemedText style={styles.mainTitle}>Recomendaciones</ThemedText>
@@ -109,7 +83,7 @@ export default function RecommendationsScreen() {
             {/* Blood Pressure Card */}
             <View style={styles.recommendationCard}>
               <View style={styles.cardIcon}>
-                <Ionicons name="pulse" size={20} color={COLORS.WHITE} />
+                <Ionicons name="pulse" size={20} color={Colors.light.white} />
               </View>
               <View style={styles.cardContent}>
                 <ThemedText style={styles.cardTitle}>
@@ -125,7 +99,11 @@ export default function RecommendationsScreen() {
             {/* Heart Rate Card */}
             <View style={styles.recommendationCard}>
               <View style={styles.cardIcon}>
-                <IconSymbol name="heart.fill" size={20} color={COLORS.WHITE} />
+                <IconSymbol
+                  name="heart.fill"
+                  size={20}
+                  color={Colors.light.white}
+                />
               </View>
               <View style={styles.cardContent}>
                 <ThemedText style={styles.cardTitle}>Ritmo Cardíaco</ThemedText>
@@ -139,7 +117,11 @@ export default function RecommendationsScreen() {
             {/* Oxygen Saturation Card */}
             <View style={styles.recommendationCard}>
               <View style={styles.cardIcon}>
-                <IconSymbol name="lungs.fill" size={20} color={COLORS.WHITE} />
+                <IconSymbol
+                  name="lungs.fill"
+                  size={20}
+                  color={Colors.light.white}
+                />
               </View>
               <View style={styles.cardContent}>
                 <ThemedText style={styles.cardTitle}>
@@ -159,7 +141,11 @@ export default function RecommendationsScreen() {
               onPress={handleDiscussWithIA}
               activeOpacity={0.8}
             >
-              <IconSymbol name="message.fill" size={20} color={COLORS.WHITE} />
+              <IconSymbol
+                name="message.fill"
+                size={20}
+                color={Colors.light.white}
+              />
               <ThemedText style={styles.primaryButtonText}>
                 Discutir con Pocket Doctor
               </ThemedText>
@@ -184,7 +170,7 @@ export default function RecommendationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
   },
   header: {
     flexDirection: "row",
@@ -192,9 +178,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: COLORS.GRAY_50,
+    backgroundColor: Colors.light.lightGray,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.GRAY_200,
+    borderBottomColor: Colors.light.borderGray,
   },
   backButton: {
     padding: 8,
@@ -215,21 +201,21 @@ const styles = StyleSheet.create({
   brandTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     lineHeight: 22,
   },
   profileIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     alignItems: "center",
     justifyContent: "center",
   },
   profileIconText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
   scrollContent: {
     flex: 1,
@@ -247,11 +233,11 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
-    shadowColor: COLORS.BRAND_BLUE,
+    shadowColor: Colors.light.brandBlue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -260,7 +246,7 @@ const styles = StyleSheet.create({
   mainTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: COLORS.GRAY_800,
+    color: Colors.light.textGray,
     textAlign: "center",
   },
   recommendationsList: {
@@ -268,24 +254,38 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   recommendationCard: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.friendlyGreenBg,
     borderRadius: 16,
     padding: 20,
     flexDirection: "row",
     alignItems: "flex-start",
-    shadowColor: COLORS.GRAY_900,
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
     borderWidth: 1,
-    borderColor: COLORS.GRAY_100,
+    borderColor: Colors.light.friendlyGreenBorder,
+  },
+  warningCard: {
+    backgroundColor: Colors.light.warningBg,
+    borderRadius: 16,
+    padding: 20,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    shadowColor: Colors.light.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: Colors.light.warningBorder,
   },
   cardIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 16,
@@ -296,27 +296,27 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: COLORS.GRAY_800,
+    color: Colors.light.textGray,
     marginBottom: 8,
   },
   cardDescription: {
     fontSize: 15,
     fontWeight: "400",
-    color: COLORS.GRAY_700,
+    color: Colors.light.textGray,
     lineHeight: 22,
   },
   actionButtons: {
     gap: 12,
   },
   primaryButton: {
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: COLORS.BRAND_BLUE,
+    shadowColor: Colors.light.brandBlue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -325,22 +325,22 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
     marginLeft: 8,
   },
   secondaryButton: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderWidth: 1,
-    borderColor: COLORS.BRAND_BLUE,
+    borderColor: Colors.light.brandBlue,
     alignItems: "center",
     justifyContent: "center",
   },
   secondaryButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
   },
 });

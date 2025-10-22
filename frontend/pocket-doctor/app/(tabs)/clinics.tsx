@@ -11,6 +11,7 @@ import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { Colors } from "@/constants/theme";
 
 interface Clinic {
   id: string;
@@ -42,24 +43,6 @@ interface UserProfile {
   conditions: string[];
   medicalHistory: MedicalData[];
 }
-
-const COLORS = {
-  BRAND_BLUE: "#002D73",
-  LIGHT_BLUE: "#5A7BB5",
-  MEDICAL_BLUE: "#1E40AF",
-  HEALTH_GREEN: "#059669",
-  WHITE: "#FFFFFF",
-  GRAY_50: "#F9FAFB",
-  GRAY_100: "#F3F4F6",
-  GRAY_200: "#E5E7EB",
-  GRAY_300: "#D1D5DB",
-  GRAY_400: "#9CA3AF",
-  GRAY_500: "#6B7280",
-  GRAY_600: "#4B5563",
-  GRAY_700: "#374151",
-  GRAY_800: "#1F2937",
-  GRAY_900: "#111827",
-} as const;
 
 const MOCK_USER_PROFILE: UserProfile = {
   name: "Ethan",
@@ -194,7 +177,7 @@ const getRecommendedSpecialties = (userProfile: UserProfile): string[] => {
 
 export default function ClinicsScreen() {
   const backgroundColor = useThemeColor(
-    { light: COLORS.WHITE, dark: "#000000" },
+    { light: Colors.light.white, dark: Colors.dark.background },
     "background"
   );
 
@@ -202,7 +185,7 @@ export default function ClinicsScreen() {
     router.push("/(tabs)/profile");
   };
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(
     null
   );
@@ -250,7 +233,11 @@ export default function ClinicsScreen() {
       activeOpacity={0.7}
     >
       <View style={styles.clinicIcon}>
-        <Ionicons name="heart-outline" size={20} color={COLORS.BRAND_BLUE} />
+        <Ionicons
+          name="heart-outline"
+          size={20}
+          color={Colors.light.brandBlue}
+        />
       </View>
       <View style={styles.clinicInfo}>
         <ThemedText style={styles.clinicName}>{clinic.name}</ThemedText>
@@ -258,7 +245,11 @@ export default function ClinicsScreen() {
       </View>
       <View style={styles.clinicThumbnail}>
         <View style={styles.thumbnailPlaceholder}>
-          <Ionicons name="business-outline" size={24} color={COLORS.GRAY_400} />
+          <Ionicons
+            name="business-outline"
+            size={24}
+            color={Colors.light.placeholderGray}
+          />
         </View>
       </View>
     </TouchableOpacity>
@@ -275,14 +266,22 @@ export default function ClinicsScreen() {
           onPress={handleBackToList}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.BRAND_BLUE} />
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color={Colors.light.brandBlue}
+          />
           <ThemedText style={styles.backButtonText}>Volver</ThemedText>
         </TouchableOpacity>
       </View>
 
       <View style={styles.clinicImageContainer}>
         <View style={styles.clinicImagePlaceholder}>
-          <Ionicons name="business-outline" size={48} color={COLORS.GRAY_400} />
+          <Ionicons
+            name="business-outline"
+            size={48}
+            color={Colors.light.placeholderGray}
+          />
           <ThemedText style={styles.imagePlaceholderText}>
             {clinic.name}
           </ThemedText>
@@ -295,7 +294,7 @@ export default function ClinicsScreen() {
             <Ionicons
               name="heart-outline"
               size={20}
-              color={COLORS.BRAND_BLUE}
+              color={Colors.light.brandBlue}
             />
           </View>
           <View style={styles.clinicDetailInfo}>
@@ -315,26 +314,30 @@ export default function ClinicsScreen() {
           <Ionicons
             name="location-outline"
             size={16}
-            color={COLORS.BRAND_BLUE}
+            color={Colors.light.brandBlue}
           />
           <ThemedText style={styles.mapButtonText}>{clinic.mapCode}</ThemedText>
         </TouchableOpacity>
 
         <View style={styles.clinicDetails}>
           <View style={styles.detailRow}>
-            <Ionicons name="star-outline" size={16} color={COLORS.GRAY_600} />
+            <Ionicons name="star-outline" size={16} color={Colors.light.gray} />
             <ThemedText style={styles.detailText}>
               Calificación: {clinic.rating}/5.0
             </ThemedText>
           </View>
 
           <View style={styles.detailRow}>
-            <Ionicons name="call-outline" size={16} color={COLORS.GRAY_600} />
+            <Ionicons name="call-outline" size={16} color={Colors.light.gray} />
             <ThemedText style={styles.detailText}>{clinic.phone}</ThemedText>
           </View>
 
           <View style={styles.detailRow}>
-            <Ionicons name="globe-outline" size={16} color={COLORS.GRAY_600} />
+            <Ionicons
+              name="globe-outline"
+              size={16}
+              color={Colors.light.gray}
+            />
             <ThemedText style={styles.detailText}>{clinic.website}</ThemedText>
           </View>
         </View>
@@ -394,7 +397,7 @@ export default function ClinicsScreen() {
               <Ionicons
                 name="business-outline"
                 size={20}
-                color={COLORS.GRAY_400}
+                color={Colors.light.placeholderGray}
               />
               <ThemedText style={styles.searchPlaceholder}>
                 Clínicas y Especialistas
@@ -435,8 +438,8 @@ export default function ClinicsScreen() {
                   size={14}
                   color={
                     selectedSpecialty === specialty
-                      ? COLORS.WHITE
-                      : COLORS.BRAND_BLUE
+                      ? Colors.light.white
+                      : Colors.light.brandBlue
                   }
                 />
                 <ThemedText
@@ -475,7 +478,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.GRAY_200,
+    borderBottomColor: Colors.light.borderGray,
   },
   headerLeft: {
     flex: 1,
@@ -500,18 +503,18 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 12,
     fontWeight: "700",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     letterSpacing: 0.5,
   },
   pageTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
   },
   profileIcon: {
     width: 32,
     height: 32,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
@@ -526,11 +529,11 @@ const styles = StyleSheet.create({
   profileIconText: {
     fontSize: 14,
     fontWeight: "700",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
 
   content: {
-    backgroundColor: COLORS.GRAY_50,
+    backgroundColor: Colors.light.lightGray,
     paddingTop: 16,
   },
 
@@ -541,12 +544,12 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 12,
-    shadowColor: "#000",
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -555,7 +558,7 @@ const styles = StyleSheet.create({
   searchPlaceholder: {
     flex: 1,
     fontSize: 16,
-    color: COLORS.GRAY_400,
+    color: Colors.light.placeholderGray,
   },
 
   filtersContainer: {
@@ -568,12 +571,12 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   filterChip: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: COLORS.GRAY_200,
+    borderColor: Colors.light.borderGray,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
@@ -582,19 +585,19 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   filterChipActive: {
-    backgroundColor: COLORS.BRAND_BLUE,
-    borderColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
+    borderColor: Colors.light.brandBlue,
   },
   filterChipText: {
     fontSize: 12,
-    color: COLORS.GRAY_600,
+    color: Colors.light.gray,
     fontWeight: "500",
     textAlign: "center",
     flex: 1,
     lineHeight: 14,
   },
   filterChipTextActive: {
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
 
   clinicsList: {
@@ -604,12 +607,12 @@ const styles = StyleSheet.create({
   },
 
   clinicCard: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
-    shadowColor: "#000",
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -618,7 +621,7 @@ const styles = StyleSheet.create({
   clinicIcon: {
     width: 40,
     height: 40,
-    backgroundColor: COLORS.GRAY_100,
+    backgroundColor: Colors.light.lightGray,
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
@@ -630,12 +633,12 @@ const styles = StyleSheet.create({
   clinicName: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.GRAY_800,
+    color: Colors.light.textGray,
     marginBottom: 4,
   },
   clinicAddress: {
     fontSize: 14,
-    color: COLORS.GRAY_500,
+    color: Colors.light.gray,
   },
   clinicThumbnail: {
     width: 60,
@@ -643,7 +646,7 @@ const styles = StyleSheet.create({
   },
   thumbnailPlaceholder: {
     flex: 1,
-    backgroundColor: COLORS.GRAY_100,
+    backgroundColor: Colors.light.lightGray,
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
@@ -651,7 +654,7 @@ const styles = StyleSheet.create({
 
   detailContainer: {
     flex: 1,
-    backgroundColor: COLORS.GRAY_50,
+    backgroundColor: Colors.light.lightGray,
   },
 
   backButtonContainer: {
@@ -668,12 +671,12 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
   },
 
   clinicImageContainer: {
     height: 200,
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -685,15 +688,15 @@ const styles = StyleSheet.create({
   imagePlaceholderText: {
     fontSize: 18,
     fontWeight: "600",
-    color: COLORS.GRAY_600,
+    color: Colors.light.gray,
   },
 
   clinicDetailCard: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     margin: 20,
     borderRadius: 12,
     padding: 20,
-    shadowColor: "#000",
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -707,7 +710,7 @@ const styles = StyleSheet.create({
   clinicDetailIcon: {
     width: 40,
     height: 40,
-    backgroundColor: COLORS.GRAY_100,
+    backgroundColor: Colors.light.lightGray,
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
@@ -719,25 +722,25 @@ const styles = StyleSheet.create({
   clinicDetailName: {
     fontSize: 18,
     fontWeight: "600",
-    color: COLORS.GRAY_800,
+    color: Colors.light.textGray,
     marginBottom: 4,
     lineHeight: 24,
   },
   clinicDetailShortName: {
     fontSize: 16,
     fontWeight: "500",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     marginBottom: 4,
   },
   clinicDetailAddress: {
     fontSize: 14,
-    color: COLORS.GRAY_500,
+    color: Colors.light.gray,
   },
 
   mapButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.GRAY_100,
+    backgroundColor: Colors.light.lightGray,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -747,7 +750,7 @@ const styles = StyleSheet.create({
   },
   mapButtonText: {
     fontSize: 12,
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     fontWeight: "500",
   },
 
@@ -762,7 +765,7 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 14,
-    color: COLORS.GRAY_600,
+    color: Colors.light.gray,
   },
 
   specialtiesSection: {
@@ -771,7 +774,7 @@ const styles = StyleSheet.create({
   specialtiesTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.GRAY_800,
+    color: Colors.light.textGray,
     marginBottom: 12,
   },
   specialtiesList: {
@@ -780,14 +783,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   specialtyTag: {
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   specialtyText: {
     fontSize: 12,
-    color: COLORS.WHITE,
+    color: Colors.light.white,
     fontWeight: "500",
   },
 });

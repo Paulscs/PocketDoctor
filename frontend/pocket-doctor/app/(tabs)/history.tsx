@@ -12,6 +12,7 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { Colors } from "@/constants/theme";
 
 interface MedicalResult {
   id: string;
@@ -21,27 +22,6 @@ interface MedicalResult {
   status: "normal" | "elevated" | "low" | "critical";
   description: string;
 }
-
-const COLORS = {
-  BRAND_BLUE: "#002D73",
-  LIGHT_BLUE: "#5A7BB5",
-  MEDICAL_BLUE: "#1E40AF",
-  HEALTH_GREEN: "#059669",
-  SUCCESS: "#34C759",
-  WARNING: "#FF9500",
-  ERROR: "#FF3B30",
-  WHITE: "#FFFFFF",
-  GRAY_50: "#F9FAFB",
-  GRAY_100: "#F3F4F6",
-  GRAY_200: "#E5E7EB",
-  GRAY_300: "#D1D5DB",
-  GRAY_400: "#9CA3AF",
-  GRAY_500: "#6B7280",
-  GRAY_600: "#4B5563",
-  GRAY_700: "#374151",
-  GRAY_800: "#1F2937",
-  GRAY_900: "#111827",
-} as const;
 
 const MOCK_MEDICAL_RESULTS: MedicalResult[] = [
   {
@@ -95,14 +75,14 @@ const getResultIcon = (type: MedicalResult["type"]) => {
 const getStatusColor = (status: MedicalResult["status"]) => {
   switch (status) {
     case "normal":
-      return COLORS.SUCCESS;
+      return Colors.light.success;
     case "elevated":
     case "low":
-      return COLORS.WARNING;
+      return Colors.light.warning;
     case "critical":
-      return COLORS.ERROR;
+      return Colors.light.error;
     default:
-      return COLORS.GRAY_500;
+      return Colors.light.gray;
   }
 };
 
@@ -123,7 +103,7 @@ const getStatusText = (status: MedicalResult["status"]) => {
 
 export default function HistoryScreen() {
   const backgroundColor = useThemeColor(
-    { light: COLORS.WHITE, dark: "#000000" },
+    { light: Colors.light.white, dark: Colors.dark.background },
     "background"
   );
 
@@ -145,9 +125,9 @@ export default function HistoryScreen() {
     >
       <View style={styles.resultIcon}>
         <Ionicons
-          name={getResultIcon(result.type) as any}
+          name={getResultIcon(result.type) as keyof typeof Ionicons.glyphMap}
           size={20}
-          color={COLORS.BRAND_BLUE}
+          color={Colors.light.brandBlue}
         />
       </View>
       <View style={styles.resultContent}>
@@ -167,7 +147,11 @@ export default function HistoryScreen() {
             {getStatusText(result.status)}
           </ThemedText>
         </View>
-        <IconSymbol name="chevron.right" size={16} color={COLORS.GRAY_400} />
+        <IconSymbol
+          name="chevron.right"
+          size={16}
+          color={Colors.light.placeholderGray}
+        />
       </View>
     </TouchableOpacity>
   );
@@ -231,7 +215,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.GRAY_200,
+    borderBottomColor: Colors.light.borderGray,
   },
   headerLeft: {
     flex: 1,
@@ -253,18 +237,18 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 12,
     fontWeight: "700",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     letterSpacing: 0.5,
   },
   pageTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
   },
   profileIcon: {
     width: 32,
     height: 32,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
@@ -272,7 +256,7 @@ const styles = StyleSheet.create({
   profileIconText: {
     fontSize: 14,
     fontWeight: "700",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
   scrollView: {
     flex: 1,
@@ -288,18 +272,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
   },
   resultsList: {
     gap: 12,
   },
   resultItem: {
-    backgroundColor: COLORS.LIGHT_BLUE,
+    backgroundColor: Colors.light.lightBlue,
     borderRadius: 12,
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
-    shadowColor: "#000",
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -308,7 +292,7 @@ const styles = StyleSheet.create({
   resultIcon: {
     width: 40,
     height: 40,
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
@@ -320,12 +304,12 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
     marginBottom: 4,
   },
   resultDescription: {
     fontSize: 14,
-    color: COLORS.WHITE,
+    color: Colors.light.white,
     opacity: 0.9,
   },
   resultActions: {
@@ -341,7 +325,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontWeight: "600",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
   emptySpace: {
     flex: 1,
@@ -351,7 +335,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: COLORS.GRAY_500,
+    color: Colors.light.gray,
     textAlign: "center",
     fontStyle: "italic",
   },

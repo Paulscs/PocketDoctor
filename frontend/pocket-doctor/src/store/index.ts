@@ -1,6 +1,11 @@
 export { useAuthStore } from "./authStore";
 export { useMedicalDataStore } from "./medicalDataStore";
-export { useChatStore } from "./chatStore";
+export {
+  useChatStore,
+  useActiveSession,
+  useChatSessions,
+  useActiveSessionMessages,
+} from "./chatStore";
 export type { User, AuthState, AuthActions, AuthStore } from "./authStore";
 export type {
   AnalysisResult,
@@ -12,6 +17,7 @@ export type {
 export type {
   Message,
   FollowUpOption,
+  ChatSession,
   ChatState,
   ChatActions,
   ChatStore,

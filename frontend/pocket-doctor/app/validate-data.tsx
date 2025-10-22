@@ -14,33 +14,7 @@ import { ThemedText } from "@/components/themed-text";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { router } from "expo-router";
-
-const COLORS = {
-  BRAND_BLUE: "#002D73",
-  LIGHT_BLUE: "#5A7BB5",
-  MEDICAL_BLUE: "#1E40AF",
-  HEALTH_GREEN: "#059669",
-  WARNING: "#F59E0B",
-  WARNING_BG: "#FEF3C7",
-  WARNING_BORDER: "#FCD34D",
-  SUCCESS: "#10B981",
-  SUCCESS_BG: "#D1FAE5",
-  SUCCESS_BORDER: "#6EE7B7",
-  DANGER: "#EF4444",
-  DANGER_BG: "#FEE2E2",
-  DANGER_BORDER: "#FCA5A5",
-  WHITE: "#FFFFFF",
-  GRAY_50: "#F9FAFB",
-  GRAY_100: "#F3F4F6",
-  GRAY_200: "#E5E7EB",
-  GRAY_300: "#D1D5DB",
-  GRAY_400: "#9CA3AF",
-  GRAY_500: "#6B7280",
-  GRAY_600: "#4B5563",
-  GRAY_700: "#374151",
-  GRAY_800: "#1F2937",
-  GRAY_900: "#111827",
-};
+import { Colors } from "@/constants/theme";
 
 interface MedicalData {
   id: string;
@@ -85,30 +59,30 @@ const getStatusConfig = (status: string) => {
   switch (status) {
     case "normal":
       return {
-        backgroundColor: COLORS.SUCCESS_BG,
-        borderColor: COLORS.SUCCESS_BORDER,
-        textColor: COLORS.SUCCESS,
+        backgroundColor: Colors.light.friendlyGreenBg,
+        borderColor: Colors.light.friendlyGreenBorder,
+        textColor: Colors.light.success,
         text: "Normal",
       };
     case "elevated":
       return {
-        backgroundColor: COLORS.WARNING_BG,
-        borderColor: COLORS.WARNING_BORDER,
-        textColor: COLORS.WARNING,
+        backgroundColor: Colors.light.warningBg,
+        borderColor: Colors.light.warningBorder,
+        textColor: Colors.light.warning,
         text: "Elevado",
       };
     case "low":
       return {
-        backgroundColor: COLORS.DANGER_BG,
-        borderColor: COLORS.DANGER_BORDER,
-        textColor: COLORS.DANGER,
+        backgroundColor: Colors.light.error,
+        borderColor: Colors.light.error,
+        textColor: Colors.light.error,
         text: "Bajo",
       };
     default:
       return {
-        backgroundColor: COLORS.GRAY_100,
-        borderColor: COLORS.GRAY_300,
-        textColor: COLORS.GRAY_600,
+        backgroundColor: Colors.light.lightGray,
+        borderColor: Colors.light.borderGray,
+        textColor: Colors.light.gray,
         text: "Desconocido",
       };
   }
@@ -122,7 +96,7 @@ export default function ValidateDataScreen() {
   const [editValue, setEditValue] = useState("");
 
   const backgroundColor = useThemeColor(
-    { light: COLORS.WHITE, dark: "#000000" },
+    { light: Colors.light.white, dark: Colors.dark.background },
     "background"
   );
 
@@ -178,7 +152,7 @@ export default function ValidateDataScreen() {
           onPress={handleCancel}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.GRAY_700} />
+          <Ionicons name="arrow-back" size={24} color={Colors.light.textGray} />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
@@ -206,7 +180,7 @@ export default function ValidateDataScreen() {
           {/* Icon and Title */}
           <View style={styles.iconContainer}>
             <View style={styles.mainIcon}>
-              <Ionicons name="sync" size={40} color={COLORS.WHITE} />
+              <Ionicons name="sync" size={40} color={Colors.light.white} />
             </View>
             <ThemedText style={styles.mainTitle}>
               Validar datos extraídos
@@ -221,7 +195,11 @@ export default function ValidateDataScreen() {
                 <View key={data.id} style={styles.dataCard}>
                   <View style={styles.dataHeader}>
                     <View style={styles.dataIcon}>
-                      <Ionicons name="medical" size={16} color={COLORS.WHITE} />
+                      <Ionicons
+                        name="medical"
+                        size={16}
+                        color={Colors.light.white}
+                      />
                     </View>
                     <ThemedText style={styles.dataName}>{data.name}</ThemedText>
                     <View
@@ -259,7 +237,7 @@ export default function ValidateDataScreen() {
                           <Ionicons
                             name="pencil"
                             size={14}
-                            color={COLORS.MEDICAL_BLUE}
+                            color={Colors.light.medicalBlue}
                           />
                         </TouchableOpacity>
                       </View>
@@ -288,7 +266,7 @@ export default function ValidateDataScreen() {
           onPress={handleProceedWithAI}
           activeOpacity={0.8}
         >
-          <Ionicons name="bulb" size={20} color={COLORS.WHITE} />
+          <Ionicons name="bulb" size={20} color={Colors.light.white} />
           <ThemedText style={styles.primaryButtonText}>
             Proceder con Analíticas IA
           </ThemedText>
@@ -331,7 +309,7 @@ export default function ValidateDataScreen() {
                 onPress={handleCancelEdit}
                 activeOpacity={0.7}
               >
-                <Ionicons name="close" size={20} color={COLORS.GRAY_500} />
+                <Ionicons name="close" size={20} color={Colors.light.gray} />
               </TouchableOpacity>
             </View>
 
@@ -347,7 +325,7 @@ export default function ValidateDataScreen() {
                 value={editValue}
                 onChangeText={setEditValue}
                 placeholder="Ingresa el nuevo valor"
-                placeholderTextColor={COLORS.GRAY_400}
+                placeholderTextColor={Colors.light.placeholderGray}
                 autoFocus={true}
               />
 
@@ -384,7 +362,7 @@ export default function ValidateDataScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
   },
   header: {
     flexDirection: "row",
@@ -392,9 +370,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: COLORS.GRAY_50,
+    backgroundColor: Colors.light.lightGray,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.GRAY_200,
+    borderBottomColor: Colors.light.borderGray,
   },
   backButton: {
     padding: 8,
@@ -415,21 +393,21 @@ const styles = StyleSheet.create({
   brandTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     lineHeight: 22,
   },
   profileIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     alignItems: "center",
     justifyContent: "center",
   },
   profileIconText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
   scrollContent: {
     flex: 1,
@@ -447,11 +425,11 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
-    shadowColor: COLORS.BRAND_BLUE,
+    shadowColor: Colors.light.brandBlue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -460,23 +438,23 @@ const styles = StyleSheet.create({
   mainTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: COLORS.GRAY_800,
+    color: Colors.light.textGray,
     textAlign: "center",
   },
   dataList: {
     gap: 16,
   },
   dataCard: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.friendlyBlueBg,
     borderRadius: 16,
     padding: 20,
-    shadowColor: COLORS.GRAY_900,
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
     borderWidth: 1,
-    borderColor: COLORS.GRAY_100,
+    borderColor: Colors.light.friendlyBlueBorder,
   },
   dataHeader: {
     flexDirection: "row",
@@ -487,7 +465,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -496,7 +474,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     fontWeight: "600",
-    color: COLORS.GRAY_800,
+    color: Colors.light.textGray,
   },
   statusPill: {
     paddingHorizontal: 12,
@@ -518,7 +496,7 @@ const styles = StyleSheet.create({
   valueLabel: {
     fontSize: 14,
     fontWeight: "500",
-    color: COLORS.GRAY_500,
+    color: Colors.light.gray,
     marginBottom: 4,
   },
   valueRow: {
@@ -528,7 +506,7 @@ const styles = StyleSheet.create({
   valueText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.GRAY_800,
+    color: Colors.light.textGray,
     marginRight: 8,
   },
   editButton: {
@@ -540,32 +518,32 @@ const styles = StyleSheet.create({
   rangeLabel: {
     fontSize: 14,
     fontWeight: "500",
-    color: COLORS.GRAY_500,
+    color: Colors.light.gray,
     marginBottom: 4,
   },
   rangeText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.GRAY_800,
+    color: Colors.light.textGray,
   },
   actionButtons: {
     paddingHorizontal: 20,
     paddingVertical: 20,
     paddingBottom: 32,
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderTopWidth: 1,
-    borderTopColor: COLORS.GRAY_200,
+    borderTopColor: Colors.light.borderGray,
     gap: 12,
   },
   primaryButton: {
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: COLORS.BRAND_BLUE,
+    shadowColor: Colors.light.brandBlue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -574,23 +552,23 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
     marginLeft: 8,
   },
   secondaryButton: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderWidth: 1,
-    borderColor: COLORS.GRAY_300,
+    borderColor: Colors.light.borderGray,
     alignItems: "center",
     justifyContent: "center",
   },
   secondaryButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
   },
   modalOverlay: {
     flex: 1,
@@ -600,11 +578,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   modalContent: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderRadius: 16,
     width: "100%",
     maxWidth: 400,
-    shadowColor: COLORS.GRAY_900,
+    shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -617,12 +595,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.GRAY_200,
+    borderBottomColor: Colors.light.borderGray,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: COLORS.GRAY_800,
+    color: Colors.light.textGray,
   },
   closeButton: {
     padding: 4,
@@ -635,32 +613,32 @@ const styles = StyleSheet.create({
   modalLabel: {
     fontSize: 14,
     fontWeight: "500",
-    color: COLORS.GRAY_600,
+    color: Colors.light.gray,
   },
   currentValue: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.GRAY_800,
-    backgroundColor: COLORS.GRAY_100,
+    color: Colors.light.textGray,
+    backgroundColor: Colors.light.lightGray,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
   },
   editInput: {
     borderWidth: 1,
-    borderColor: COLORS.GRAY_300,
+    borderColor: Colors.light.borderGray,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 16,
-    color: COLORS.GRAY_800,
-    backgroundColor: COLORS.WHITE,
+    color: Colors.light.textGray,
+    backgroundColor: Colors.light.white,
   },
   normalRange: {
     fontSize: 14,
     fontWeight: "500",
-    color: COLORS.GRAY_600,
-    backgroundColor: COLORS.GRAY_50,
+    color: Colors.light.gray,
+    backgroundColor: Colors.light.lightGray,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
@@ -671,13 +649,13 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     gap: 12,
     borderTopWidth: 1,
-    borderTopColor: COLORS.GRAY_200,
+    borderTopColor: Colors.light.borderGray,
   },
   modalCancelButton: {
     flex: 1,
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderWidth: 1,
-    borderColor: COLORS.GRAY_300,
+    borderColor: Colors.light.borderGray,
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: "center",
@@ -686,11 +664,11 @@ const styles = StyleSheet.create({
   modalCancelText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.GRAY_600,
+    color: Colors.light.gray,
   },
   modalSaveButton: {
     flex: 1,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: "center",
@@ -699,6 +677,6 @@ const styles = StyleSheet.create({
   modalSaveText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
 });

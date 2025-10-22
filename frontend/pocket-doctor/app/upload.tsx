@@ -12,19 +12,7 @@ import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-
-const COLORS = {
-  BRAND_BLUE: "#002D73",
-  LIGHT_BLUE: "#5A7BB5",
-  SUCCESS: "#34C759",
-  WARNING: "#FF9500",
-  MUTED: "#6B7280",
-  WHITE: "#FFFFFF",
-  BLACK: "#111827",
-  LIGHT_GRAY: "#F8F9FA",
-  BORDER: "#E5E7EB",
-  RED: "#FF3B30",
-} as const;
+import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 
 export default function UploadScreen() {
   const [selectedFile, setSelectedFile] = useState<{
@@ -79,7 +67,11 @@ export default function UploadScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.BRAND_BLUE} />
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color={Colors.light.brandBlue}
+          />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <View style={styles.logoContainer}>
@@ -107,7 +99,7 @@ export default function UploadScreen() {
             <IconSymbol
               name="square.and.arrow.up"
               size={48}
-              color={COLORS.BRAND_BLUE}
+              color={Colors.light.brandBlue}
             />
           </View>
         </View>
@@ -134,14 +126,18 @@ export default function UploadScreen() {
               </ThemedText>
               <View style={styles.formatList}>
                 <View style={styles.formatItem}>
-                  <IconSymbol name="doc.fill" size={20} color={COLORS.RED} />
+                  <IconSymbol
+                    name="doc.fill"
+                    size={20}
+                    color={Colors.light.error}
+                  />
                   <ThemedText style={styles.formatText}>PDF</ThemedText>
                 </View>
                 <View style={styles.formatItem}>
                   <IconSymbol
                     name="photo.fill"
                     size={20}
-                    color={COLORS.LIGHT_BLUE}
+                    color={Colors.light.lightBlue}
                   />
                   <ThemedText style={styles.formatText}>JPG</ThemedText>
                 </View>
@@ -149,7 +145,7 @@ export default function UploadScreen() {
                   <IconSymbol
                     name="photo.fill"
                     size={20}
-                    color={COLORS.SUCCESS}
+                    color={Colors.light.success}
                   />
                   <ThemedText style={styles.formatText}>PNG</ThemedText>
                 </View>
@@ -163,7 +159,11 @@ export default function UploadScreen() {
                 onPress={handleCameraPress}
                 activeOpacity={0.7}
               >
-                <Ionicons name="camera" size={20} color={COLORS.BRAND_BLUE} />
+                <Ionicons
+                  name="camera"
+                  size={20}
+                  color={Colors.light.brandBlue}
+                />
                 <ThemedText style={styles.optionText}>Cámara</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
@@ -174,7 +174,7 @@ export default function UploadScreen() {
                 <IconSymbol
                   name="doc.fill"
                   size={20}
-                  color={COLORS.BRAND_BLUE}
+                  color={Colors.light.brandBlue}
                 />
                 <ThemedText style={styles.optionText}>Archivo</ThemedText>
               </TouchableOpacity>
@@ -186,7 +186,11 @@ export default function UploadScreen() {
         {selectedFile && (
           <View style={styles.selectedFileContainer}>
             <View style={styles.selectedFile}>
-              <IconSymbol name="doc.fill" size={24} color={COLORS.BRAND_BLUE} />
+              <IconSymbol
+                name="doc.fill"
+                size={24}
+                color={Colors.light.brandBlue}
+              />
               <View style={styles.fileInfo}>
                 <ThemedText style={styles.fileName}>
                   {selectedFile.name}
@@ -196,7 +200,11 @@ export default function UploadScreen() {
                 </ThemedText>
               </View>
               <TouchableOpacity onPress={() => setSelectedFile(null)}>
-                <Ionicons name="close-circle" size={24} color={COLORS.MUTED} />
+                <Ionicons
+                  name="close-circle"
+                  size={24}
+                  color={Colors.light.gray}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -233,7 +241,7 @@ export default function UploadScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
   },
   header: {
     flexDirection: "row",
@@ -241,7 +249,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.BORDER,
+    borderBottomColor: Colors.light.borderGray,
   },
   backButton: {
     padding: 8,
@@ -263,13 +271,13 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 18,
     fontWeight: "700",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     lineHeight: 22,
   },
   profileIcon: {
     width: 32,
     height: 32,
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
@@ -277,7 +285,7 @@ const styles = StyleSheet.create({
   profileIconText: {
     fontSize: 14,
     fontWeight: "700",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
   scrollView: {
     flex: 1,
@@ -295,7 +303,7 @@ const styles = StyleSheet.create({
   uploadIcon: {
     width: 80,
     height: 80,
-    backgroundColor: COLORS.LIGHT_GRAY,
+    backgroundColor: Colors.light.lightGray,
     borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
@@ -304,7 +312,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     textAlign: "center",
     marginBottom: 32,
     textDecorationLine: "underline",
@@ -316,16 +324,16 @@ const styles = StyleSheet.create({
   uploadButton: {
     borderWidth: 2,
     borderStyle: "dashed",
-    borderColor: COLORS.BRAND_BLUE,
+    borderColor: Colors.light.brandBlue,
     borderRadius: 16,
     padding: 32,
     alignItems: "center",
-    backgroundColor: COLORS.LIGHT_GRAY,
+    backgroundColor: Colors.light.lightGray,
   },
   uploadText: {
     fontSize: 18,
     fontWeight: "600",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
     marginBottom: 24,
   },
   formatSection: {
@@ -335,7 +343,7 @@ const styles = StyleSheet.create({
   formatTitle: {
     fontSize: 14,
     fontWeight: "500",
-    color: COLORS.MUTED,
+    color: Colors.light.gray,
     marginBottom: 12,
   },
   formatList: {
@@ -345,12 +353,18 @@ const styles = StyleSheet.create({
   formatItem: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: Colors.light.borderGray,
     gap: 6,
   },
   formatText: {
     fontSize: 14,
     fontWeight: "500",
-    color: COLORS.BLACK,
+    color: Colors.light.black,
   },
   uploadOptions: {
     flexDirection: "row",
@@ -359,9 +373,9 @@ const styles = StyleSheet.create({
   optionButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderWidth: 1,
-    borderColor: COLORS.BORDER,
+    borderColor: Colors.light.borderGray,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -370,7 +384,7 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 14,
     fontWeight: "500",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
   },
 
   selectedFileContainer: {
@@ -379,9 +393,9 @@ const styles = StyleSheet.create({
   selectedFile: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderWidth: 1,
-    borderColor: COLORS.SUCCESS,
+    borderColor: Colors.light.success,
     borderRadius: 12,
     padding: 16,
     gap: 12,
@@ -392,12 +406,12 @@ const styles = StyleSheet.create({
   fileName: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.BLACK,
+    color: Colors.light.black,
     marginBottom: 2,
   },
   fileType: {
     fontSize: 14,
-    color: COLORS.MUTED,
+    color: Colors.light.gray,
   },
 
   actionButtons: {
@@ -405,24 +419,24 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   processButton: {
-    backgroundColor: COLORS.BRAND_BLUE,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: "center",
   },
   processButtonDisabled: {
-    backgroundColor: COLORS.LIGHT_BLUE,
+    backgroundColor: Colors.light.lightBlue,
     opacity: 0.7,
   },
   processButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.WHITE,
+    color: Colors.light.white,
   },
   cancelButton: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: Colors.light.white,
     borderWidth: 1,
-    borderColor: COLORS.BRAND_BLUE,
+    borderColor: Colors.light.brandBlue,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: "center",
@@ -430,6 +444,6 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.BRAND_BLUE,
+    color: Colors.light.brandBlue,
   },
 });

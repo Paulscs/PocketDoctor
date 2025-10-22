@@ -55,7 +55,11 @@ export function BottomNavigation({
               accessibilityState={{ selected: isActive }}
               accessibilityHint={`Navegar a ${tab.label}`}
             >
-              <IconSymbol name={tab.icon as any} size={24} color={color} />
+              <IconSymbol
+                name={tab.icon as keyof typeof IconSymbol}
+                size={24}
+                color={color}
+              />
               <ThemedText
                 style={[
                   styles.tabLabel,
