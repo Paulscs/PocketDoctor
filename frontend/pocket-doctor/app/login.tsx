@@ -1,346 +1,512 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  TextInput,
   Text,
-  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
   Image,
+  Alert,
+  ScrollView,
+  ImageSourcePropType,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
-import CheckRow from "@/components/ui/CheckRow";
 import { Ionicons } from "@expo/vector-icons";
-import { ThemedText } from "@/components/themed-text";
-const BRAND_BLUE = "#002D73";
-const MUTED = "#52607A";
+import { router } from "expo-router";
+import { Colors } from "@/constants/theme";
+import { useThemeColor } from "@/hooks/use-theme-color";
+import { useAuthStore } from "@/src/store";
 
+const SIZES = {
+  ICON: 18,
+  BORDER_RADIUS: 8,
+  PADDING: 24,
+} as const;
+
+interface ThemeColors {
+  brandBlue: string;
+  muted: string;
+  white: string;
+  black: string;
+  placeholder: string;
+  border: string;
+  divider: string;
+  friendlyBlue: string;
+  friendlyBlueBg: string;
+  friendlyBlueBorder: string;
+  friendlyGreen: string;
+  friendlyGreenBg: string;
+  friendlyGreenBorder: string;
+}
+
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.white },
+    content: { flexGrow: 1, padding: SIZES.PADDING },
+
+    header: { alignItems: "center", marginTop: 40, marginBottom: 20 },
+    logo: { width: 100, height: 80 },
+    title: {
+      fontSize: 26,
+      fontWeight: "700",
+      color: colors.brandBlue,
+      marginTop: 8,
+    },
+    subtitle: {
+      color: colors.muted,
+      fontSize: 14,
+      textAlign: "center",
+      marginTop: 4,
+    },
+
+    form: { marginTop: 12 },
+    label: {
+      color: colors.brandBlue,
+      fontWeight: "600",
+      fontSize: 15,
+      marginBottom: 6,
+    },
+    inputRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: SIZES.BORDER_RADIUS,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      marginBottom: 14,
+    },
+    input: {
+      flex: 1,
+      fontSize: 15,
+      color: colors.black,
+      marginLeft: 8,
+    },
+
+    optionsRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 18,
+    },
+    rememberRow: { flexDirection: "row", alignItems: "center" },
+    checkbox: {
+      width: 16,
+      height: 16,
+      borderWidth: 1.3,
+      borderColor: colors.border,
+      borderRadius: 4,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: colors.white,
+      marginRight: 6,
+    },
+    checkboxChecked: {
+      backgroundColor: colors.brandBlue,
+      borderColor: colors.brandBlue,
+    },
+    rememberText: { color: colors.black, fontSize: 13, marginTop: -1 },
+    forgotText: {
+      color: colors.brandBlue,
+      fontSize: 13,
+      marginTop: -1,
+    },
+
+    button: {
+      backgroundColor: colors.brandBlue,
+      borderRadius: 10,
+      paddingVertical: 14,
+      alignItems: "center",
+      marginBottom: 24,
+    },
+    buttonDisabled: { opacity: 0.7 },
+    buttonText: { color: colors.white, fontSize: 16, fontWeight: "600" },
+
+    divider: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 24,
+    },
+    line: { flex: 1, height: 1, backgroundColor: colors.divider },
+    dividerText: { color: colors.placeholder, marginHorizontal: 10 },
+
+    socialRow: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 20,
+      marginBottom: 24,
+    },
+    socialButton: { padding: 4 },
+    socialIcon: { width: 40, height: 40 },
+
+    signUpRow: {
+      flexDirection: "row",
+      justifyContent: "center",
+      marginBottom: 16,
+    },
+    signUpText: { color: colors.muted, fontSize: 14 },
+    signUpLink: {
+      color: colors.brandBlue,
+      fontWeight: "600",
+      fontSize: 14,
+    },
+
+    footerWarnings: {
+      flexDirection: "row",
+      gap: 8,
+      marginBottom: 20,
+    },
+    warningCard: {
+      flex: 1,
+      borderRadius: 8,
+      padding: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1,
+    },
+    warningIcon: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 8,
+    },
+    warningContent: {
+      flex: 1,
+    },
+    warningTitle: {
+      fontSize: 10,
+      fontWeight: "700",
+      marginBottom: 1,
+    },
+    warningText: {
+      fontSize: 9,
+      lineHeight: 11,
+    },
+
+    // Medical card styles (friendly blue)
+    medicalCard: {
+      backgroundColor: colors.friendlyBlueBg,
+      borderColor: colors.friendlyBlueBorder,
+    },
+    medicalIcon: {
+      backgroundColor: colors.friendlyBlue,
+    },
+    medicalTitle: {
+      color: colors.friendlyBlue,
+    },
+    medicalText: {
+      color: "#1E40AF",
+    },
+
+    // Security card styles (friendly green)
+    securityCard: {
+      backgroundColor: colors.friendlyGreenBg,
+      borderColor: colors.friendlyGreenBorder,
+    },
+    securityIcon: {
+      backgroundColor: colors.friendlyGreen,
+    },
+    securityTitle: {
+      color: colors.friendlyGreen,
+    },
+    securityText: {
+      color: "#047857",
+    },
+  });
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
-  const [secure, setSecure] = useState(true);
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [remember, setRemember] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
-      return;
+  // Global state
+  const { login, isLoading, error, clearError } = useAuthStore();
+
+  // Theme colors
+  const brandBlue = useThemeColor(
+    { light: Colors.light.brandBlue, dark: Colors.dark.brandBlue },
+    "brandBlue"
+  );
+  const muted = useThemeColor(
+    { light: Colors.light.muted, dark: Colors.dark.muted },
+    "muted"
+  );
+  const white = useThemeColor(
+    { light: Colors.light.white, dark: Colors.dark.white },
+    "white"
+  );
+  const black = useThemeColor(
+    { light: Colors.light.black, dark: Colors.dark.black },
+    "black"
+  );
+  const placeholder = useThemeColor(
+    { light: Colors.light.placeholder, dark: Colors.dark.placeholder },
+    "placeholder"
+  );
+  const border = useThemeColor(
+    { light: Colors.light.borderGray, dark: Colors.dark.borderGray },
+    "border"
+  );
+  const divider = useThemeColor(
+    { light: Colors.light.divider, dark: Colors.dark.divider },
+    "divider"
+  );
+  const friendlyBlue = useThemeColor(
+    { light: Colors.light.friendlyBlue, dark: Colors.dark.friendlyBlue },
+    "friendlyBlue"
+  );
+  const friendlyBlueBg = useThemeColor(
+    { light: Colors.light.friendlyBlueBg, dark: Colors.dark.friendlyBlueBg },
+    "friendlyBlueBg"
+  );
+  const friendlyBlueBorder = useThemeColor(
+    {
+      light: Colors.light.friendlyBlueBorder,
+      dark: Colors.dark.friendlyBlueBorder,
+    },
+    "friendlyBlueBorder"
+  );
+  const friendlyGreen = useThemeColor(
+    { light: Colors.light.friendlyGreen, dark: Colors.dark.friendlyGreen },
+    "friendlyGreen"
+  );
+  const friendlyGreenBg = useThemeColor(
+    { light: Colors.light.friendlyGreenBg, dark: Colors.dark.friendlyGreenBg },
+    "friendlyGreenBg"
+  );
+  const friendlyGreenBorder = useThemeColor(
+    {
+      light: Colors.light.friendlyGreenBorder,
+      dark: Colors.dark.friendlyGreenBorder,
+    },
+    "friendlyGreenBorder"
+  );
+
+  const styles = useMemo(
+    () =>
+      createStyles({
+        brandBlue,
+        muted,
+        white,
+        black,
+        placeholder,
+        border,
+        divider,
+        friendlyBlue,
+        friendlyBlueBg,
+        friendlyBlueBorder,
+        friendlyGreen,
+        friendlyGreenBg,
+        friendlyGreenBorder,
+      }),
+    [
+      brandBlue,
+      muted,
+      white,
+      black,
+      placeholder,
+      border,
+      divider,
+      friendlyBlue,
+      friendlyBlueBg,
+      friendlyBlueBorder,
+      friendlyGreen,
+      friendlyGreenBg,
+      friendlyGreenBorder,
+    ]
+  );
+
+  const validate = useCallback(() => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Error", "Por favor, completa todos los campos");
+      return false;
     }
-    const isFormValid = email.trim() !== "" && password.trim() !== "";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      Alert.alert("Error", "Por favor, ingresa un correo electrónico válido");
+      return false;
+    }
+    return true;
+  }, [email, password]);
 
-    setIsLoading(true);
+  const handleLogin = useCallback(async () => {
+    if (!validate()) return;
+    clearError();
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      router.push("/(tabs)");
-    } catch {
-      Alert.alert("Error", "Login failed. Please try again.");
-    } finally {
-      setIsLoading(false);
+      await login(email, password);
+      router.push("/(tabs)/home");
+    } catch (err) {
+      // Error is handled by the store
     }
-  };
+  }, [validate, login, email, password, clearError]);
 
-  const handleSocialLogin = (provider: string) => {
-    Alert.alert("Social Login", `${provider} login will be implemented`);
-  };
+  const navigateToForgotPassword = () => router.push("/forgot-password");
+  const navigateToRegister = () => router.push("/register");
 
-  const handleForgotPassword = () => {
-    // TODO: Implement forgot password
-    Alert.alert("Forgot Password", "Password reset will be implemented");
-  };
+  const renderSocial = (src: ImageSourcePropType, key: string) => (
+    <TouchableOpacity key={key} style={styles.socialButton}>
+      <Image source={src} style={styles.socialIcon} resizeMode="contain" />
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollContainer}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Logo Section */}
-        <View style={styles.logoContainer}>
-          {/* Real Pocket Doctor Logo */}
-          <Image source={require("@/assets/images/aloneLogo.png")} style={styles.logo} resizeMode="contain" />
-          <ThemedText style={styles.title}>Bienvenido</ThemedText>
-          <ThemedText style={styles.subtitle}>
-            Inicia sesión para acceder a tu asistente médico IA
-          </ThemedText>
+        {/* Header */}
+        <View style={styles.header}>
+          <Image
+            source={require("@/assets/images/logoBlue.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.title}>Iniciar Sesión</Text>
+          <Text style={styles.subtitle}>
+            Ingresa para descubrir lo que tus análisis dicen de ti.
+          </Text>
         </View>
 
-        {/* Form Section */}
-        <View style={styles.formContainer}>
-          <Text style={styles.inputLabel}>Correo Electrónico</Text>
-          <View style={styles.inputContainer}>
+        {/* Inputs */}
+        <View style={styles.form}>
+          {/* Email */}
+          <Text style={styles.label}>Correo electrónico</Text>
+          <View style={styles.inputRow}>
+            <Ionicons name="mail-outline" size={SIZES.ICON} color={muted} />
             <TextInput
-              style={styles.textInput}
+              style={styles.input}
               placeholder="ejemplo@gmail.com"
-              value={email}
-              onChangeText={setEmail}
+              placeholderTextColor={placeholder}
               keyboardType="email-address"
               autoCapitalize="none"
-              placeholderTextColor="#999"
+              autoComplete="email"
+              editable={!isLoading}
+              value={email}
+              onChangeText={setEmail}
             />
           </View>
 
-          <Text style={styles.inputLabel}>Contraseña</Text>
-          <View style={styles.inputContainer}>
+          {/* Password */}
+          <Text style={styles.label}>Contraseña</Text>
+          <View style={styles.inputRow}>
+            <Ionicons
+              name="lock-closed-outline"
+              size={SIZES.ICON}
+              color={muted}
+            />
             <TextInput
-              style={styles.textInput}
+              style={styles.input}
               placeholder="Introduzca su contraseña"
+              placeholderTextColor={placeholder}
+              secureTextEntry={!showPassword}
+              autoComplete="password"
+              editable={!isLoading}
               value={password}
               onChangeText={setPassword}
-              secureTextEntry={secure}
-              placeholderTextColor="#999"
             />
-            <TouchableOpacity onPress={() => setSecure(!secure)} style={styles.eyeBtn}>
-            <Ionicons name={secure ? "eye-off" : "eye"} size={20} color="#666" />
+            <TouchableOpacity onPress={() => setShowPassword(p => !p)}>
+              <Ionicons
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={SIZES.ICON}
+                color={muted}
+              />
             </TouchableOpacity>
           </View>
 
-          {/* Remember Me & Forgot Password */}
+          {/* Remember + Forgot */}
           <View style={styles.optionsRow}>
             <TouchableOpacity
-              style={styles.rememberContainer}
-              onPress={() => setRememberMe(!rememberMe)}
+              style={styles.rememberRow}
+              onPress={() => setRemember(r => !r)}
+              activeOpacity={0.8}
             >
-              <CheckRow
-                checked={rememberMe}
-                onToggle={() => setRememberMe(!rememberMe)}
-                text="Recordarme"
+              <View
+                style={[styles.checkbox, remember && styles.checkboxChecked]}
               >
-              </CheckRow>
+                {remember && (
+                  <Ionicons name="checkmark" size={12} color={white} />
+                )}
+              </View>
+              <Text style={styles.rememberText}>Recordarme</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleForgotPassword}>
+
+            <TouchableOpacity onPress={navigateToForgotPassword}>
               <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Login Button */}
+          {/* Button */}
           <TouchableOpacity
-            style={styles.loginButton}
+            style={[styles.button, isLoading && styles.buttonDisabled]}
             onPress={handleLogin}
             disabled={isLoading}
           >
-            <Text style={styles.loginButtonText}>
+            <Text style={styles.buttonText}>
               {isLoading ? "Iniciando..." : "Iniciar Sesión"}
             </Text>
           </TouchableOpacity>
 
           {/* Divider */}
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
+          <View style={styles.divider}>
+            <View style={styles.line} />
             <Text style={styles.dividerText}>o continúa con</Text>
-            <View style={styles.dividerLine} />
+            <View style={styles.line} />
           </View>
 
-          {/* Social Login Buttons */}
-          <View style={styles.socialButtonsContainer}>
-              <TouchableOpacity style={styles.socialButton}>
-                <Image source={require("@/assets/images/google.png")} style={styles.socialIcon} resizeMode="contain" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
-                <Image source={require("@/assets/images/microsoft.png")} style={styles.socialIcon} resizeMode="contain" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
-                <Image source={require("@/assets/images/apple.png")} style={styles.socialIcon} resizeMode="contain" />
-              </TouchableOpacity>
-            </View>
+          {/* Social Login */}
+          <View style={styles.socialRow}>
+            {[
+              require("@/assets/images/google.png"),
+              require("@/assets/images/microsoft.png"),
+              require("@/assets/images/apple.png"),
+            ].map((src, i) => renderSocial(src, `social-${i}`))}
+          </View>
 
-
-          {/* Sign Up Link */}
-          <View style={styles.signUpContainer}>
+          {/* Register */}
+          <View style={styles.signUpRow}>
             <Text style={styles.signUpText}>¿No tienes una cuenta? </Text>
-            <TouchableOpacity onPress={() => router.push("/register")}>
+            <TouchableOpacity onPress={navigateToRegister}>
               <Text style={styles.signUpLink}>Crear cuenta</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>🛡️ Cumple con HIPAA</Text>
-            <Text style={styles.footerText}>🔒 Cifrado 256 bits</Text>
+          {/* Footer Warnings */}
+          <View style={styles.footerWarnings}>
+            <View style={[styles.warningCard, styles.medicalCard]}>
+              <View style={[styles.warningIcon, styles.medicalIcon]}>
+                <Ionicons name="medical-outline" size={12} color={white} />
+              </View>
+              <View style={styles.warningContent}>
+                <Text style={[styles.warningTitle, styles.medicalTitle]}>
+                  Solo informativo
+                </Text>
+                <Text style={[styles.warningText, styles.medicalText]}>
+                  No reemplaza diagnóstico médico
+                </Text>
+              </View>
+            </View>
+
+            <View style={[styles.warningCard, styles.securityCard]}>
+              <View style={[styles.warningIcon, styles.securityIcon]}>
+                <Ionicons name="shield-checkmark" size={12} color={white} />
+              </View>
+              <View style={styles.warningContent}>
+                <Text style={[styles.warningTitle, styles.securityTitle]}>
+                  HIPAA
+                </Text>
+                <Text style={[styles.warningText, styles.securityText]}>
+                  Datos encriptados y seguros
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  title: { fontSize: 28, fontWeight: "700", color: BRAND_BLUE, marginBottom: 6 },
-  subtitle: { fontSize: 14, color: MUTED, textAlign: "center", paddingHorizontal: 12 },
-  container: {
-    flex: 1,
-    backgroundColor: "#F8F9FA",
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 40,
-  },
-  logoContainer: { alignItems: "center", marginBottom: 32, marginTop: 20 },
-  logo: { width: 200, height: 140 },
-  welcomeText: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#1A365D",
-    marginBottom: 8,
-  },
-  formContainer: {
-    flex: 1,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#002D73",
-    marginBottom: 8,
-    marginTop: 20,
-  },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
-    paddingVertical: 12,
-    marginBottom: 8,
-  },
-  textInput: {
-    flex: 1,
-    fontSize: 16,
-    color: "#2D3748",
-    paddingVertical: 8,
-    backgroundColor: "transparent",
-  },
-  eyeBtn: { 
-    padding: 6,
-    marginLeft: 8,
-  },
-  inputIcon: {
-    fontSize: 20,
-    marginLeft: 8,
-  },
-  optionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 16,
-    marginBottom: 32,
-  },
-  rememberContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  socialButtonsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 24,
-    marginBottom: 32,
-  },
-  socialButton: {
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  socialIcon: {
-    width: 32,
-    height: 32,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: "#CBD5E0",
-    marginRight: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkboxChecked: {
-    backgroundColor: "#4299E1",
-    borderColor: "#4299E1",
-  },
-  checkmark: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  rememberText: {
-    fontSize: 14,
-    color: "#4A5568",
-  },
-  forgotText: {
-    color: "#002D73",
-    fontWeight: "600",
-    fontSize: 14,
-    textDecorationLine: "underline",
-  },
-  loginButton: {
-    backgroundColor: "#002D73",
-    borderRadius: 25,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginBottom: 32,
-    shadowColor: "#4299E1",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  loginButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E2E8F0",
-  },
-  dividerText: {
-    fontSize: 14,
-    color: "#A0AEC0",
-    marginHorizontal: 16,
-  },
-  socialContainer: {
-    alignItems: "center",
-  },
-  socialText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#2D3748",
-  },
-  signUpContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 24,
-    marginBottom: 32,
-  },
-  signUpText: {
-    fontSize: 14,
-    color: "#718096",
-  },
-  signUpLink: {
-    color: "#002D73",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingTop: 20,
-  },
-  footerText: {
-    fontSize: 12,
-    color: "#A0AEC0",
-  },
-});

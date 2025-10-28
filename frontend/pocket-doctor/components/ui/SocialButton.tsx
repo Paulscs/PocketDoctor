@@ -7,7 +7,10 @@ type Props = {
   onPress?: () => void;
 };
 
-const iconMap: Record<string, { name: any; color: string }> = {
+const iconMap: Record<
+  string,
+  { name: keyof typeof Ionicons.glyphMap; color: string }
+> = {
   google: { name: "logo-google", color: "#DB4437" },
   microsoft: { name: "logo-windows", color: "#0078D6" },
   apple: { name: "logo-apple", color: "#000000" },
@@ -26,5 +29,14 @@ export default function SocialButton({ provider, onPress }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: "center" },
-  circle: { width: 54, height: 54, borderRadius: 27, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#ECEFF5" },
+  circle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#ECEFF5",
+  },
 });

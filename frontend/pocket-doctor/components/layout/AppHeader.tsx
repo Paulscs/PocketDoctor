@@ -33,7 +33,7 @@ export function AppHeader({
         {showLogo && (
           <View style={styles.logoContainer}>
             <Image
-              source={require("@/assets/images/logo.png")}
+              source={require("@/assets/images/logoBlack.png")}
               style={styles.logo}
               resizeMode="contain"
             />

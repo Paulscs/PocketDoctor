@@ -23,9 +23,9 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
-          title: "Home",
+          title: "Inicio",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={24} name="house.fill" color={color} />
           ),
@@ -37,6 +37,15 @@ export default function TabLayout() {
           title: "Chat",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={24} name="message.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="clinics"
+        options={{
+          title: "Clínicas",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={24} name="building.fill" color={color} />
           ),
         }}
       />

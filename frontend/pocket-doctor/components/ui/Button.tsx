@@ -1,5 +1,11 @@
-import React from "react";
-import { TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import React, { useMemo } from "react";
+import {
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  ViewStyle,
+  TextStyle,
+} from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -12,7 +18,7 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
-  style?: any;
+  style?: ViewStyle;
 }
 
 export function Button({
@@ -38,7 +44,7 @@ export function Button({
     "text"
   );
 
-  const getButtonStyle = () => {
+  const buttonStyle = useMemo(() => {
     const baseStyle = [styles.button, styles[size]];
 
     switch (variant) {
@@ -65,9 +71,9 @@ export function Button({
       default:
         return [...baseStyle, { backgroundColor: primaryColor }];
     }
-  };
+  }, [variant, size, primaryColor, backgroundColor]);
 
-  const getTextStyle = () => {
+  const textStyle = useMemo(() => {
     switch (variant) {
       case "primary":
         return { color: "#ffffff" };
@@ -78,11 +84,11 @@ export function Button({
       default:
         return { color: "#ffffff" };
     }
-  };
+  }, [variant, textColor, primaryColor]);
 
   return (
     <TouchableOpacity
-      style={[...getButtonStyle(), disabled && styles.disabled, style]}
+      style={[...buttonStyle, disabled && styles.disabled, style]}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
@@ -94,7 +100,7 @@ export function Button({
         />
       ) : (
         <ThemedText
-          style={[styles.buttonText, styles[`${size}Text`], getTextStyle()]}
+          style={[styles.buttonText, styles[`${size}Text`], textStyle]}
         >
           {title}
         </ThemedText>
