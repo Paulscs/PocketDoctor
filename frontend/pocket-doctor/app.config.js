@@ -10,7 +10,7 @@ export default {
     // ✅ Fixes the Linking warning in production builds
     scheme: "pocketdoctor",
 
-    userInterfaceStyle: "automatic",
+    userInterfaceStyle: "light",
     newArchEnabled: true,
 
     ios: {
@@ -69,7 +69,7 @@ export default {
 
     experiments: {
       typedRoutes: true,
-      reactCompiler: true,
+      reactCompiler: false,
     },
   },
 };
