@@ -1,179 +1,109 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+// src/store/authStore.ts
+import { create } from 'zustand';
+import { supabase } from '@/src/lib/supabase';
+import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  height?: number;
-  weight?: number;
-  bloodType?: string;
-  gender?: string;
-  dateOfBirth?: Date;
-  allergies?: string[];
-  medicalConditions?: string[];
-  profileImage?: string;
-}
-
-export interface AuthState {
+export type User = SupabaseUser;
+export type AuthState = {
   user: User | null;
-  isAuthenticated: boolean;
+  session: Session | null;
   isLoading: boolean;
   error: string | null;
-}
-
-export interface AuthActions {
-  login: (email: string, password: string) => Promise<void>;
-  register: (userData: Partial<User> & { password: string }) => Promise<void>;
-  logout: () => void;
-  updateProfile: (userData: Partial<User>) => Promise<void>;
-  setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
+};
+export type AuthActions = {
   clearError: () => void;
-}
-
+  login: (email: string, password: string) => Promise<void>;
+  register: (p: {
+    email: string; password: string;
+    nombre?: string; apellido?: string;
+    fecha_nacimiento?: string; sexo?: string;
+  }) => Promise<void>;
+  logout: () => Promise<void>;
+};
 export type AuthStore = AuthState & AuthActions;
 
-export const useAuthStore = create<AuthStore>()(
-  persist(
-    (set, get) => ({
-      // Initial state
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      error: null,
+export const useAuthStore = create<AuthStore>((set, get) => ({
+  user: null,
+  session: null,
+  isLoading: false,
+  error: null,
 
-      // Actions
-      login: async (email: string, password: string) => {
-        set({ isLoading: true, error: null });
-        try {
-          // TODO: Replace with actual API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
+  clearError: () => set({ error: null }),
 
-          // Mock user data for now
-          const mockUser: User = {
-            id: "1",
-            email,
-            firstName: "John",
-            lastName: "Doe",
-            height: 175,
-            weight: 70,
-            bloodType: "O+",
-            gender: "Masculino",
-            dateOfBirth: new Date("1990-01-01"),
-            allergies: [],
-            medicalConditions: [],
-          };
+  login: async (email, password) => {
+    console.log('[auth] login:start', { email });
+    set({ isLoading: true, error: null });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-          set({
-            user: mockUser,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          });
-        } catch (error) {
-          set({
-            isLoading: false,
-            error: error instanceof Error ? error.message : "Login failed",
-          });
-        }
-      },
+      if (error) {
+        console.warn('[auth] login:error', { code: (error as any).status, message: error.message });
+        // Mensajes típicos que devuelve Supabase:
+        // - "Invalid login credentials" (credenciales malas o email no verificado si lo exiges)
+        set({ error: error.message, isLoading: false });
+        throw error;
+      }
 
-      register: async userData => {
-        set({ isLoading: true, error: null });
-        try {
-          // TODO: Replace with actual API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('[auth] login:success', {
+        userId: data.user?.id,
+        email: data.user?.email,
+        hasSession: !!data.session,
+      });
 
-          const newUser: User = {
-            id: Date.now().toString(),
-            email: userData.email!,
-            firstName: userData.firstName!,
-            lastName: userData.lastName!,
-            height: userData.height,
-            weight: userData.weight,
-            bloodType: userData.bloodType,
-            gender: userData.gender,
-            dateOfBirth: userData.dateOfBirth,
-            allergies: userData.allergies || [],
-            medicalConditions: userData.medicalConditions || [],
-          };
-
-          set({
-            user: newUser,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          });
-        } catch (error) {
-          set({
-            isLoading: false,
-            error:
-              error instanceof Error ? error.message : "Registration failed",
-          });
-        }
-      },
-
-      logout: () => {
-        set({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: null,
-        });
-      },
-
-      updateProfile: async userData => {
-        set({ isLoading: true, error: null });
-        try {
-          // TODO: Replace with actual API call
-          await new Promise(resolve => setTimeout(resolve, 500));
-
-          const currentUser = get().user;
-          if (!currentUser) {
-            throw new Error("No user logged in");
-          }
-
-          const updatedUser: User = {
-            ...currentUser,
-            ...userData,
-          };
-
-          set({
-            user: updatedUser,
-            isLoading: false,
-            error: null,
-          });
-        } catch (error) {
-          set({
-            isLoading: false,
-            error:
-              error instanceof Error ? error.message : "Profile update failed",
-          });
-        }
-      },
-
-      setLoading: (loading: boolean) => {
-        set({ isLoading: loading });
-      },
-
-      setError: (error: string | null) => {
-        set({ error });
-      },
-
-      clearError: () => {
-        set({ error: null });
-      },
-    }),
-    {
-      name: "auth-storage",
-      storage: createJSONStorage(() => AsyncStorage),
-      partialize: state => ({
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
-      }),
+      set({ user: data.user ?? null, session: data.session ?? null, isLoading: false });
+    } catch (e: any) {
+      // e?.message ya se setea arriba, pero dejamos doble registro
+      console.error('[auth] login:exception', e?.message ?? String(e));
+      set({ isLoading: false });
+      throw e;
     }
-  )
-);
+  },
+
+  register: async ({ email, password, ...meta }) => {
+    console.log('[auth] register:start', { email, meta });
+    set({ isLoading: true, error: null });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email, password, options: { data: meta },
+      });
+
+      if (error) {
+        console.warn('[auth] register:error', { code: (error as any).status, message: error.message });
+        // Ejemplos: "User already registered", "Password should be at least 6 characters"
+        set({ error: error.message, isLoading: false });
+        throw error;
+      }
+
+      console.log('[auth] register:success', {
+        userId: data.user?.id,
+        email: data.user?.email,
+        hasSession: !!data.session, // si tienes verificación por email, suele ser false
+      });
+
+      set({ user: data.user ?? null, session: data.session ?? null, isLoading: false });
+    } catch (e: any) {
+      console.error('[auth] register:exception', e?.message ?? String(e));
+      set({ isLoading: false });
+      throw e;
+    }
+  },
+
+  logout: async () => {
+    console.log('[auth] logout:start');
+    set({ isLoading: true, error: null });
+    try {
+      await supabase.auth.signOut();
+      console.log('[auth] logout:success');
+      set({ user: null, session: null, isLoading: false });
+    } catch (e: any) {
+      console.error('[auth] logout:exception', e?.message ?? String(e));
+      set({ error: e?.message ?? 'Error al cerrar sesión', isLoading: false });
+      throw e;
+    }
+  },
+}));
+
+// Log de cambios de sesión (útil para depurar)
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('[auth] onAuthStateChange', { event, userId: session?.user?.id, hasSession: !!session });
+});
