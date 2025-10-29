@@ -6,6 +6,7 @@ import {
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
+import 'react-native-url-polyfill/auto';
 import {
   Pridi_400Regular,
   Pridi_500Medium,
