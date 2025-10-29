@@ -229,7 +229,7 @@ function SelectField({
   const [ddItems, setDdItems] = useState<DDItem<string>[]>(items);
 
   return (
-    <View style={{ zIndex }}>
+    <View style={{ zIndex, position: 'relative' }}> {/* <-- position agregado */}
       <Label required={required} styles={styles}>
         {label}
       </Label>
@@ -247,10 +247,15 @@ function SelectField({
           invalid && styles.fieldErrorBox,
         ]}
         listMode="SCROLLVIEW"
+
+        // 👇 Estas dos líneas son las que arreglan el problema
+        zIndex={zIndex}
+        zIndexInverse={zIndex}
       />
     </View>
   );
 }
+
 
 function RegisterScreenInner() {
   const [firstName, setFirstName] = useState("");
@@ -690,12 +695,10 @@ function RegisterScreenInner() {
                   submitted && !dateOfBirth && styles.fieldError,
                 ]}
                 onPress={() => setShowDatePicker(true)}
+                activeOpacity={0.8}
               >
                 <Text
-                  style={[
-                    styles.textInput,
-                    !dateOfBirth && styles.placeholderText,
-                  ]}
+                  style={[styles.textInput, !dateOfBirth && styles.placeholderText]}
                 >
                   {dateOfBirth ? formatDate(dateOfBirth) : "DD/MM/AAAA"}
                 </Text>
