@@ -1,28 +1,32 @@
-# backend/app/core/config.py
-import os
-from dataclasses import dataclass
-from pathlib import Path
+# app/core/config.py
+from pydantic_settings import BaseSettings
 
-# 1) Cargar .env por ruta absoluta: .../backend/.env
-try:
-    from dotenv import load_dotenv
-    ENV_PATH = Path(__file__).resolve().parents[2] / ".env"  # <-- backend/.env
-    load_dotenv(ENV_PATH)
-except Exception:
-    pass  # si no está instalado dotenv, simplemente no carga
+class Settings(BaseSettings):
+    # --- Requeridos (sin default) primero ---
+    SUPABASE_URL: str
+    SUPABASE_KEY: str
 
-@dataclass(frozen=True)
-class Settings:
-    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
-    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
-    SUPABASE_JWT_SECRET: str | None = os.getenv("SUPABASE_JWT_SECRET")
-    SUPABASE_JWKS_URL: str | None = os.getenv("SUPABASE_JWKS_URL")
-    API_NAME: str = os.getenv("API_NAME", "Pocket Doctor API")
-    API_VERSION: str = os.getenv("API_VERSION", "0.1.0")
-    STORAGE_BUCKET: str = os.getenv("STORAGE_BUCKET", "uploads")
+    # --- Opcionales con default después ---
+    SUPABASE_JWT_SECRET: str | None = None
+    SUPABASE_JWKS_URL: str | None = None
+
+    API_NAME: str = "Pocket Doctor API"
+    API_VERSION: str = "0.1.0"
+    STORAGE_BUCKET: str = "uploads"
+
+    # OCR local (opcionales)
+    TESSERACT_CMD: str | None = None
+    OCR_LANG: str = "spa+eng"
+    POPPLER_PATH: str | None = None
+
+    # Lee automáticamente variables del archivo .env en el directorio del backend
+    model_config = {
+        "env_file": ".env",
+        "extra": "ignore",
+    }
 
 settings = Settings()
 
-# (Opcional de debug: borrar luego)
+# (Opcional de debug, quítalo luego)
 if not settings.SUPABASE_URL or not settings.SUPABASE_URL.startswith("http"):
     print("[config] OJO: SUPABASE_URL vacío o sin https://")
