@@ -64,9 +64,22 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await supabase.auth.signUp({
-        email, password, options: { data: meta },
+        email,
+        password,
+        options: {
+          data: {
+            firstName,       // string
+            lastName,        // string
+            gender,          // "Masculino" | "Femenino" | etc
+            dateOfBirth,     // "YYYY-MM-DD"  <- en tu register.tsx haz el formato de la Date
+            height,          // number (cm)
+            weight,          // number (kg)
+            bloodType,       // "A+","O-", etc.
+            allergies,       // string[]
+            medicalConditions// string[]
+          }
+        }
       });
-
       if (error) {
         console.warn('[auth] register:error', { code: (error as any).status, message: error.message });
         // Ejemplos: "User already registered", "Password should be at least 6 characters"

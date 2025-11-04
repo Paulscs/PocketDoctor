@@ -218,7 +218,7 @@ function SelectField({
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
-  items: Item[];
+  items: { label: string; value: string }[];
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   zIndex: number;
@@ -226,35 +226,59 @@ function SelectField({
   required?: boolean;
   styles: ReturnType<typeof createStyles>;
 }) {
-  const [ddItems, setDdItems] = useState<DDItem<string>[]>(items);
+  const [ddItems, setDdItems] = useState(items);
 
   return (
-    <View style={{ zIndex, position: 'relative' }}> {/* <-- position agregado */}
+    <View
+      style={{
+        zIndex,
+        position: "relative",
+        // 👇 ayuda extra en Android para superponer
+        elevation: 10,
+      }}
+    >
       <Label required={required} styles={styles}>
         {label}
       </Label>
+
       <DropDownPicker
         open={open}
         value={value}
         items={ddItems}
         setOpen={setOpen}
         setItems={setDdItems}
-        setValue={cb => onChange((cb(value) as string) ?? "")}
+
+        // ✅ más robusto que onChangeValue
+        onSelectItem={(item) => onChange(item.value)}
+
         placeholder={placeholder}
         style={[styles.ddInput, invalid && styles.fieldErrorBottom]}
         dropDownContainerStyle={[
           styles.ddMenu,
           invalid && styles.fieldErrorBox,
+          { elevation: 20 }, // 👈 extra para Android
         ]}
-        listMode="SCROLLVIEW"
 
-        // 👇 Estas dos líneas son las que arreglan el problema
+        // ✅ evita problemas de z-index: modal en Android, scroll en iOS
+        listMode={Platform.OS === "android" ? "MODAL" : "SCROLLVIEW"}
+        modalProps={{
+          animationType: "slide",
+        }}
+        modalTitle={label}
+        modalContentContainerStyle={{ paddingHorizontal: 16 }}
+
         zIndex={zIndex}
         zIndexInverse={zIndex}
+        multiple={false}
+        closeAfterSelecting={true}
+        autoScroll={true}
+        dropDownDirection="AUTO"
       />
     </View>
   );
 }
+
+
 
 
 function RegisterScreenInner() {
@@ -435,7 +459,7 @@ function RegisterScreenInner() {
         weight: weight ? parseInt(weight) : undefined,
         bloodType,
         gender,
-        dateOfBirth,
+        dateOfBirth: dateOfBirth ? dateOfBirth.toISOString().slice(0, 10) : undefined,
         allergies: selectedAllergies,
         medicalConditions: selectedConditions,
       });
@@ -487,7 +511,7 @@ function RegisterScreenInner() {
                   placeholder="Introduzca sus nombres"
                   value={firstName}
                   onChangeText={setFirstName}
-                  placeholderTextColor="placeholderGray"
+                  placeholderTextColor={placeholderGray}
                   autoCapitalize="words"
                 />
               </View>
@@ -509,7 +533,7 @@ function RegisterScreenInner() {
                   placeholder="Introduzca sus apellidos"
                   value={lastName}
                   onChangeText={setLastName}
-                  placeholderTextColor="placeholderGray"
+                  placeholderTextColor={placeholderGray}
                   autoCapitalize="words"
                 />
               </View>
@@ -536,7 +560,7 @@ function RegisterScreenInner() {
                   autoCorrect={false}
                   textContentType="emailAddress"
                   inputMode="email"
-                  placeholderTextColor="placeholderGray"
+                  placeholderTextColor={placeholderGray}
                 />
               </View>
               {submitted && !requiredStr(email) && (
@@ -558,7 +582,7 @@ function RegisterScreenInner() {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={secure}
-                  placeholderTextColor="placeholderGray"
+                  placeholderTextColor={placeholderGray}
                   textContentType="password"
                 />
                 <TouchableOpacity
@@ -594,7 +618,7 @@ function RegisterScreenInner() {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={secureConfirm}
-                  placeholderTextColor="placeholderGray"
+                  placeholderTextColor={placeholderGray}
                   textContentType="password"
                 />
                 <TouchableOpacity
@@ -636,7 +660,7 @@ function RegisterScreenInner() {
                   value={height}
                   onChangeText={setHeight}
                   keyboardType="numeric"
-                  placeholderTextColor="placeholderGray"
+                  placeholderTextColor={placeholderGray}
                 />
               </View>
               {submitted && !requiredStr(height) && (
@@ -658,7 +682,7 @@ function RegisterScreenInner() {
                   value={weight}
                   onChangeText={setWeight}
                   keyboardType="numeric"
-                  placeholderTextColor="placeholderGray"
+                  placeholderTextColor={placeholderGray}
                 />
               </View>
               {submitted && !requiredStr(weight) && (
@@ -766,7 +790,7 @@ function RegisterScreenInner() {
                     placeholder="Especifique otras alergias"
                     value={otherAllergies}
                     onChangeText={setOtherAllergies}
-                    placeholderTextColor="placeholderGray"
+                    placeholderTextColor={placeholderGray}
                   />
                 </View>
               )}
@@ -808,7 +832,7 @@ function RegisterScreenInner() {
                     placeholder="Especifique otras condiciones médicas"
                     value={otherConditions}
                     onChangeText={setOtherConditions}
-                    placeholderTextColor="placeholderGray"
+                    placeholderTextColor={placeholderGray}
                   />
                 </View>
               )}
