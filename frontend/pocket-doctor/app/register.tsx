@@ -229,32 +229,31 @@ function SelectField({
   const [ddItems, setDdItems] = useState<DDItem<string>[]>(items);
 
   return (
-    <View style={{ zIndex, position: 'relative' }}> {/* <-- position agregado */}
+    <View style={{ zIndex, position: "relative" }}>
+      {/* posición agregada para que el menú se superponga correctamente */}
       <Label required={required} styles={styles}>
         {label}
       </Label>
+
+      {/* Estas dos líneas arreglan el stacking del dropdown */}
       <DropDownPicker
         open={open}
         value={value}
         items={ddItems}
         setOpen={setOpen}
         setItems={setDdItems}
-        setValue={cb => onChange((cb(value) as string) ?? "")}
+        setValue={(cb) => onChange((cb(value) as string) ?? "")}
         placeholder={placeholder}
         style={[styles.ddInput, invalid && styles.fieldErrorBottom]}
-        dropDownContainerStyle={[
-          styles.ddMenu,
-          invalid && styles.fieldErrorBox,
-        ]}
+        dropDownContainerStyle={[styles.ddMenu, invalid && styles.fieldErrorBox]}
         listMode="SCROLLVIEW"
-
-        // 👇 Estas dos líneas son las que arreglan el problema
         zIndex={zIndex}
         zIndexInverse={zIndex}
       />
     </View>
   );
 }
+
 
 
 function RegisterScreenInner() {
@@ -430,15 +429,15 @@ function RegisterScreenInner() {
       await register({
         email,
         password,
-        firstName,
-        lastName,
-        height: height ? parseInt(height) : undefined,
-        weight: weight ? parseInt(weight) : undefined,
-        bloodType,
-        gender,
-        dateOfBirth,
-        allergies: selectedAllergies,
-        medicalConditions: selectedConditions,
+        nombre: firstName,
+        apellido: lastName,
+        fecha_nacimiento: dateOfBirth ? dateOfBirth.toISOString() : undefined,
+        sexo: gender,
+        estatura: height ? parseInt(height) : undefined,
+        peso: weight ? parseInt(weight) : undefined,
+        tipo_sangre: bloodType,
+        alergias: selectedAllergies,
+        condiciones_medicas: selectedConditions,
       });
       router.push("/(tabs)/home");
     } catch (err) {
