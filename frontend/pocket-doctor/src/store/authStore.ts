@@ -11,12 +11,20 @@ export type AuthState = {
   error: string | null;
 };
 export type AuthActions = {
-  clearError: () => void;
+   clearError: () => void;
   login: (email: string, password: string) => Promise<void>;
   register: (p: {
-    email: string; password: string;
-    nombre?: string; apellido?: string;
-    fecha_nacimiento?: string; sexo?: string;
+    email: string;
+    password: string;
+    nombre?: string;
+    apellido?: string;
+    fecha_nacimiento?: string;
+    sexo?: string;
+    estatura?: number;
+    peso?: number;
+    tipo_sangre?: string;
+    alergias?: string[];
+    condiciones_medicas?: string[];
   }) => Promise<void>;
   logout: () => Promise<void>;
 };
