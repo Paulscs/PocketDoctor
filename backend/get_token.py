@@ -2,8 +2,8 @@
 import httpx
 from app.core.config import settings  # <- reusa tu config que ya lee .env
 
-EMAIL = "paulscalderon2@gmail.com"
-PASSWORD = "prueba1234"
+EMAIL = "josearturoguzmantavarez@gmail.com"
+PASSWORD = "Arturo512"
 
 def signup_if_needed():
     url = f"{settings.SUPABASE_URL}/auth/v1/signup"

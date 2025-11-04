@@ -352,6 +352,7 @@ function RegisterScreenInner() {
     requiredStr(lastName) &&
     requiredStr(email) &&
     requiredStr(password) &&
+    password.length > 6 &&
     requiredStr(confirmPassword) &&
     requiredStr(height) &&
     requiredStr(weight) &&
@@ -549,7 +550,7 @@ function RegisterScreenInner() {
               <View
                 style={[
                   styles.inputContainer,
-                  submitted && !requiredStr(password) && styles.fieldError,
+                  submitted && (!requiredStr(password) || password.length <= 6) && styles.fieldError,
                 ]}
               >
                 <TextInput
@@ -574,6 +575,9 @@ function RegisterScreenInner() {
               </View>
               {submitted && !requiredStr(password) && (
                 <Text style={styles.err}>Requerido</Text>
+              )}
+              {submitted && requiredStr(password) && password.length <= 6 && (
+                <Text style={styles.err}>La contraseña debe tener más de 6 caracteres</Text>
               )}
 
               <Label required styles={styles}>
