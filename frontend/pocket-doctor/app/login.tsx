@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -342,6 +342,12 @@ export default function LoginScreen() {
       // Error is handled by the store
     }
   }, [validate, login, email, password, clearError]);
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert("Credenciales inválidas", "El correo electrónico o la contraseña son incorrectos. Por favor, verifica tus datos e intenta nuevamente.");
+    }
+  }, [error]);
 
   const navigateToForgotPassword = () => router.push("/forgot-password");
   const navigateToRegister = () => router.push("/register");
