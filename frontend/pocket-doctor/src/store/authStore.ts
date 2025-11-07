@@ -2,12 +2,13 @@
 import { create } from 'zustand';
 import { supabase } from '@/src/lib/supabase';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
-import { getUserProfile } from '../services/user';
+import { getUserProfile, UserProfile } from '../services/user';
 
 export type User = SupabaseUser;
 export type AuthState = {
   user: User | null;
   session: Session | null;
+  userProfile: UserProfile | null;
   isLoading: boolean;
   error: string | null;
 };
@@ -34,6 +35,7 @@ export type AuthStore = AuthState & AuthActions;
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   session: null,
+  userProfile: null,
   isLoading: false,
   error: null,
 
@@ -59,7 +61,29 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         hasSession: !!data.session,
       });
 
-      set({ user: data.user ?? null, session: data.session ?? null, isLoading: false });
+      // Fetch user profile after successful login
+      if (data.session?.access_token) {
+        try {
+          const profile = await getUserProfile(data.session.access_token);
+          set({ user: data.user ?? null, session: data.session ?? null, userProfile: profile, isLoading: false });
+        } catch (profileError) {
+          console.error('[auth] failed to fetch user profile after login:', profileError);
+          set({ user: data.user ?? null, session: data.session ?? null, userProfile: null, isLoading: false });
+        }
+      } else {
+        // Fetch user profile after successful registration
+        if (data.session?.access_token) {
+          try {
+            const profile = await getUserProfile(data.session.access_token);
+            set({ user: data.user ?? null, session: data.session ?? null, userProfile: profile, isLoading: false });
+          } catch (profileError) {
+            console.error('[auth] failed to fetch user profile after register:', profileError);
+            set({ user: data.user ?? null, session: data.session ?? null, userProfile: null, isLoading: false });
+          }
+        } else {
+          set({ user: data.user ?? null, session: data.session ?? null, isLoading: false });
+        }
+      }
     } catch (e: any) {
       // e?.message ya se setea arriba, pero dejamos doble registro
       console.error('[auth] login:exception', e?.message ?? String(e));
@@ -103,7 +127,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       await supabase.auth.signOut();
       console.log('[auth] logout:success');
-      set({ user: null, session: null, isLoading: false });
+      set({ user: null, session: null, userProfile: null, isLoading: false });
     } catch (e: any) {
       console.error('[auth] logout:exception', e?.message ?? String(e));
       set({ error: e?.message ?? 'Error al cerrar sesión', isLoading: false });
@@ -113,6 +137,19 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 }));
 
 // Log de cambios de sesión (útil para depurar)
-supabase.auth.onAuthStateChange((event, session) => {
+supabase.auth.onAuthStateChange(async (event, session) => {
   console.log('[auth] onAuthStateChange', { event, userId: session?.user?.id, hasSession: !!session });
+
+  // Update store when session changes
+  if (event === 'SIGNED_IN' && session?.access_token) {
+    try {
+      const profile = await getUserProfile(session.access_token);
+      useAuthStore.setState({ user: session.user, session, userProfile: profile });
+    } catch (error) {
+      console.error('[auth] failed to fetch profile on auth state change:', error);
+      useAuthStore.setState({ user: session.user, session, userProfile: null });
+    }
+  } else if (event === 'SIGNED_OUT') {
+    useAuthStore.setState({ user: null, session: null, userProfile: null });
+  }
 });

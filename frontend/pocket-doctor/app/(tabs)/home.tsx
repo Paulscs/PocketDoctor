@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
-import { getUserProfile, getRootMessage } from "@/src/services/user";
+import { getUserProfile, getRootMessage, UserProfile } from "@/src/services/user";
 import { useState } from "react";
 
 export default function HomeScreen() {
@@ -25,7 +25,7 @@ export default function HomeScreen() {
     "background"
   );
 
-  const { user, session } = useAuthStore();
+  const { user, session, userProfile } = useAuthStore();
 
   const containerStyle = useMemo(
     () => [styles.container, { backgroundColor }],
@@ -38,8 +38,13 @@ export default function HomeScreen() {
   );
 
   const greetingText = useMemo(
-    () => `Hola, ${user?.email?.split('@')[0] || "Usuario"}`,
-    [user?.email]
+    () => {
+      if (userProfile?.nombre) {
+        return `Hola, ${userProfile.nombre}`;
+      }
+      return `Hola, ${user?.email?.split('@')[0] || "Usuario"}`;
+    },
+    [user?.email, userProfile]
   );
 
   const handleUploadResults = useCallback(() => {
@@ -67,17 +72,20 @@ export default function HomeScreen() {
 
     let mounted = true;
     
-    // Fetch user profile
-    (async () => {
-      try {
-        const profile = await getUserProfile(token);
-        if (mounted) {
-          console.log('[home] user profile after login:', profile);
+    // Fetch user profile (only if not already loaded in store)
+    if (!userProfile) {
+      (async () => {
+        try {
+          const profile = await getUserProfile(token);
+          if (mounted) {
+            console.log('[home] user profile after login:', profile);
+            // Note: Profile is now stored in the auth store, so we don't need to set it locally
+          }
+        } catch (e) {
+          console.error('[home] failed to fetch user profile:', e);
         }
-      } catch (e) {
-        console.error('[home] failed to fetch user profile:', e);
-      }
-    })();
+      })();
+    }
 
     // Fetch root message independently
     (async () => {
@@ -118,7 +126,9 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityHint="Navega a la pantalla de perfil"
           >
-            <ThemedText style={styles.profileIconText}>A</ThemedText>
+            <ThemedText style={styles.profileIconText}>
+              {userProfile?.nombre?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "A"}
+            </ThemedText>
           </TouchableOpacity>
         </View>
       </View>
