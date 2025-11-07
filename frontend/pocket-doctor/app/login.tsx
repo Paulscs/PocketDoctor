@@ -17,6 +17,7 @@ import { router } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAuthStore } from "@/src/store";
+import { getUserProfile } from "@/src/services/user";
 
 const SIZES = {
   ICON: 18,
@@ -250,7 +251,7 @@ export default function LoginScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   // Global state
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { login, isLoading, error, clearError, session } = useAuthStore();
 
   // Theme colors
   const brandBlue = useThemeColor(
@@ -391,6 +392,26 @@ export default function LoginScreen() {
       });
     }
   }, [error, fadeAnim, clearError]);
+
+  // When someone logs in (session access token present), call backend /users/me
+  // and log the response here on the login page for debugging/inspection.
+  useEffect(() => {
+    const token = session?.access_token;
+    console.log('[login] user profile before login:', token);
+    if (!token) return;
+
+    let mounted = true;
+    (async () => {
+      try {
+        const profile = await getUserProfile(token);
+        if (mounted) console.log('[login] user profile after login:', profile);
+      } catch (e) {
+        console.error('[login] failed to fetch user profile after login:', e);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, [session?.access_token]);
 
   const navigateToForgotPassword = () => router.push("/forgot-password");
   const navigateToRegister = () => router.push("/register");

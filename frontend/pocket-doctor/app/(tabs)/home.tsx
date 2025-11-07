@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -15,14 +15,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
+import { getUserProfile, getRootMessage } from "@/src/services/user";
+import { useState } from "react";
 
 export default function HomeScreen() {
+  const [rootMessage, setRootMessage] = useState<string>("");
   const backgroundColor = useThemeColor(
     { light: Colors.light.white, dark: Colors.dark.background },
     "background"
   );
 
-  const { user } = useAuthStore();
+  const { user, session } = useAuthStore();
 
   const containerStyle = useMemo(
     () => [styles.container, { backgroundColor }],
@@ -35,8 +38,8 @@ export default function HomeScreen() {
   );
 
   const greetingText = useMemo(
-    () => `Hola, ${user?.firstName || "Usuario"}`,
-    [user?.firstName]
+    () => `Hola, ${user?.email?.split('@')[0] || "Usuario"}`,
+    [user?.email]
   );
 
   const handleUploadResults = useCallback(() => {
@@ -54,6 +57,42 @@ export default function HomeScreen() {
   const handleProfilePress = useCallback(() => {
     router.push("/(tabs)/profile");
   }, []);
+
+  // When user logs in and session is available, call backend /users/me
+  // and log the response here on the home page for debugging/inspection.
+  useEffect(() => {
+    const token = session?.access_token;
+    console.log('[home] user profile before login:', token);
+    if (!token) return;
+
+    let mounted = true;
+    
+    // Fetch user profile
+    (async () => {
+      try {
+        const profile = await getUserProfile(token);
+        if (mounted) {
+          console.log('[home] user profile after login:', profile);
+        }
+      } catch (e) {
+        console.error('[home] failed to fetch user profile:', e);
+      }
+    })();
+
+    // Fetch root message independently
+    (async () => {
+      try {
+        const rootResponse = await getRootMessage();
+        if (mounted) {
+          setRootMessage(rootResponse.message);
+        }
+      } catch (e) {
+        console.error('[home] failed to fetch root message:', e);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, [session?.access_token]);
 
   return (
     <SafeAreaView style={containerStyle}>
@@ -95,6 +134,11 @@ export default function HomeScreen() {
           <ThemedText style={styles.subGreeting}>
             ¿Cómo puedo ayudarte hoy?
           </ThemedText>
+          {rootMessage && (
+            <ThemedText style={styles.rootMessage}>
+              {rootMessage}
+            </ThemedText>
+          )}
         </View>
 
         {/* Search Bar */}
@@ -683,5 +727,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.light.warningText,
     lineHeight: 16,
+  },
+  rootMessage: {
+    fontSize: 14,
+    color: Colors.light.muted,
+    marginTop: 8,
+    textAlign: 'center',
   },
 });

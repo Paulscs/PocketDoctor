@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/src/lib/supabase';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import { getUserProfile } from '../services/user';
 
 export type User = SupabaseUser;
 export type AuthState = {
