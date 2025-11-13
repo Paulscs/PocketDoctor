@@ -8,6 +8,8 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Modal,
+  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
@@ -62,6 +64,10 @@ export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingField, setEditingField] = useState<'alergias' | 'condiciones_medicas' | null>(null);
+  const [tempItems, setTempItems] = useState<string[]>([]);
+  const [newItem, setNewItem] = useState('');
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -115,6 +121,37 @@ export default function ProfileScreen() {
 
   const handleEditProfile = () => {
     setIsEditing(true);
+  };
+
+  const openItemModal = (field: 'alergias' | 'condiciones_medicas') => {
+    setEditingField(field);
+    setTempItems(profile[field] || []);
+    setNewItem('');
+    setModalVisible(true);
+  };
+
+  const addItem = () => {
+    if (newItem.trim()) {
+      setTempItems([...tempItems, newItem.trim()]);
+      setNewItem('');
+    }
+  };
+
+  const removeItem = (index: number) => {
+    setTempItems(tempItems.filter((_, i) => i !== index));
+  };
+
+  const saveItems = () => {
+    if (editingField) {
+      updateProfile(editingField, tempItems);
+    }
+    setModalVisible(false);
+    setEditingField(null);
+  };
+
+  const cancelItems = () => {
+    setModalVisible(false);
+    setEditingField(null);
   };
 
   const updateProfile = (field: keyof UserProfile, value: string | number | string[] | undefined) => {
@@ -295,32 +332,110 @@ export default function ProfileScreen() {
 
           {/* Allergies Section */}
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Alérgias</ThemedText>
-            <TextInput
-              style={[styles.textInput, { height: 80 }]}
-              value={profile.alergias?.join(', ') || ''}
-              onChangeText={text => updateProfile("alergias", text ? text.split(',').map(a => a.trim()) : [])}
-              editable={isEditing}
-              placeholder="Separadas por coma"
-              placeholderTextColor={Colors.light.placeholderGray}
-              multiline
-              numberOfLines={3}
-            />
+            <View style={styles.labelRow}>
+              <ThemedText style={styles.inputLabel}>Alérgias</ThemedText>
+              {isEditing && (
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => openItemModal('alergias')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add-circle" size={20} color={Colors.light.brandBlue} />
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.chipContainer}>
+              {profile.alergias && profile.alergias.length > 0 ? (
+                profile.alergias.map((alergia, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.chip}
+                    onPress={() => isEditing && openItemModal('alergias')}
+                    activeOpacity={0.7}
+                  >
+                    <ThemedText style={styles.chipText}>{alergia}</ThemedText>
+                    {isEditing && (
+                      <TouchableOpacity
+                        style={styles.chipRemove}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          const newAlergias = profile.alergias?.filter((_, i) => i !== index) || [];
+                          updateProfile('alergias', newAlergias);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="close" size={14} color={Colors.light.error} />
+                      </TouchableOpacity>
+                    )}
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <TouchableOpacity
+                  style={styles.addButtonInline}
+                  onPress={() => isEditing && openItemModal('alergias')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add" size={16} color={Colors.light.brandBlue} />
+                  <ThemedText style={styles.addButtonTextInline}>
+                    {isEditing ? 'Agregar alergia' : 'No hay alergias registradas'}
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           {/* Medical Conditions Section */}
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Condiciones Médicas</ThemedText>
-            <TextInput
-              style={[styles.textInput, { height: 80 }]}
-              value={profile.condiciones_medicas?.join(', ') || ''}
-              onChangeText={text => updateProfile("condiciones_medicas", text ? text.split(',').map(c => c.trim()) : [])}
-              editable={isEditing}
-              placeholder="Separadas por coma"
-              placeholderTextColor={Colors.light.placeholderGray}
-              multiline
-              numberOfLines={3}
-            />
+            <View style={styles.labelRow}>
+              <ThemedText style={styles.inputLabel}>Condiciones Médicas</ThemedText>
+              {isEditing && (
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => openItemModal('condiciones_medicas')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add-circle" size={20} color={Colors.light.brandBlue} />
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.chipContainer}>
+              {profile.condiciones_medicas && profile.condiciones_medicas.length > 0 ? (
+                profile.condiciones_medicas.map((condicion, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.chip}
+                    onPress={() => isEditing && openItemModal('condiciones_medicas')}
+                    activeOpacity={0.7}
+                  >
+                    <ThemedText style={styles.chipText}>{condicion}</ThemedText>
+                    {isEditing && (
+                      <TouchableOpacity
+                        style={styles.chipRemove}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          const newCondiciones = profile.condiciones_medicas?.filter((_, i) => i !== index) || [];
+                          updateProfile('condiciones_medicas', newCondiciones);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="close" size={14} color={Colors.light.error} />
+                      </TouchableOpacity>
+                    )}
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <TouchableOpacity
+                  style={styles.addButtonInline}
+                  onPress={() => isEditing && openItemModal('condiciones_medicas')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add" size={16} color={Colors.light.brandBlue} />
+                  <ThemedText style={styles.addButtonTextInline}>
+                    {isEditing ? 'Agregar condición médica' : 'No hay condiciones médicas registradas'}
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         </View>
 
@@ -356,6 +471,79 @@ export default function ProfileScreen() {
           <ThemedText style={styles.logoutButtonText}>Cerrar Sesión</ThemedText>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Modal for editing allergies/medical conditions */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={cancelItems}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <ThemedText style={styles.modalTitle}>
+              {editingField === 'alergias' ? 'Editar Alérgias' : 'Editar Condiciones Médicas'}
+            </ThemedText>
+
+            <FlatList
+              style={styles.itemList}
+              data={tempItems}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={({ item, index }) => (
+                <View style={styles.itemRow}>
+                  <ThemedText style={styles.itemText}>{item}</ThemedText>
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => removeItem(index)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="close-circle" size={20} color={Colors.light.error} />
+                  </TouchableOpacity>
+                </View>
+              )}
+              ListEmptyComponent={
+                <ThemedText style={styles.placeholderText}>
+                  {editingField === 'alergias' ? 'No hay alergias agregadas' : 'No hay condiciones médicas agregadas'}
+                </ThemedText>
+              }
+            />
+
+            <View style={styles.addItemContainer}>
+              <TextInput
+                style={styles.addItemInput}
+                value={newItem}
+                onChangeText={setNewItem}
+                placeholder={editingField === 'alergias' ? 'Nueva alergia...' : 'Nueva condición médica...'}
+                placeholderTextColor={Colors.light.placeholderGray}
+              />
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={addItem}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="add" size={20} color={Colors.light.white} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={cancelItems}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={styles.cancelButtonText}>Cancelar</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButtonModal]}
+                onPress={saveItems}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={styles.saveButtonTextModal}>Guardar</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -556,5 +744,155 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: Colors.light.brandBlue,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  editButton: {
+    padding: 4,
+  },
+  chipContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    backgroundColor: Colors.light.lightGray,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: Colors.light.borderGray,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  chipText: {
+    fontSize: 14,
+    color: Colors.light.textGray,
+  },
+  chipRemove: {
+    padding: 2,
+  },
+  addButtonInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.light.lightGray,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.light.borderGray,
+    borderStyle: 'dashed',
+  },
+  addButtonTextInline: {
+    fontSize: 14,
+    color: Colors.light.brandBlue,
+  },
+  placeholderText: {
+    fontSize: 14,
+    color: Colors.light.placeholderGray,
+    fontStyle: 'italic',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 20,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.light.brandBlue,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  itemList: {
+    maxHeight: 200,
+    marginBottom: 16,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.light.lightGray,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  itemText: {
+    fontSize: 16,
+    color: Colors.light.textGray,
+    flex: 1,
+  },
+  removeButton: {
+    padding: 4,
+  },
+  addItemContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  addItemInput: {
+    flex: 1,
+    backgroundColor: Colors.light.white,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: Colors.light.textGray,
+    borderWidth: 1,
+    borderColor: Colors.light.borderGray,
+  },
+  addButton: {
+    backgroundColor: Colors.light.brandBlue,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.light.white,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: Colors.light.lightGray,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.light.textGray,
+  },
+  saveButtonModal: {
+    backgroundColor: Colors.light.brandBlue,
+  },
+  saveButtonTextModal: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.light.white,
   },
 });
