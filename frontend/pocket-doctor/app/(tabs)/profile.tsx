@@ -94,12 +94,8 @@ export default function ProfileScreen() {
 
     setIsSaving(true);
     try {
-      // Prepare update data - send all editable fields
+      // Prepare update data - only send the fields defined in UserProfileUpdate schema
       const updateData = {
-        nombre: profile.nombre,
-        apellido: profile.apellido,
-        fecha_nacimiento: profile.fecha_nacimiento,
-        altura_cm: profile.altura_cm,
         peso_kg: profile.peso_kg,
         alergias: profile.alergias,
         condiciones_medicas: profile.condiciones_medicas,
@@ -209,10 +205,10 @@ export default function ProfileScreen() {
             <View style={styles.inputContainer}>
               <ThemedText style={styles.inputLabel}>Nombres</ThemedText>
               <TextInput
-                style={styles.textInput}
+                style={styles.textInputDisabled}
                 value={profile.nombre || ''}
                 onChangeText={text => updateProfile("nombre", text)}
-                editable={isEditing}
+                editable={false}
                 placeholder="Nombres"
                 placeholderTextColor={Colors.light.placeholderGray}
               />
@@ -220,16 +216,17 @@ export default function ProfileScreen() {
             <View style={styles.inputContainer}>
               <ThemedText style={styles.inputLabel}>Apellidos</ThemedText>
               <TextInput
-                style={styles.textInput}
+                style={styles.textInputDisabled}
                 value={profile.apellido || ''}
                 onChangeText={text => updateProfile("apellido", text)}
-                editable={isEditing}
+                editable={false}
                 placeholder="Apellidos"
                 placeholderTextColor={Colors.light.placeholderGray}
               />
             </View>
           </View>
         </View>
+
 
         {/* Email Section */}
         <View style={styles.section}>
@@ -238,10 +235,10 @@ export default function ProfileScreen() {
           </ThemedText>
           <View style={styles.inputContainer}>
             <TextInput
-              style={styles.textInput}
+              style={styles.textInputDisabled}
               value={profile.email}
               onChangeText={text => updateProfile("email", text)}
-              editable={isEditing}
+              editable={false}
               placeholder="Correo electrónico"
               placeholderTextColor={Colors.light.placeholderGray}
               keyboardType="email-address"
@@ -249,7 +246,21 @@ export default function ProfileScreen() {
             />
           </View>
         </View>
-
+ {/* Birth Date Section */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Fecha de Nacimiento</ThemedText>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.textInputDisabled}
+              value={profile.fecha_nacimiento || ''}
+              onChangeText={text => updateProfile("fecha_nacimiento", text)}
+              editable={false}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={Colors.light.placeholderGray}
+            />
+          </View>
+        </View>
+        
         {/* Medical Information Section */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Información Médica</ThemedText>
@@ -258,10 +269,10 @@ export default function ProfileScreen() {
           <View style={styles.inputContainer}>
             <ThemedText style={styles.inputLabel}>Altura (cm)</ThemedText>
             <TextInput
-              style={styles.textInput}
+              style={styles.textInputDisabled}
               value={profile.altura_cm?.toString() || ''}
               onChangeText={text => updateProfile("altura_cm", text ? parseFloat(text) : undefined)}
-              editable={isEditing}
+              editable={false}
               placeholder="Altura en cm"
               placeholderTextColor={Colors.light.placeholderGray}
               keyboardType="numeric"
@@ -313,20 +324,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Birth Date Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Fecha de Nacimiento</ThemedText>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInput}
-              value={profile.fecha_nacimiento || ''}
-              onChangeText={text => updateProfile("fecha_nacimiento", text)}
-              editable={isEditing}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={Colors.light.placeholderGray}
-            />
-          </View>
-        </View>
+       
 
         {/* Save Changes Button */}
         {isSaving ? (
@@ -490,6 +488,21 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     color: Colors.light.textGray,
+    borderWidth: 1,
+    borderColor: Colors.light.borderGray,
+    shadowColor: Colors.light.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  textInputDisabled: {
+    backgroundColor: Colors.light.lightGray,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: Colors.light.placeholderGray,
     borderWidth: 1,
     borderColor: Colors.light.borderGray,
     shadowColor: Colors.light.black,
