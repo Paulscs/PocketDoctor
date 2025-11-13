@@ -1,5 +1,5 @@
 # app/routers/ocr_local.py
-from typing import Optional, Callable, List, Dict, TypedDict, Literal
+from typing import Optional, Callable, List, TypedDict, Literal
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from app.core.config import settings
 from app.core.security import get_current_user, AuthUser
@@ -56,7 +56,6 @@ def _ocr_image_bytes(img_bytes: bytes, lang: str) -> str:
 
 # =========================================================
 #           PARSER GENÉRICO ROBUSTO → JSON
-#     Busca primero el rango y luego el valor correcto
 # =========================================================
 
 class RefRange(TypedDict, total=False):
@@ -131,6 +130,140 @@ def _clean_name_segment(seg: str) -> str:
     name = re.sub(r"[\(\)#]", "", name)
     name = re.sub(r"\s+", " ", name).strip()
     return name
+
+# =========================================================
+#      SEGMENTACIÓN DE TABLAS SOBRE TEXTO DE OCR
+# =========================================================
+
+# Palabras típicas de cabeceras de tablas
+_HEADER_GROUPS = {
+    "name": [
+        "DETERMIN", "PRUEBA", "ANALISIS", "ANÁLISIS",
+        "EXAMEN", "PARAM", "DETERMINACION", "DETERMINACIÓN"
+    ],
+    "result": ["RESULTADO", "VALOR"],
+    "ref": ["INTERVALO", "RANGO", "REFERENCIA", "VALORES"],
+    "unit": ["UNIDAD", "UNIDADES"],
+}
+
+# Frases que casi seguro NO son filas de tabla (cabeceras, pies, datos de paciente)
+_NON_TABLE_KEYWORDS = [
+    "INFORME DE RESULTADO", "INFORME DE RESULTADOCS",
+    "FACT.", "FACT ", "CED/PAS", "FEC NAC", "EDAD", "SEXO",
+    "TOMA DE MUESTRA", "TOMA DE MUESTRAS",
+    "EMITIDO", "EMITIDOCS",
+    "AUTORIZADO", "SERIAL", "PAGINA", "PÁGINA",
+    "RNC", "TEL", "AV.", "SEGUROS", "LABORATORIO CLINICO",
+    "TIPO MUESTRA", "RESULTADOS FUERA DE INTERVALO", "VALORES CRITICOS",
+]
+
+# Unidades típicas de laboratorio para detección rápida
+_COMMON_UNITS = [
+    "MG/DL", "G/DL", "U/L", "UI/L", "MM/1H", "%", "UG/G",
+    "10^3/UL", "10°3/UL", "10*3/UL", "10^6/UL", "10°6/UL",
+    "FL", "PG", "UL", "µL"
+]
+
+# Títulos de sección que NO son filas (aunque estén dentro de la tabla)
+_SECTION_TITLE_KEYWORDS = [
+    "EXAMEN MACROSC",   # MACROSCOPICO / MACROSC6PICO
+    "EXAMEN MICROSC",   # MICROSCOPICO / MICROSC6PICO
+]
+
+def _is_header_line(line_u: str) -> bool:
+    """
+    Devuelve True si la línea parece la cabecera de una tabla.
+    Requerimos al menos un término de 'name' (DETERMINACION / PRUEBA / EXAMEN...)
+    y al menos otro grupo (resultado / referencia / unidad).
+    Así evitamos confundir 'INFORME DE RESULTADO(S) REFERENCIA' con cabecera.
+    """
+    groups_present = set()
+    for group, kws in _HEADER_GROUPS.items():
+        if any(kw in line_u for kw in kws):
+            groups_present.add(group)
+
+    # Debe tener algo del grupo 'name' y al menos otro grupo más
+    if "name" in groups_present and len(groups_present) >= 2:
+        return True
+    return False
+
+def _is_footer_line(line_u: str) -> bool:
+    """Línea que indica que ya salimos de la tabla (pie, disclaimers, etc.)."""
+    return any(kw in line_u for kw in _NON_TABLE_KEYWORDS)
+
+def _looks_like_table_row(line: str, line_u: str) -> bool:
+    """Heurística: ¿esta línea parece una fila de resultados?"""
+    # Títulos de sección dentro de la tabla (no son filas)
+    if any(kw in line_u for kw in _SECTION_TITLE_KEYWORDS):
+        return False
+
+    # Debe tener al menos un dígito
+    if not re.search(r"\d", line):
+        return False
+
+    # Si tiene rango tipo 0.7 - 1.2, seguro es fila
+    if RANGE_RE.search(line):
+        return True
+
+    # Si termina con una unidad típica
+    if any(unit in line_u for unit in _COMMON_UNITS):
+        return True
+
+    # Unidad genérica al final (letras/%/µ/etc.)
+    if re.search(r"\d\s*[%A-ZÁÉÍÓÚÜÑµμ/^\d\.\-]+$", line_u):
+        return True
+
+    # Densidad numérica: muchas cifras en una línea relativamente corta
+    digits = len(re.findall(r"\d", line))
+    if digits >= 2 and digits / max(len(line), 1) > 0.15:
+        return True
+
+    return False
+
+def _extract_table_lines(text: str) -> List[str]:
+    """
+    Strategy 1: segmentación por texto.
+    - Busca cabeceras de tabla (DETERMINACION / RESULTADO / INTERVALO / UNIDADES...)
+    - Desde ahí, recoge las líneas que parecen filas de tabla.
+    - Corta solo cuando detecta pies de página / disclaimers claros.
+    """
+    raw_lines = re.split(r"[\r\n]+", text)
+    normalized_lines = [_normalize_line(l) for l in raw_lines]
+
+    table_lines: List[str] = []
+    in_table = False
+
+    for line in normalized_lines:
+        if not line:
+            # líneas vacías se ignoran siempre
+            continue
+
+        line_u = line.upper()
+
+        # Si aún no estamos dentro de una tabla, buscamos cabecera
+        if not in_table:
+            if _is_header_line(line_u):
+                in_table = True
+                # no añadimos la cabecera a las filas
+            continue
+
+        # Ya dentro de una tabla -------------------------
+
+        # ¿Llegamos a un pie/leyenda claro? -> cerramos tabla
+        if _is_footer_line(line_u):
+            in_table = False
+            continue
+
+        # Solo añadimos líneas que parezcan filas de tabla;
+        # las demás se ignoran pero NO cierran la tabla.
+        if _looks_like_table_row(line, line_u):
+            table_lines.append(line)
+
+    return table_lines
+
+# =========================================================
+#        PARSEO DE LINEAS (YA FILTRADAS) DE LABORATORIO
+# =========================================================
 
 def _parse_line_range_first(line: str) -> Optional[ParsedItem]:
     """
@@ -249,8 +382,9 @@ def ocr_local_file(
 ):
     """
     Sube una imagen o PDF local y devuelve:
-    - text: OCR crudo
-    - items: lista de objetos con {name_raw, name, value, unit, ref_range?, flag?, status?}
+    - text: OCR crudo completo
+    - table_text: solo líneas de tablas detectadas
+    - items: objetos parseados {name_raw, name, value, unit, ref_range?, flag?, status?}
     - pages_processed: para PDFs (si aplica)
     """
     mime = (file.content_type or "").lower()
@@ -259,8 +393,17 @@ def ocr_local_file(
     if mime.startswith("image/"):
         try:
             content = file.file.read()
-            text = _ocr_image_bytes(content, lang=lang)
-            return {"text": text, "items": parse_generic_labs(text)}
+            full_text = _ocr_image_bytes(content, lang=lang)
+
+            table_lines = _extract_table_lines(full_text)
+            table_text = "\n".join(table_lines)
+            items = parse_generic_labs(table_text)
+
+            return {
+                "text": full_text,
+                "table_text": table_text,
+                "items": items,
+            }
         except Exception as e:
             raise HTTPException(500, f"OCR error: {e}")
 
@@ -288,9 +431,15 @@ def ocr_local_file(
                 texts.append(_ocr_image_bytes(buf.getvalue(), lang=lang))
 
             full_text = "\n\n".join(texts)
+
+            table_lines = _extract_table_lines(full_text)
+            table_text = "\n".join(table_lines)
+            items = parse_generic_labs(table_text)
+
             return {
                 "text": full_text,
-                "items": parse_generic_labs(full_text),
+                "table_text": table_text,
+                "items": items,
                 "pages_processed": len(images),
             }
         except Exception as e:
