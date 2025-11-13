@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 class UserProfile(BaseModel):
@@ -12,9 +12,11 @@ class UserProfile(BaseModel):
     ubicacion: Optional[str] = None
     fecha_registro: str
     estado: bool
+    peso_kg: Optional[float] = None
+    alergias: Optional[List[str]] = None
+    condiciones_medicas: Optional[List[str]] = None
 
 class UserProfileUpdate(BaseModel):
-    nombre: Optional[str] = None
-    apellido: Optional[str] = None
-    fecha_nacimiento: Optional[str] = None  # ISO: "YYYY-MM-DD"
-    sexo: Optional[str] = None              # "M" | "F" | "U" (según tu convención)
+    peso_kg: Optional[float] = None
+    alergias: Optional[List[str]] = None
+    condiciones_medicas: Optional[List[str]] = None

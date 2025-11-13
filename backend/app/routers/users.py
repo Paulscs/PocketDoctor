@@ -27,7 +27,7 @@ async def get_me(user: AuthUser = Depends(get_current_user)):
 @router.put("/me", response_model=UserProfile)
 async def update_me(payload: UserProfileUpdate, user: AuthUser = Depends(get_current_user)):
     """
-    Actualiza SOLO los campos enviados en el body (nombre, apellido, fecha_nacimiento, sexo).
+    Actualiza SOLO los campos enviados en el body (peso_kg, alergias, condiciones_medicas).
     Seguridad: RLS en `usuarios` debe permitir UPDATE únicamente a tu propia fila:
       create policy "usuarios_update_own"
         on public.usuarios for update
@@ -37,6 +37,9 @@ async def update_me(payload: UserProfileUpdate, user: AuthUser = Depends(get_cur
 
     # Construimos el dict con solo los campos presentes (no-None)
     to_update = {k: v for k, v in payload.model_dump().items() if v is not None}
+    # Convertir peso_kg a int si es float
+    if 'peso_kg' in to_update and isinstance(to_update['peso_kg'], float):
+        to_update['peso_kg'] = int(to_update['peso_kg'])
 
     if not to_update:
         # Si no enviaste nada, devolvemos el perfil actual (no error)
@@ -48,13 +51,11 @@ async def update_me(payload: UserProfileUpdate, user: AuthUser = Depends(get_cur
         return current
 
     # UPDATE con filtro por user_auth_id; RLS evitará que actualices otra fila
-    res = (client.table("usuarios")
-                .update(to_update)
-                .eq("user_auth_id", user.sub)
-                .select("*")
-                .single()
-                .execute())
-    data = res.data
+    client.table("usuarios").update(to_update).eq("user_auth_id", user.sub).execute()
+
+    # Obtener el perfil actualizado
+    resp = client.table("usuarios").select("*").eq("user_auth_id", user.sub).single().execute()
+    data = resp.data
     if not data:
         raise HTTPException(status_code=404, detail="Perfil no encontrado")
 
