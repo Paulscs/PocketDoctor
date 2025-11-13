@@ -36,6 +36,23 @@ export async function getUserProfile(accessToken: string): Promise<UserProfile> 
   return response.json();
 }
 
+export async function updateUserProfile(accessToken: string, updates: Partial<UserProfile>): Promise<UserProfile> {
+  const response = await fetch(`${API_BASE_URL}/users/me`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updates),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update user profile: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
 export async function getRootMessage(): Promise<{ message: string }> {
   const response = await fetch(`${API_BASE_URL}/`, {
     method: 'GET',

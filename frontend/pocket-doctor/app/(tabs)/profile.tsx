@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -6,6 +6,8 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
@@ -14,20 +16,39 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { getUserProfile, updateUserProfile, UserProfile as ApiUserProfile } from "@/src/services/user";
+import { useAuthStore } from "@/src/store/authStore";
 
 interface UserProfile {
-  firstName: string;
-  lastName: string;
+  id: number;
+  user_auth_id: string;
+  nombre?: string;
+  apellido?: string;
   email: string;
-  phone: string;
-  profileImage?: string;
+  fecha_nacimiento?: string;
+  sexo?: string;
+  ubicacion?: string;
+  fecha_registro: string;
+  estado: boolean;
+  es_admin?: boolean;
+  altura_cm?: number;
+  peso_kg?: number;
+  tipo_sangre?: string;
+  alergias?: string[];
+  condiciones_medicas?: string[];
 }
 
 const INITIAL_PROFILE: UserProfile = {
-  firstName: "Ethan",
-  lastName: "Peña Sosa",
+  id: 0,
+  user_auth_id: "",
+  nombre: "Ethan",
+  apellido: "Peña Sosa",
   email: "Ethan@gmail.com",
-  phone: "829-555-0103",
+  fecha_registro: "",
+  estado: true,
+  peso_kg: undefined,
+  alergias: [],
+  condiciones_medicas: [],
 };
 
 export default function ProfileScreen() {
@@ -36,20 +57,71 @@ export default function ProfileScreen() {
     "background"
   );
 
+  const { session, userProfile } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile>(INITIAL_PROFILE);
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSaveChanges = () => {
-    console.log("Saving profile changes:", profile);
-    setIsEditing(false);
-    // TODO: Implement actual save functionality
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (userProfile) {
+        setProfile(userProfile);
+        setIsLoading(false);
+      } else if (session?.access_token) {
+        try {
+          const fetchedProfile = await getUserProfile(session.access_token);
+          setProfile(fetchedProfile);
+        } catch (error) {
+          console.error('Failed to load profile:', error);
+          Alert.alert('Error', 'No se pudo cargar el perfil');
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [userProfile, session]);
+
+  const handleSaveChanges = async () => {
+    if (!session?.access_token) {
+      Alert.alert('Error', 'No hay sesión activa');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Prepare update data - send all editable fields
+      const updateData = {
+        nombre: profile.nombre,
+        apellido: profile.apellido,
+        fecha_nacimiento: profile.fecha_nacimiento,
+        altura_cm: profile.altura_cm,
+        peso_kg: profile.peso_kg,
+        alergias: profile.alergias,
+        condiciones_medicas: profile.condiciones_medicas,
+      };
+
+      const updatedProfile = await updateUserProfile(session.access_token, updateData);
+      setProfile(updatedProfile);
+      setIsEditing(false);
+      Alert.alert('Éxito', 'Perfil actualizado correctamente');
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      Alert.alert('Error', 'No se pudo guardar el perfil');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleEditProfile = () => {
     setIsEditing(true);
   };
 
-  const updateProfile = (field: keyof UserProfile, value: string) => {
+  const updateProfile = (field: keyof UserProfile, value: string | number | string[] | undefined) => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
@@ -63,6 +135,17 @@ export default function ProfileScreen() {
     // TODO: Implement actual logout functionality
     router.push("/login");
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.light.brandBlue} />
+          <ThemedText style={styles.loadingText}>Cargando perfil...</ThemedText>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
@@ -113,7 +196,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
           <ThemedText style={styles.fullName}>
-            {profile.firstName} {profile.lastName}
+            {profile.nombre || 'Nombre'} {profile.apellido || 'Apellido'}
           </ThemedText>
         </View>
 
@@ -127,8 +210,8 @@ export default function ProfileScreen() {
               <ThemedText style={styles.inputLabel}>Nombres</ThemedText>
               <TextInput
                 style={styles.textInput}
-                value={profile.firstName}
-                onChangeText={text => updateProfile("firstName", text)}
+                value={profile.nombre || ''}
+                onChangeText={text => updateProfile("nombre", text)}
                 editable={isEditing}
                 placeholder="Nombres"
                 placeholderTextColor={Colors.light.placeholderGray}
@@ -138,8 +221,8 @@ export default function ProfileScreen() {
               <ThemedText style={styles.inputLabel}>Apellidos</ThemedText>
               <TextInput
                 style={styles.textInput}
-                value={profile.lastName}
-                onChangeText={text => updateProfile("lastName", text)}
+                value={profile.apellido || ''}
+                onChangeText={text => updateProfile("apellido", text)}
                 editable={isEditing}
                 placeholder="Apellidos"
                 placeholderTextColor={Colors.light.placeholderGray}
@@ -167,30 +250,99 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Phone Section */}
+        {/* Medical Information Section */}
         <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Teléfono</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Información Médica</ThemedText>
+
+          {/* Height Section */}
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Altura (cm)</ThemedText>
+            <TextInput
+              style={styles.textInput}
+              value={profile.altura_cm?.toString() || ''}
+              onChangeText={text => updateProfile("altura_cm", text ? parseFloat(text) : undefined)}
+              editable={isEditing}
+              placeholder="Altura en cm"
+              placeholderTextColor={Colors.light.placeholderGray}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Weight Section */}
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Peso (kg)</ThemedText>
+            <TextInput
+              style={styles.textInput}
+              value={profile.peso_kg?.toString() || ''}
+              onChangeText={text => updateProfile("peso_kg", text ? parseFloat(text) : undefined)}
+              editable={isEditing}
+              placeholder="Peso en kg"
+              placeholderTextColor={Colors.light.placeholderGray}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Allergies Section */}
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Alérgias</ThemedText>
+            <TextInput
+              style={[styles.textInput, { height: 80 }]}
+              value={profile.alergias?.join(', ') || ''}
+              onChangeText={text => updateProfile("alergias", text ? text.split(',').map(a => a.trim()) : [])}
+              editable={isEditing}
+              placeholder="Separadas por coma"
+              placeholderTextColor={Colors.light.placeholderGray}
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+
+          {/* Medical Conditions Section */}
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Condiciones Médicas</ThemedText>
+            <TextInput
+              style={[styles.textInput, { height: 80 }]}
+              value={profile.condiciones_medicas?.join(', ') || ''}
+              onChangeText={text => updateProfile("condiciones_medicas", text ? text.split(',').map(c => c.trim()) : [])}
+              editable={isEditing}
+              placeholder="Separadas por coma"
+              placeholderTextColor={Colors.light.placeholderGray}
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+        </View>
+
+        {/* Birth Date Section */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Fecha de Nacimiento</ThemedText>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.textInput}
-              value={profile.phone}
-              onChangeText={text => updateProfile("phone", text)}
+              value={profile.fecha_nacimiento || ''}
+              onChangeText={text => updateProfile("fecha_nacimiento", text)}
               editable={isEditing}
-              placeholder="Teléfono"
+              placeholder="YYYY-MM-DD"
               placeholderTextColor={Colors.light.placeholderGray}
-              keyboardType="phone-pad"
             />
           </View>
         </View>
 
         {/* Save Changes Button */}
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleSaveChanges}
-          activeOpacity={0.7}
-        >
-          <ThemedText style={styles.saveButtonText}>Guardar Cambios</ThemedText>
-        </TouchableOpacity>
+        {isSaving ? (
+          <View style={styles.saveButton}>
+            <ActivityIndicator color={Colors.light.white} />
+            <ThemedText style={styles.saveButtonText}>Guardando...</ThemedText>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSaveChanges}
+            activeOpacity={0.7}
+          >
+            <ThemedText style={styles.saveButtonText}>Guardar Cambios</ThemedText>
+          </TouchableOpacity>
+        )}
 
         {/* Logout Button */}
         <TouchableOpacity
@@ -381,5 +533,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.light.error,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: Colors.light.brandBlue,
   },
 });

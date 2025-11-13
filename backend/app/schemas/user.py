@@ -12,6 +12,7 @@ class UserProfile(BaseModel):
     ubicacion: Optional[str] = None
     fecha_registro: str
     estado: bool
+    altura_cm: Optional[int] = None
     peso_kg: Optional[float] = None
     alergias: Optional[List[str]] = None
     condiciones_medicas: Optional[List[str]] = None
