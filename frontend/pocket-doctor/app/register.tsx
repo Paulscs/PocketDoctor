@@ -229,44 +229,24 @@ function SelectField({
   const [ddItems, setDdItems] = useState(items);
 
   return (
-    <View
-      style={{
-        zIndex,
-        position: "relative",
-        // 👇 ayuda extra en Android para superponer
-        elevation: 10,
-      }}
-    >
+    <View style={{ zIndex, position: "relative" }}>
+      {/* posición agregada para que el menú se superponga correctamente */}
       <Label required={required} styles={styles}>
         {label}
       </Label>
 
+      {/* Estas dos líneas arreglan el stacking del dropdown */}
       <DropDownPicker
         open={open}
         value={value}
         items={ddItems}
         setOpen={setOpen}
         setItems={setDdItems}
-
-        // ✅ más robusto que onChangeValue
-        onSelectItem={(item) => onChange(item.value)}
-
+        setValue={(cb) => onChange((cb(value) as string) ?? "")}
         placeholder={placeholder}
         style={[styles.ddInput, invalid && styles.fieldErrorBottom]}
-        dropDownContainerStyle={[
-          styles.ddMenu,
-          invalid && styles.fieldErrorBox,
-          { elevation: 20 }, // 👈 extra para Android
-        ]}
-
-        // ✅ evita problemas de z-index: modal en Android, scroll en iOS
-        listMode={Platform.OS === "android" ? "MODAL" : "SCROLLVIEW"}
-        modalProps={{
-          animationType: "slide",
-        }}
-        modalTitle={label}
-        modalContentContainerStyle={{ paddingHorizontal: 16 }}
-
+        dropDownContainerStyle={[styles.ddMenu, invalid && styles.fieldErrorBox]}
+        listMode="SCROLLVIEW"
         zIndex={zIndex}
         zIndexInverse={zIndex}
         multiple={false}
@@ -277,7 +257,6 @@ function SelectField({
     </View>
   );
 }
-
 
 
 
@@ -453,15 +432,15 @@ function RegisterScreenInner() {
       await register({
         email,
         password,
-        firstName,
-        lastName,
-        height: height ? parseInt(height) : undefined,
-        weight: weight ? parseInt(weight) : undefined,
-        bloodType,
-        gender,
-        dateOfBirth: dateOfBirth ? dateOfBirth.toISOString().slice(0, 10) : undefined,
-        allergies: selectedAllergies,
-        medicalConditions: selectedConditions,
+        nombre: firstName,
+        apellido: lastName,
+        fecha_nacimiento: dateOfBirth ? dateOfBirth.toISOString() : undefined,
+        sexo: gender,
+        estatura: height ? parseInt(height) : undefined,
+        peso: weight ? parseInt(weight) : undefined,
+        tipo_sangre: bloodType,
+        alergias: selectedAllergies,
+        condiciones_medicas: selectedConditions,
       });
       router.push("/(tabs)/home");
     } catch (err) {
