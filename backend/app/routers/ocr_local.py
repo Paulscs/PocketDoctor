@@ -1,15 +1,59 @@
 import io
 import re
 from typing import List, Optional
+import os
+import uuid
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from pydantic import BaseModel
-
+from supabase import create_client, Client
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 
 router = APIRouter(prefix="/ocr-local", tags=["OCR local"])
 
+# ---------------------------
+# Supabase
+# ---------------------------
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+SUPABASE_BUCKET = "uploads"
+
+supabase_client: Optional[Client] = None
+if SUPABASE_URL and SUPABASE_SERVICE_KEY:
+    try:
+        supabase_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+    except Exception as e:
+        print(f"[Supabase] Error creando cliente: {e}")
+else:
+    print("[Supabase] SUPABASE_URL o SUPABASE_SERVICE_KEY no configurados")
+
+
+def upload_pdf_to_supabase(content: bytes, filename: str) -> tuple[Optional[str], Optional[str]]:
+    """
+    Sube el PDF al bucket 'uploads' de Supabase.
+    Devuelve (storage_path, public_url) o (None, None) si falla o no hay cliente.
+    """
+    if supabase_client is None:
+        print("[Supabase] Cliente no inicializado, no se subirá el archivo")
+        return None, None
+
+    unique_name = f"{uuid.uuid4()}_{filename}"
+    storage_path = f"labs/{unique_name}"
+
+    try:
+        supabase_client.storage.from_(SUPABASE_BUCKET).upload(
+            path=storage_path,
+            file=content,
+        )
+        public_url = supabase_client.storage.from_(SUPABASE_BUCKET).get_public_url(
+            storage_path
+        )
+        return storage_path, public_url
+    except Exception as e:
+        print(f"[Supabase] Error subiendo archivo: {e}")
+        return None, None
 
 # ---------------------------
 # Modelos de respuesta
@@ -30,12 +74,14 @@ class LabItem(BaseModel):
     status: Optional[str] = None  # "alto", "bajo", "normal"
     line: str
 
-
 class OCRResponse(BaseModel):
     text: str
     table_text: str
     items: List[LabItem]
     pages_processed: int
+    storage_path: Optional[str] = None  # path en Supabase
+    public_url: Optional[str] = None    # URL pública (si aplica)
+
 
 
 # ---------------------------
@@ -559,7 +605,11 @@ async def ocr_pdf(file: UploadFile = File(...)):
         if not content:
             raise HTTPException(status_code=400, detail="Archivo vacío")
 
+        # Subir el PDF a Supabase (si está configurado)
+        storage_path, public_url = upload_pdf_to_supabase(content, file.filename)
+
         doc = DocumentFile.from_pdf(io.BytesIO(content))
+
         if len(doc) == 0:
             raise HTTPException(status_code=400, detail="El PDF no contiene páginas")
 
@@ -599,7 +649,10 @@ async def ocr_pdf(file: UploadFile = File(...)):
             table_text=table_text,
             items=items,
             pages_processed=pages_to_process,
+            storage_path=storage_path,
+            public_url=public_url,
         )
+
 
     except HTTPException:
         raise
