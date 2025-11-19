@@ -7,12 +7,25 @@ import {
   Image,
   Alert,
 } from "react-native";
+import * as DocumentPicker from "expo-document-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { useAuthStore } from "@/src/store";
+
+
+type SelectedFile = {
+  name: string;
+  type: string; // MIME type, e.g. "application/pdf"
+  uri: string;
+};
+
+// Ajusta esta URL según tu entorno (emulador, dispositivo físico, etc.)
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:8000";
 
 export default function UploadScreen() {
   const [selectedFile, setSelectedFile] = useState<{
@@ -22,38 +35,110 @@ export default function UploadScreen() {
   } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleCameraPress = () => {
+  // 👇 NUEVO: leemos la sesión desde el store de auth
+  const session = useAuthStore(state => state.session);
+  const accessToken = session?.access_token;
+
+  const handleFilePress = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "application/pdf", // solo PDF por ahora
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const asset = result.assets[0];
+
+      setSelectedFile({
+        name: asset.name || "documento.pdf",
+        type: asset.mimeType || "application/pdf",
+        uri: asset.uri,
+      });
+    } catch (error) {
+      console.error("Error seleccionando archivo:", error);
+      Alert.alert("Error", "No se pudo seleccionar el archivo");
+    }
+  };
+
+const handleCameraPress = () => {
+    // Por ahora, puedes dejarlo de prueba
     setSelectedFile({
       name: "foto_laboratorio.jpg",
-      type: "JPG",
+      type: "image/jpeg",
       uri: "camera://photo.jpg",
     });
   };
 
-  const handleFilePress = () => {
-    setSelectedFile({
-      name: "resultados_laboratorio.pdf",
-      type: "PDF",
-      uri: "file://document.pdf",
+const handleProcessDocuments = async () => {
+  if (!selectedFile) {
+    Alert.alert("Error", "Por favor selecciona un archivo primero");
+    return;
+  }
+
+  // Por ahora solo aceptamos PDF
+  if (!selectedFile.type.toLowerCase().includes("pdf")) {
+    Alert.alert(
+      "Formato no soportado",
+      "Por ahora solo podemos procesar archivos PDF."
+    );
+    return;
+  }
+
+  // Si no hay sesión, no podemos llamar a /files/upload (usa get_current_user)
+  if (!accessToken) {
+    Alert.alert(
+      "Sesión requerida",
+      "Debes iniciar sesión antes de subir documentos."
+    );
+    return;
+  }
+
+  setIsProcessing(true);
+
+  try {
+    const formData = new FormData();
+
+    formData.append("file", {
+      uri: selectedFile.uri,
+      name: selectedFile.name,
+      type: selectedFile.type,
+    } as any);
+
+    const response = await fetch(`${API_BASE_URL}/files/upload`, {
+      method: "POST",
+      body: formData,
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${accessToken}`, // 👈 AQUÍ VA TU JWT DE SUPABASE
+      },
     });
-  };
 
-  const handleProcessDocuments = async () => {
-    if (!selectedFile) {
-      Alert.alert("Error", "Por favor selecciona un archivo primero");
-      return;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error subiendo archivo:", errorText);
+      throw new Error(errorText || "Error al subir el archivo");
     }
 
-    setIsProcessing(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      router.push("/validate-data");
-    } catch {
-      Alert.alert("Error", "No se pudo procesar el documento");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+    const uploadResult = await response.json();
+    console.log("Upload result:", uploadResult);
+
+    // Aquí ya sabes que el archivo entró al bucket "uploads"
+    // uploadResult.path -> user_sub/uuid.pdf
+    // uploadResult.public_url / signed_url según tu backend
+    Alert.alert("Listo", "Documento subido correctamente al servidor.");
+  } catch (error) {
+    console.error("Error procesando documento:", error);
+    Alert.alert(
+      "Error",
+      "No se pudo subir el documento. Inténtalo de nuevo más tarde."
+    );
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   const handleCancel = () => {
     router.back();
