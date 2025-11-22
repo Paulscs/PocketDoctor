@@ -4,7 +4,7 @@ from supabase import create_client
 from ..core.config import settings
 from ..core.security import get_current_user, AuthUser
 from ..core.permissions import ensure_admin_or_403
-from ..schemas.centros import CentroCreate, CentroUpdate, CentroOut
+from ..schemas.centros import CentroCreate, CentroUpdate, CentroOut, EspecialistaCentro
 
 router = APIRouter(prefix="/centros", tags=["centros_medicos"])
 
@@ -43,6 +43,12 @@ def get_centro(centro_id: int, user: AuthUser = Depends(get_current_user)):
     if not res.data:
         raise HTTPException(status_code=404, detail="Centro no encontrado")
     return res.data
+
+@router.get("/{centro_id}/especialistas", response_model=list[EspecialistaCentro])
+def list_especialistas_centro(centro_id: int, user: AuthUser = Depends(get_current_user)):
+    c = client_for_user(user.token)
+    res = c.table("v_especialistas_centros").select("*").eq("centro_id", centro_id).execute()
+    return res.data or []
 
 @router.post("", response_model=CentroOut, status_code=201)
 def create_centro(payload: CentroCreate, user: AuthUser = Depends(get_current_user)):

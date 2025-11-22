@@ -5,6 +5,7 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
@@ -12,6 +13,8 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors } from "@/constants/theme";
+import { useAuthStore } from "@/src/store/authStore";
+import { getCentros, Centro, getEspecialistasCentro, EspecialistaCentro } from "@/src/services/clinics";
 
 interface Clinic {
   id: string;
@@ -83,68 +86,18 @@ const MOCK_USER_PROFILE: UserProfile = {
   ],
 };
 
-const MOCK_CLINICS: Clinic[] = [
-  {
-    id: "1",
-    name: "CEMDOE",
-    fullName: "Centro Médico de Diabetes, Obesidad y Especialidades",
-    address: "C. Clara Pardo, Santo Domingo",
-    specialties: ["Cardiología", "Endocrinología", "Nutrición"],
-    image: "cemdoe-building",
-    mapCode: "F3Q3+9M Santo Domingo",
-    rating: 4.8,
-    phone: "+1 809-555-0123",
-    website: "www.cemdoe.com",
-  },
-  {
-    id: "2",
-    name: "Hospital General",
-    fullName: "Hospital General de la Plaza de la Salud",
-    address: "Av. Independencia, Santo Domingo",
-    specialties: ["Medicina General", "Cardiología", "Neurología"],
-    image: "hospital-general",
-    mapCode: "F3Q4+2M Santo Domingo",
-    rating: 4.6,
-    phone: "+1 809-555-0124",
-    website: "www.hospitalgeneral.com",
-  },
-  {
-    id: "3",
-    name: "Clínica Abreu",
-    fullName: "Clínica Abreu - Centro de Especialidades",
-    address: "C. Winston Churchill, Santo Domingo",
-    specialties: ["Cardiología", "Cirugía", "Oncología"],
-    image: "clinica-abreu",
-    mapCode: "F3Q5+5M Santo Domingo",
-    rating: 4.7,
-    phone: "+1 809-555-0125",
-    website: "www.clinicaabreu.com",
-  },
-  {
-    id: "4",
-    name: "Centro Cardiológico",
-    fullName: "Centro Cardiológico Dominicano",
-    address: "Av. 27 de Febrero, Santo Domingo",
-    specialties: ["Cardiología", "Cirugía Cardíaca"],
-    image: "centro-cardio",
-    mapCode: "F3Q6+8M Santo Domingo",
-    rating: 4.9,
-    phone: "+1 809-555-0126",
-    website: "www.centrocardio.com",
-  },
-  {
-    id: "5",
-    name: "Instituto Endocrino",
-    fullName: "Instituto de Endocrinología y Metabolismo",
-    address: "C. Max Henríquez Ureña, Santo Domingo",
-    specialties: ["Endocrinología", "Nutrición", "Diabetes"],
-    image: "instituto-endocrino",
-    mapCode: "F3Q7+1M Santo Domingo",
-    rating: 4.7,
-    phone: "+1 809-555-0127",
-    website: "www.institutoendocrino.com",
-  },
-];
+const mapCentroToClinic = (centro: Centro): Clinic => ({
+  id: centro.id.toString(),
+  name: centro.nombre,
+  fullName: centro.nombre,
+  address: [centro.direccion, centro.ciudad, centro.provincia].filter(Boolean).join(', '),
+  specialties: [],
+  image: '',
+  mapCode: centro.ubicacion_geografica || '',
+  rating: 0,
+  phone: centro.telefono || '',
+  website: '',
+});
 
 // Generate recommended specialties based on user's medical data
 const getRecommendedSpecialties = (userProfile: UserProfile): string[] => {
@@ -181,40 +134,60 @@ export default function ClinicsScreen() {
     "background"
   );
 
+  const { session } = useAuthStore();
+
   const handleProfilePress = () => {
     router.push("/(tabs)/profile");
   };
 
+  const [clinics, setClinics] = useState<Clinic[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchQuery] = useState("");
-  const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(
-    null
-  );
   const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
-  const [recommendedSpecialties, setRecommendedSpecialties] = useState<
-    string[]
-  >([]);
+  const [specialists, setSpecialists] = useState<EspecialistaCentro[]>([]);
+
 
   useEffect(() => {
-    // Generate recommendations based on user's medical profile
-    const recommendations = getRecommendedSpecialties(MOCK_USER_PROFILE);
-    setRecommendedSpecialties(recommendations);
+    const fetchClinics = async () => {
+      if (!session?.access_token) return;
+      setLoading(true);
+      try {
+        const centros = await getCentros(session.access_token);
+        const mappedClinics = centros.map(mapCentroToClinic);
+        setClinics(mappedClinics);
+      } catch (error) {
+        console.error('Failed to fetch clinics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClinics();
+  }, [session]);
 
-    // Auto-select first recommended specialty if available
-    if (recommendations.length > 0 && !selectedSpecialty) {
-      setSelectedSpecialty(recommendations[0]);
-    }
-  }, [selectedSpecialty]);
+  useEffect(() => {
+    const fetchSpecialists = async () => {
+      if (!selectedClinic || !session?.access_token) {
+        setSpecialists([]);
+        return;
+      }
+      try {
+        const specs = await getEspecialistasCentro(selectedClinic.id, session.access_token);
+        setSpecialists(specs);
+      } catch (error) {
+        console.error('Failed to fetch specialists:', error);
+        setSpecialists([]);
+      }
+    };
+    fetchSpecialists();
+  }, [selectedClinic, session]);
 
-  const filteredClinics = MOCK_CLINICS.filter(clinic => {
+  const filteredClinics = clinics.filter(clinic => {
     const matchesSearch =
       clinic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       clinic.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       clinic.address.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesSpecialty =
-      !selectedSpecialty || clinic.specialties.includes(selectedSpecialty);
-
-    return matchesSearch && matchesSpecialty;
+    return matchesSearch;
   });
 
   const handleClinicPress = (clinic: Clinic) => {
@@ -223,6 +196,17 @@ export default function ClinicsScreen() {
 
   const handleBackToList = () => {
     setSelectedClinic(null);
+  };
+
+  const handleOpenMap = (mapCode: string) => {
+    if (!mapCode) return;
+    const match = mapCode.match(/\(([^,]+),([^)]+)\)/);
+    if (match) {
+      const lat = match[1];
+      const lng = match[2];
+      const url = `https://www.google.com/maps?q=${lat},${lng}`;
+      Linking.openURL(url);
+    }
   };
 
   const renderClinicCard = (clinic: Clinic) => (
@@ -310,48 +294,57 @@ export default function ClinicsScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.mapButton} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.mapButton} activeOpacity={0.7} onPress={() => handleOpenMap(clinic.mapCode)}>
           <Ionicons
             name="location-outline"
             size={16}
             color={Colors.light.brandBlue}
           />
-          <ThemedText style={styles.mapButtonText}>{clinic.mapCode}</ThemedText>
+          <ThemedText style={styles.mapButtonText}>Ver ubicación</ThemedText>
         </TouchableOpacity>
 
         <View style={styles.clinicDetails}>
           <View style={styles.detailRow}>
-            <Ionicons name="star-outline" size={16} color={Colors.light.gray} />
-            <ThemedText style={styles.detailText}>
-              Calificación: {clinic.rating}/5.0
-            </ThemedText>
-          </View>
-
-          <View style={styles.detailRow}>
             <Ionicons name="call-outline" size={16} color={Colors.light.gray} />
             <ThemedText style={styles.detailText}>{clinic.phone}</ThemedText>
           </View>
-
-          <View style={styles.detailRow}>
-            <Ionicons
-              name="globe-outline"
-              size={16}
-              color={Colors.light.gray}
-            />
-            <ThemedText style={styles.detailText}>{clinic.website}</ThemedText>
-          </View>
         </View>
 
-        <View style={styles.specialtiesSection}>
-          <ThemedText style={styles.specialtiesTitle}>
-            Especialidades:
+        <View style={styles.specialistsSection}>
+          <ThemedText style={styles.specialistsTitle}>
+            Especialistas:
           </ThemedText>
-          <View style={styles.specialtiesList}>
-            {clinic.specialties.map((specialty, index) => (
-              <View key={index} style={styles.specialtyTag}>
-                <ThemedText style={styles.specialtyText}>
-                  {specialty}
-                </ThemedText>
+          <View style={styles.specialistsList}>
+            {specialists.map((specialist) => (
+              <View key={specialist.especialista_id} style={styles.specialistCard}>
+                <View style={styles.specialistHeader}>
+                  <Ionicons
+                    name="person-outline"
+                    size={20}
+                    color={Colors.light.brandBlue}
+                  />
+                  <View style={styles.specialistInfo}>
+                    <ThemedText style={styles.specialistName}>
+                      {specialist.nombre} {specialist.apellido || ''}
+                    </ThemedText>
+                    {specialist.contacto && (
+                      <ThemedText style={styles.specialistContact}>
+                        {specialist.contacto}
+                      </ThemedText>
+                    )}
+                  </View>
+                </View>
+                {specialist.especialidad && specialist.especialidad.length > 0 && (
+                  <View style={styles.specialistSpecialties}>
+                    {specialist.especialidad.map((esp, index) => (
+                      <View key={index} style={styles.specialtyTag}>
+                        <ThemedText style={styles.specialtyText}>
+                          {esp}
+                        </ThemedText>
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
             ))}
           </View>
@@ -405,55 +398,6 @@ export default function ClinicsScreen() {
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            horizontal
-            style={styles.filtersContainer}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filtersContent}
-          >
-            {recommendedSpecialties.map(specialty => (
-              <TouchableOpacity
-                key={specialty}
-                style={[
-                  styles.filterChip,
-                  selectedSpecialty === specialty && styles.filterChipActive,
-                ]}
-                onPress={() =>
-                  setSelectedSpecialty(
-                    selectedSpecialty === specialty ? null : specialty
-                  )
-                }
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={
-                    specialty === "Cardiología"
-                      ? "heart-outline"
-                      : specialty === "Endocrinología"
-                        ? "medical-outline"
-                        : specialty === "Nutrición"
-                          ? "restaurant-outline"
-                          : "medical-outline"
-                  }
-                  size={14}
-                  color={
-                    selectedSpecialty === specialty
-                      ? Colors.light.white
-                      : Colors.light.brandBlue
-                  }
-                />
-                <ThemedText
-                  style={[
-                    styles.filterChipText,
-                    selectedSpecialty === specialty &&
-                      styles.filterChipTextActive,
-                  ]}
-                >
-                  {specialty}
-                </ThemedText>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
 
           <View style={styles.clinicsList}>
             {filteredClinics.map(renderClinicCard)}
@@ -781,6 +725,46 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+  },
+  specialistsSection: {
+    marginTop: 8,
+  },
+  specialistsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.light.textGray,
+    marginBottom: 12,
+  },
+  specialistsList: {
+    gap: 12,
+  },
+  specialistCard: {
+    backgroundColor: Colors.light.lightGray,
+    borderRadius: 8,
+    padding: 12,
+  },
+  specialistHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  specialistInfo: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  specialistName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.light.textGray,
+  },
+  specialistContact: {
+    fontSize: 14,
+    color: Colors.light.gray,
+  },
+  specialistSpecialties: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
   },
   specialtyTag: {
     backgroundColor: Colors.light.brandBlue,

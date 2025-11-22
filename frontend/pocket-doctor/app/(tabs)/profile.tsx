@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -6,6 +6,10 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
+  Alert,
+  ActivityIndicator,
+  Modal,
+  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
@@ -14,20 +18,39 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { getUserProfile, updateUserProfile, UserProfile as ApiUserProfile } from "@/src/services/user";
+import { useAuthStore } from "@/src/store/authStore";
 
 interface UserProfile {
-  firstName: string;
-  lastName: string;
+  id: number;
+  user_auth_id: string;
+  nombre?: string;
+  apellido?: string;
   email: string;
-  phone: string;
-  profileImage?: string;
+  fecha_nacimiento?: string;
+  sexo?: string;
+  ubicacion?: string;
+  fecha_registro: string;
+  estado: boolean;
+  es_admin?: boolean;
+  altura_cm?: number;
+  peso_kg?: number;
+  tipo_sangre?: string;
+  alergias?: string[];
+  condiciones_medicas?: string[];
 }
 
 const INITIAL_PROFILE: UserProfile = {
-  firstName: "Ethan",
-  lastName: "Peña Sosa",
+  id: 0,
+  user_auth_id: "",
+  nombre: "Ethan",
+  apellido: "Peña Sosa",
   email: "Ethan@gmail.com",
-  phone: "829-555-0103",
+  fecha_registro: "",
+  estado: true,
+  peso_kg: undefined,
+  alergias: [],
+  condiciones_medicas: [],
 };
 
 export default function ProfileScreen() {
@@ -36,20 +59,102 @@ export default function ProfileScreen() {
     "background"
   );
 
+  const { session, userProfile } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile>(INITIAL_PROFILE);
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingField, setEditingField] = useState<'alergias' | 'condiciones_medicas' | null>(null);
+  const [tempItems, setTempItems] = useState<string[]>([]);
+  const [newItem, setNewItem] = useState('');
 
-  const handleSaveChanges = () => {
-    console.log("Saving profile changes:", profile);
-    setIsEditing(false);
-    // TODO: Implement actual save functionality
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (userProfile) {
+        setProfile(userProfile);
+        setIsLoading(false);
+      } else if (session?.access_token) {
+        try {
+          const fetchedProfile = await getUserProfile(session.access_token);
+          setProfile(fetchedProfile);
+        } catch (error) {
+          console.error('Failed to load profile:', error);
+          Alert.alert('Error', 'No se pudo cargar el perfil');
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [userProfile, session]);
+
+  const handleSaveChanges = async () => {
+    if (!session?.access_token) {
+      Alert.alert('Error', 'No hay sesión activa');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Prepare update data - only send the fields defined in UserProfileUpdate schema
+      const updateData = {
+        peso_kg: profile.peso_kg,
+        alergias: profile.alergias,
+        condiciones_medicas: profile.condiciones_medicas,
+      };
+
+      const updatedProfile = await updateUserProfile(session.access_token, updateData);
+      setProfile(updatedProfile);
+      setIsEditing(false);
+      Alert.alert('Éxito', 'Perfil actualizado correctamente');
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      Alert.alert('Error', 'No se pudo guardar el perfil');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleEditProfile = () => {
     setIsEditing(true);
   };
 
-  const updateProfile = (field: keyof UserProfile, value: string) => {
+  const openItemModal = (field: 'alergias' | 'condiciones_medicas') => {
+    setEditingField(field);
+    setTempItems(profile[field] || []);
+    setNewItem('');
+    setModalVisible(true);
+  };
+
+  const addItem = () => {
+    if (newItem.trim()) {
+      setTempItems([...tempItems, newItem.trim()]);
+      setNewItem('');
+    }
+  };
+
+  const removeItem = (index: number) => {
+    setTempItems(tempItems.filter((_, i) => i !== index));
+  };
+
+  const saveItems = () => {
+    if (editingField) {
+      updateProfile(editingField, tempItems);
+    }
+    setModalVisible(false);
+    setEditingField(null);
+  };
+
+  const cancelItems = () => {
+    setModalVisible(false);
+    setEditingField(null);
+  };
+
+  const updateProfile = (field: keyof UserProfile, value: string | number | string[] | undefined) => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
@@ -63,6 +168,17 @@ export default function ProfileScreen() {
     // TODO: Implement actual logout functionality
     router.push("/login");
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.light.brandBlue} />
+          <ThemedText style={styles.loadingText}>Cargando perfil...</ThemedText>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
@@ -113,7 +229,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
           <ThemedText style={styles.fullName}>
-            {profile.firstName} {profile.lastName}
+            {profile.nombre || 'Nombre'} {profile.apellido || 'Apellido'}
           </ThemedText>
         </View>
 
@@ -126,10 +242,10 @@ export default function ProfileScreen() {
             <View style={styles.inputContainer}>
               <ThemedText style={styles.inputLabel}>Nombres</ThemedText>
               <TextInput
-                style={styles.textInput}
-                value={profile.firstName}
-                onChangeText={text => updateProfile("firstName", text)}
-                editable={isEditing}
+                style={styles.textInputDisabled}
+                value={profile.nombre || ''}
+                onChangeText={text => updateProfile("nombre", text)}
+                editable={false}
                 placeholder="Nombres"
                 placeholderTextColor={Colors.light.placeholderGray}
               />
@@ -137,16 +253,17 @@ export default function ProfileScreen() {
             <View style={styles.inputContainer}>
               <ThemedText style={styles.inputLabel}>Apellidos</ThemedText>
               <TextInput
-                style={styles.textInput}
-                value={profile.lastName}
-                onChangeText={text => updateProfile("lastName", text)}
-                editable={isEditing}
+                style={styles.textInputDisabled}
+                value={profile.apellido || ''}
+                onChangeText={text => updateProfile("apellido", text)}
+                editable={false}
                 placeholder="Apellidos"
                 placeholderTextColor={Colors.light.placeholderGray}
               />
             </View>
           </View>
         </View>
+
 
         {/* Email Section */}
         <View style={styles.section}>
@@ -155,10 +272,10 @@ export default function ProfileScreen() {
           </ThemedText>
           <View style={styles.inputContainer}>
             <TextInput
-              style={styles.textInput}
+              style={styles.textInputDisabled}
               value={profile.email}
               onChangeText={text => updateProfile("email", text)}
-              editable={isEditing}
+              editable={false}
               placeholder="Correo electrónico"
               placeholderTextColor={Colors.light.placeholderGray}
               keyboardType="email-address"
@@ -166,31 +283,179 @@ export default function ProfileScreen() {
             />
           </View>
         </View>
-
-        {/* Phone Section */}
+ {/* Birth Date Section */}
         <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Teléfono</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Fecha de Nacimiento</ThemedText>
           <View style={styles.inputContainer}>
             <TextInput
-              style={styles.textInput}
-              value={profile.phone}
-              onChangeText={text => updateProfile("phone", text)}
-              editable={isEditing}
-              placeholder="Teléfono"
+              style={styles.textInputDisabled}
+              value={profile.fecha_nacimiento || ''}
+              onChangeText={text => updateProfile("fecha_nacimiento", text)}
+              editable={false}
+              placeholder="YYYY-MM-DD"
               placeholderTextColor={Colors.light.placeholderGray}
-              keyboardType="phone-pad"
             />
           </View>
         </View>
+        
+        {/* Medical Information Section */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Información Médica</ThemedText>
+
+          {/* Height Section */}
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Altura (cm)</ThemedText>
+            <TextInput
+              style={styles.textInputDisabled}
+              value={profile.altura_cm?.toString() || ''}
+              onChangeText={text => updateProfile("altura_cm", text ? parseFloat(text) : undefined)}
+              editable={false}
+              placeholder="Altura en cm"
+              placeholderTextColor={Colors.light.placeholderGray}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Weight Section */}
+          <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Peso (kg)</ThemedText>
+            <TextInput
+              style={styles.textInput}
+              value={profile.peso_kg?.toString() || ''}
+              onChangeText={text => updateProfile("peso_kg", text ? parseFloat(text) : undefined)}
+              editable={isEditing}
+              placeholder="Peso en kg"
+              placeholderTextColor={Colors.light.placeholderGray}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Allergies Section */}
+          <View style={styles.inputContainer}>
+            <View style={styles.labelRow}>
+              <ThemedText style={styles.inputLabel}>Alérgias</ThemedText>
+              {isEditing && (
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => openItemModal('alergias')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add-circle" size={20} color={Colors.light.brandBlue} />
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.chipContainer}>
+              {profile.alergias && profile.alergias.length > 0 ? (
+                profile.alergias.map((alergia, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.chip}
+                    onPress={() => isEditing && openItemModal('alergias')}
+                    activeOpacity={0.7}
+                  >
+                    <ThemedText style={styles.chipText}>{alergia}</ThemedText>
+                    {isEditing && (
+                      <TouchableOpacity
+                        style={styles.chipRemove}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          const newAlergias = profile.alergias?.filter((_, i) => i !== index) || [];
+                          updateProfile('alergias', newAlergias);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="close" size={14} color={Colors.light.error} />
+                      </TouchableOpacity>
+                    )}
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <TouchableOpacity
+                  style={styles.addButtonInline}
+                  onPress={() => isEditing && openItemModal('alergias')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add" size={16} color={Colors.light.brandBlue} />
+                  <ThemedText style={styles.addButtonTextInline}>
+                    {isEditing ? 'Agregar alergia' : 'No hay alergias registradas'}
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          {/* Medical Conditions Section */}
+          <View style={styles.inputContainer}>
+            <View style={styles.labelRow}>
+              <ThemedText style={styles.inputLabel}>Condiciones Médicas</ThemedText>
+              {isEditing && (
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => openItemModal('condiciones_medicas')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add-circle" size={20} color={Colors.light.brandBlue} />
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.chipContainer}>
+              {profile.condiciones_medicas && profile.condiciones_medicas.length > 0 ? (
+                profile.condiciones_medicas.map((condicion, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.chip}
+                    onPress={() => isEditing && openItemModal('condiciones_medicas')}
+                    activeOpacity={0.7}
+                  >
+                    <ThemedText style={styles.chipText}>{condicion}</ThemedText>
+                    {isEditing && (
+                      <TouchableOpacity
+                        style={styles.chipRemove}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          const newCondiciones = profile.condiciones_medicas?.filter((_, i) => i !== index) || [];
+                          updateProfile('condiciones_medicas', newCondiciones);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="close" size={14} color={Colors.light.error} />
+                      </TouchableOpacity>
+                    )}
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <TouchableOpacity
+                  style={styles.addButtonInline}
+                  onPress={() => isEditing && openItemModal('condiciones_medicas')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add" size={16} color={Colors.light.brandBlue} />
+                  <ThemedText style={styles.addButtonTextInline}>
+                    {isEditing ? 'Agregar condición médica' : 'No hay condiciones médicas registradas'}
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+
+       
 
         {/* Save Changes Button */}
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleSaveChanges}
-          activeOpacity={0.7}
-        >
-          <ThemedText style={styles.saveButtonText}>Guardar Cambios</ThemedText>
-        </TouchableOpacity>
+        {isSaving ? (
+          <View style={styles.saveButton}>
+            <ActivityIndicator color={Colors.light.white} />
+            <ThemedText style={styles.saveButtonText}>Guardando...</ThemedText>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSaveChanges}
+            activeOpacity={0.7}
+          >
+            <ThemedText style={styles.saveButtonText}>Guardar Cambios</ThemedText>
+          </TouchableOpacity>
+        )}
 
         {/* Logout Button */}
         <TouchableOpacity
@@ -206,6 +471,79 @@ export default function ProfileScreen() {
           <ThemedText style={styles.logoutButtonText}>Cerrar Sesión</ThemedText>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Modal for editing allergies/medical conditions */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={cancelItems}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <ThemedText style={styles.modalTitle}>
+              {editingField === 'alergias' ? 'Editar Alérgias' : 'Editar Condiciones Médicas'}
+            </ThemedText>
+
+            <FlatList
+              style={styles.itemList}
+              data={tempItems}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={({ item, index }) => (
+                <View style={styles.itemRow}>
+                  <ThemedText style={styles.itemText}>{item}</ThemedText>
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => removeItem(index)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="close-circle" size={20} color={Colors.light.error} />
+                  </TouchableOpacity>
+                </View>
+              )}
+              ListEmptyComponent={
+                <ThemedText style={styles.placeholderText}>
+                  {editingField === 'alergias' ? 'No hay alergias agregadas' : 'No hay condiciones médicas agregadas'}
+                </ThemedText>
+              }
+            />
+
+            <View style={styles.addItemContainer}>
+              <TextInput
+                style={styles.addItemInput}
+                value={newItem}
+                onChangeText={setNewItem}
+                placeholder={editingField === 'alergias' ? 'Nueva alergia...' : 'Nueva condición médica...'}
+                placeholderTextColor={Colors.light.placeholderGray}
+              />
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={addItem}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="add" size={20} color={Colors.light.white} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={cancelItems}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={styles.cancelButtonText}>Cancelar</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButtonModal]}
+                onPress={saveItems}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={styles.saveButtonTextModal}>Guardar</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -346,6 +684,21 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
+  textInputDisabled: {
+    backgroundColor: Colors.light.lightGray,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: Colors.light.placeholderGray,
+    borderWidth: 1,
+    borderColor: Colors.light.borderGray,
+    shadowColor: Colors.light.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
   saveButton: {
     backgroundColor: Colors.light.brandBlue,
     borderRadius: 12,
@@ -381,5 +734,165 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.light.error,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: Colors.light.brandBlue,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  editButton: {
+    padding: 4,
+  },
+  chipContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    backgroundColor: Colors.light.lightGray,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: Colors.light.borderGray,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  chipText: {
+    fontSize: 14,
+    color: Colors.light.textGray,
+  },
+  chipRemove: {
+    padding: 2,
+  },
+  addButtonInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.light.lightGray,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.light.borderGray,
+    borderStyle: 'dashed',
+  },
+  addButtonTextInline: {
+    fontSize: 14,
+    color: Colors.light.brandBlue,
+  },
+  placeholderText: {
+    fontSize: 14,
+    color: Colors.light.placeholderGray,
+    fontStyle: 'italic',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 20,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.light.brandBlue,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  itemList: {
+    maxHeight: 200,
+    marginBottom: 16,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.light.lightGray,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  itemText: {
+    fontSize: 16,
+    color: Colors.light.textGray,
+    flex: 1,
+  },
+  removeButton: {
+    padding: 4,
+  },
+  addItemContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  addItemInput: {
+    flex: 1,
+    backgroundColor: Colors.light.white,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: Colors.light.textGray,
+    borderWidth: 1,
+    borderColor: Colors.light.borderGray,
+  },
+  addButton: {
+    backgroundColor: Colors.light.brandBlue,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.light.white,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: Colors.light.lightGray,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.light.textGray,
+  },
+  saveButtonModal: {
+    backgroundColor: Colors.light.brandBlue,
+  },
+  saveButtonTextModal: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.light.white,
   },
 });
