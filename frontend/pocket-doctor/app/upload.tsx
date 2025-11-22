@@ -87,7 +87,6 @@ const handleProcessDocuments = async () => {
     return;
   }
 
-  // Si no hay sesión, no podemos llamar a /files/upload (usa get_current_user)
   if (!accessToken) {
     Alert.alert(
       "Sesión requerida",
@@ -99,46 +98,86 @@ const handleProcessDocuments = async () => {
   setIsProcessing(true);
 
   try {
-    const formData = new FormData();
-
-    formData.append("file", {
+    // 1) SUBIR A /files/upload  (Supabase Storage)
+    const uploadFormData = new FormData();
+    uploadFormData.append("file", {
       uri: selectedFile.uri,
       name: selectedFile.name,
       type: selectedFile.type,
     } as any);
 
-    const response = await fetch(`${API_BASE_URL}/files/upload`, {
+    const uploadRes = await fetch(`${API_BASE_URL}/files/upload`, {
       method: "POST",
-      body: formData,
+      body: uploadFormData,
       headers: {
         Accept: "application/json",
-        Authorization: `Bearer ${accessToken}`, // 👈 AQUÍ VA TU JWT DE SUPABASE
+        Authorization: `Bearer ${accessToken}`, // tu JWT de Supabase
       },
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (!uploadRes.ok) {
+      const errorText = await uploadRes.text();
       console.error("Error subiendo archivo:", errorText);
       throw new Error(errorText || "Error al subir el archivo");
     }
 
-    const uploadResult = await response.json();
+    const uploadResult = await uploadRes.json();
     console.log("Upload result:", uploadResult);
+    // Aquí ya está guardado en el bucket 🎉
 
-    // Aquí ya sabes que el archivo entró al bucket "uploads"
-    // uploadResult.path -> user_sub/uuid.pdf
-    // uploadResult.public_url / signed_url según tu backend
-    Alert.alert("Listo", "Documento subido correctamente al servidor.");
+    // 2) LLAMAR AL OCR: /ocr-local/pdf (usa el mismo archivo)
+    const ocrFormData = new FormData();
+    ocrFormData.append("file", {
+      uri: selectedFile.uri,
+      name: selectedFile.name,
+      type: selectedFile.type,
+    } as any);
+
+    const ocrRes = await fetch(`${API_BASE_URL}/ocr-local/pdf`, {
+      method: "POST",
+      body: ocrFormData,
+      headers: {
+        Accept: "application/json",
+        // No hace falta Authorization si tu /ocr-local/pdf no lo usa
+      },
+    });
+
+    if (!ocrRes.ok) {
+      const errorText = await ocrRes.text();
+      console.error("Error en OCR:", errorText);
+      throw new Error(errorText || "Error al analizar el documento");
+    }
+
+    const ocrResult = await ocrRes.json();
+
+    // Log completo del resultado
+    console.log("OCR result:", JSON.stringify(ocrResult, null, 2));
+
+    // Log específico del payload que le vas a mandar a la LLM
+    if (ocrResult.analysis_input) {
+      console.log(
+        "analysis_input:",
+        JSON.stringify(ocrResult.analysis_input, null, 2)
+      );
+    }
+
+    Alert.alert("Listo", "Documento subido y analizado correctamente.");
+
+    // Más adelante: aquí puedes
+    // - guardar ocrResult en algún estado global
+    // - navegar a /validate-data pasando esos datos
+    // router.push({ pathname: "/validate-data", params: { ... } });
   } catch (error) {
     console.error("Error procesando documento:", error);
     Alert.alert(
       "Error",
-      "No se pudo subir el documento. Inténtalo de nuevo más tarde."
+      "No se pudo procesar el documento. Inténtalo de nuevo más tarde."
     );
   } finally {
     setIsProcessing(false);
   }
 };
+
 
   const handleCancel = () => {
     router.back();

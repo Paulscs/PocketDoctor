@@ -9,6 +9,8 @@ from pydantic import BaseModel
 from supabase import create_client, Client
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
+from datetime import date
+from typing import Dict
 
 router = APIRouter(prefix="/ocr-local", tags=["OCR local"])
 
@@ -63,6 +65,37 @@ class RefRange(BaseModel):
     min: Optional[float] = None
     max: Optional[float] = None
 
+class PatientProfile(BaseModel):
+    age: Optional[int] = None
+    sex: Optional[str] = None  # "M", "F", etc.
+    weight_kg: Optional[float] = None
+    height_cm: Optional[float] = None
+    conditions: List[str] = []
+    medications: List[str] = []
+
+
+class LabMetadata(BaseModel):
+    collection_date: Optional[date] = None
+    lab_name: Optional[str] = None
+
+
+class LabResult(BaseModel):
+    group: Optional[str] = None
+    name: str
+    code: Optional[str] = None
+    value: Optional[float] = None
+    unit: Optional[str] = None
+    ref_low: Optional[float] = None
+    ref_high: Optional[float] = None
+    status: Optional[str] = None        # "bajo", "normal", "alto", etc.
+    flag_from_lab: Optional[str] = None # equivalente a tu flag
+    line: str
+
+
+class AnalysisInput(BaseModel):
+    patient_profile: PatientProfile
+    lab_metadata: LabMetadata
+    lab_results: List[LabResult]
 
 class LabItem(BaseModel):
     name_raw: str
@@ -81,6 +114,7 @@ class OCRResponse(BaseModel):
     pages_processed: int
     storage_path: Optional[str] = None  # path en Supabase
     public_url: Optional[str] = None    # URL pública (si aplica)
+    analysis_input: Optional[AnalysisInput] = None
 
 
 
@@ -322,10 +356,129 @@ def normalize_name(name_raw: str) -> str:
 
     return mapping.get(up, base)
 
+# ---------------------------
+# Agrupación y códigos de pruebas
+# ---------------------------
+
+NAME_TO_GROUP: Dict[str, str] = {
+    # Hemograma
+    "HEMOGLOBINA": "Hemograma",
+    "HEMATOCRITO": "Hemograma",
+    "GLOBULOS ROJOS": "Hemograma",
+    "GLOBULOS BLANCOS": "Hemograma",
+    "PLAQUETAS": "Hemograma",
+    "VCM": "Hemograma",
+    "HCM": "Hemograma",
+    "CHCM": "Hemograma",
+    "RDW-CV": "Hemograma",
+    "NEUTROF: ILOS": "Hemograma",
+    "NEUTROF: ILOS(#)": "Hemograma",
+    "LINFOCITOS": "Hemograma",
+    "LINFOCITOS(#)": "Hemograma",
+    "MONOCITOS": "Hemograma",
+    "MONOCITOS(#)": "Hemograma",
+    "EOSINOFILOS": "Hemograma",
+    "EOSINOFILOS(#)": "Hemograma",
+    "BASOFILOS": "Hemograma",
+    "BASOFILOS(#)": "Hemograma",
+
+    # Perfil hepático
+    "AST (SGOT)": "Perfil hepático",
+    "ALT (SGPT)": "Perfil hepático",
+    "PROTEINAS TOTALES": "Perfil hepático",
+    "PROTEINAS TOTALES ": "Perfil hepático",  # por si acaso
+    "ALBUMINA": "Perfil hepático",
+    "AL BUMINA": "Perfil hepático",
+    "GLOBULINAS": "Perfil hepático",
+    "RELACION A/G": "Perfil hepático",
+
+    # Función renal
+    "CREATININA": "Función renal",
+    "BUN": "Función renal",
+    "TASA FILTRACION G.(EGFR)": "Función renal",
+
+    # Metabolismo de carbohidratos
+    "GLUCOSA": "Metabolismo de carbohidratos",
+
+    # Gastrointestinal / heces
+    "CALPROTECTINA FECAL": "Gastrointestinal",
+    "DIGESTION MATERIAS FECALES": "Gastrointestinal",
+    "DIGESTIÓN MATERIAS FECALES": "Gastrointestinal",
+}
+
+NAME_TO_CODE: Dict[str, str] = {
+    "HEMOGLOBINA": "HGB",
+    "HEMATOCRITO": "HCT",
+    "GLOBULOS ROJOS": "RBC",
+    "GLOBULOS BLANCOS": "WBC",
+    "PLAQUETAS": "PLT",
+    "VCM": "MCV",
+    "HCM": "MCH",
+    "CHCM": "MCHC",
+    "RDW-CV": "RDW",
+    "AST (SGOT)": "AST",
+    "ALT (SGPT)": "ALT",
+    "CREATININA": "CREAT",
+    "GLUCOSA": "GLU",
+    "BUN": "BUN",
+    "CALPROTECTINA FECAL": "CALPROT",
+}
 
 # ---------------------------
 # Construcción de filas tipo tabla
 # ---------------------------
+def lab_item_to_lab_result(item: LabItem) -> LabResult:
+    up_name = normalize_whitespace(item.name).upper()
+
+    group = NAME_TO_GROUP.get(up_name)
+    code = NAME_TO_CODE.get(up_name)
+
+    ref_low = item.ref_range.min if item.ref_range else None
+    ref_high = item.ref_range.max if item.ref_range else None
+
+    return LabResult(
+        group=group,
+        name=item.name,          # ya normalizado por normalize_name
+        code=code,
+        value=item.value,
+        unit=item.unit,
+        ref_low=ref_low,
+        ref_high=ref_high,
+        status=item.status,
+        flag_from_lab=item.flag,
+        line=item.line,
+    )
+
+def build_analysis_input(
+    items: List[LabItem],
+    full_text: str,
+    storage_path: Optional[str] = None,
+    public_url: Optional[str] = None,
+) -> AnalysisInput:
+    # TODO: aquí podrías parsear full_text para sacar la fecha de colección y el nombre del lab
+    lab_metadata = LabMetadata(
+        collection_date=None,
+        lab_name=None,
+    )
+
+    # TODO: más adelante puedes recibir estos datos del perfil del usuario/logged in user
+    patient_profile = PatientProfile(
+        age=None,
+        sex=None,
+        weight_kg=None,
+        height_cm=None,
+        conditions=[],
+        medications=[],
+    )
+
+    lab_results = [lab_item_to_lab_result(it) for it in items]
+
+    return AnalysisInput(
+        patient_profile=patient_profile,
+        lab_metadata=lab_metadata,
+        lab_results=lab_results,
+    )
+
 
 def build_candidate_rows(lines: List[str]) -> List[str]:
     rows: List[str] = []
@@ -644,6 +797,13 @@ async def ocr_pdf(file: UploadFile = File(...)):
                 continue
             items.append(item)
 
+        analysis_input = build_analysis_input(
+            items=items,
+            full_text=full_text,
+            storage_path=storage_path,
+            public_url=public_url,
+        )
+
         return OCRResponse(
             text=full_text,
             table_text=table_text,
@@ -651,6 +811,7 @@ async def ocr_pdf(file: UploadFile = File(...)):
             pages_processed=pages_to_process,
             storage_path=storage_path,
             public_url=public_url,
+            analysis_input=analysis_input,
         )
 
 
