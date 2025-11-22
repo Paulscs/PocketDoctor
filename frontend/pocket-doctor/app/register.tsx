@@ -218,7 +218,7 @@ function SelectField({
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
-  items: Item[];
+  items: { label: string; value: string }[];
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   zIndex: number;
@@ -226,7 +226,7 @@ function SelectField({
   required?: boolean;
   styles: ReturnType<typeof createStyles>;
 }) {
-  const [ddItems, setDdItems] = useState<DDItem<string>[]>(items);
+  const [ddItems, setDdItems] = useState(items);
 
   return (
     <View style={{ zIndex, position: 'relative' }}> {/* <-- position agregado */}
@@ -251,6 +251,10 @@ function SelectField({
         // 👇 Estas dos líneas son las que arreglan el problema
         zIndex={zIndex}
         zIndexInverse={zIndex}
+        multiple={false}
+        closeAfterSelecting={true}
+        autoScroll={true}
+        dropDownDirection="AUTO"
       />
     </View>
   );
@@ -488,7 +492,7 @@ function RegisterScreenInner() {
                   placeholder="Introduzca sus nombres"
                   value={firstName}
                   onChangeText={setFirstName}
-                  placeholderTextColor="placeholderGray"
+                  placeholderTextColor={placeholderGray}
                   autoCapitalize="words"
                 />
               </View>
@@ -510,7 +514,7 @@ function RegisterScreenInner() {
                   placeholder="Introduzca sus apellidos"
                   value={lastName}
                   onChangeText={setLastName}
-                  placeholderTextColor="placeholderGray"
+                  placeholderTextColor={placeholderGray}
                   autoCapitalize="words"
                 />
               </View>
@@ -537,7 +541,7 @@ function RegisterScreenInner() {
                   autoCorrect={false}
                   textContentType="emailAddress"
                   inputMode="email"
-                  placeholderTextColor="placeholderGray"
+                  placeholderTextColor={placeholderGray}
                 />
               </View>
               {submitted && !requiredStr(email) && (
@@ -559,7 +563,7 @@ function RegisterScreenInner() {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={secure}
-                  placeholderTextColor="placeholderGray"
+                  placeholderTextColor={placeholderGray}
                   textContentType="password"
                 />
                 <TouchableOpacity
@@ -598,7 +602,7 @@ function RegisterScreenInner() {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={secureConfirm}
-                  placeholderTextColor="placeholderGray"
+                  placeholderTextColor={placeholderGray}
                   textContentType="password"
                 />
                 <TouchableOpacity
@@ -640,7 +644,7 @@ function RegisterScreenInner() {
                   value={height}
                   onChangeText={setHeight}
                   keyboardType="numeric"
-                  placeholderTextColor="placeholderGray"
+                  placeholderTextColor={placeholderGray}
                 />
               </View>
               {submitted && !requiredStr(height) && (
@@ -662,7 +666,7 @@ function RegisterScreenInner() {
                   value={weight}
                   onChangeText={setWeight}
                   keyboardType="numeric"
-                  placeholderTextColor="placeholderGray"
+                  placeholderTextColor={placeholderGray}
                 />
               </View>
               {submitted && !requiredStr(weight) && (
@@ -770,7 +774,7 @@ function RegisterScreenInner() {
                     placeholder="Especifique otras alergias"
                     value={otherAllergies}
                     onChangeText={setOtherAllergies}
-                    placeholderTextColor="placeholderGray"
+                    placeholderTextColor={placeholderGray}
                   />
                 </View>
               )}
@@ -812,7 +816,7 @@ function RegisterScreenInner() {
                     placeholder="Especifique otras condiciones médicas"
                     value={otherConditions}
                     onChangeText={setOtherConditions}
-                    placeholderTextColor="placeholderGray"
+                    placeholderTextColor={placeholderGray}
                   />
                 </View>
               )}
