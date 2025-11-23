@@ -5,4 +5,3 @@ supabase
 pydantic
 opencv-python
 pytesseract
-python-doctr
