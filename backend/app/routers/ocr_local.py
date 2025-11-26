@@ -3,6 +3,7 @@ import re
 from typing import List, Optional
 import os
 import uuid
+import json
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from pydantic import BaseModel
@@ -11,6 +12,12 @@ from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 from datetime import date
 from typing import Dict
+from openai import OpenAI
+
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
 
 router = APIRouter(prefix="/ocr-local", tags=["OCR local"])
 
@@ -96,6 +103,19 @@ class AnalysisInput(BaseModel):
     patient_profile: PatientProfile
     lab_metadata: LabMetadata
     lab_results: List[LabResult]
+
+class LLMParseRequest(BaseModel):
+    ocr_text: str
+    patient_profile: Optional[PatientProfile] = None
+    draft_analysis_input: Optional[AnalysisInput] = None  # opcional: lo que ya tienes del parser actual
+
+
+class LLMInterpretation(BaseModel):
+    analysis_input: AnalysisInput  # reutilizamos tu schema
+    summary: str                   # resumen en lenguaje natural
+    warnings: List[str] = []       # cosas a vigilar / posibles riesgos
+    disclaimer: str                # recordatorio de que no es diagnóstico
+
 
 class LabItem(BaseModel):
     name_raw: str
