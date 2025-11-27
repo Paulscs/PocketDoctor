@@ -161,7 +161,55 @@ const handleProcessDocuments = async () => {
       );
     }
 
-    Alert.alert("Listo", "Documento subido y analizado correctamente.");
+    // 3) LLAMAR A LA LLM: /parse-llm
+    // Ajusta la ruta si tu router tiene prefix (por ejemplo /llm/parse-llm)
+    const llmPayload = {
+      ocr_text: ocrResult.text ?? "",              // texto crudo del OCR
+      patient_profile: {
+        age: null,
+        sex: null,
+        weight_kg: null,
+        height_cm: null,
+        conditions: [],                           // luego puedes llenarlo con datos reales del usuario
+        medications: [],
+      },
+      draft_analysis_input: ocrResult.analysis_input ?? null, // lo que ya parseaste en el backend
+    };
+
+    console.log(
+      "LLM payload (LLMParseRequest):",
+      JSON.stringify(llmPayload, null, 2)
+    );
+
+    const llmRes = await fetch(`${API_BASE_URL}/ocr-local/parse-llm`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        // Si en el futuro quieres proteger este endpoint, aquí puedes poner Authorization también
+      },
+      body: JSON.stringify(llmPayload),
+    });
+
+    if (!llmRes.ok) {
+      const llmErrorText = await llmRes.text();
+      console.error("Error en parse-llm:", llmErrorText);
+      throw new Error(llmErrorText || "Error al analizar resultados con IA");
+    }
+
+    const llmResult = await llmRes.json();
+
+    console.log(
+      "LLM interpretation (LLMInterpretation):",
+      JSON.stringify(llmResult, null, 2)
+    );
+
+    // Por ahora, solo mostramos el resumen en un Alert
+    Alert.alert(
+      "Análisis listo",
+      llmResult.summary ||
+        "La IA analizó tus resultados. (No es un diagnóstico médico)."
+    );
 
     // Más adelante: aquí puedes
     // - guardar ocrResult en algún estado global
