@@ -16,18 +16,25 @@ from openai import OpenAI
 
 from dotenv import load_dotenv
 load_dotenv()
-# Intenta leer la API key desde el entorno
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-openai_client: Optional[OpenAI] = None
+# ---------------------------
+# Configuración DeepSeek
+# ---------------------------
+# Asegúrate de tener DEEPSEEK_API_KEY en tu archivo .env
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
-if not OPENAI_API_KEY:
+llm_client: Optional[OpenAI] = None
+
+if not DEEPSEEK_API_KEY:
     # No rompemos el servidor aquí, solo avisamos en consola
-    print("[OpenAI] WARNING: OPENAI_API_KEY no configurada. "
-          "Los endpoints que usan la IA devolverán error 500 hasta que la configures.")
+    print("[DeepSeek] WARNING: DEEPSEEK_API_KEY no configurada. "
+          "Los endpoints que usan la IA devolverán error 500.")
 else:
-    openai_client = OpenAI(api_key=OPENAI_API_KEY)
-
+    # Inicializamos el cliente apuntando a la URL de DeepSeek
+    llm_client = OpenAI(
+        api_key=DEEPSEEK_API_KEY,
+        base_url="https://api.deepseek.com"
+    )
 
 
 router = APIRouter(prefix="/ocr-local", tags=["OCR local"])
