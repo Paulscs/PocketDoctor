@@ -2,6 +2,7 @@
 import httpx
 from app.core.config import settings
 
+
 EMAIL = "keloke123@gmail.com"
 PASSWORD = "123456"
 

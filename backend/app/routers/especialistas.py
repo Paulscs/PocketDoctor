@@ -15,7 +15,7 @@ def client_for_user(token: str):
 
 @router.get("", response_model=list[EspecialistaOut])
 def list_especialistas(
-    q: Optional[str] = Query(None, description="Buscar por nombre o especialidad"),
+    q: Optional[str] = Query(None, description="Buscar por nombre"),
     limit: int = 20,
     offset: int = 0,
     user: AuthUser = Depends(get_current_user),
@@ -23,8 +23,8 @@ def list_especialistas(
     c = client_for_user(user.token)
     query = c.table("especialistas").select("*")
     if q:
-        # Buscar por nombre o especialidad
-        query = query.or_(f"nombre.ilike.%{q}%,especialidad.ilike.%{q}%")
+        # Buscar por nombre
+        query = query.ilike("nombre", f"%{q}%")
     query = query.range(offset, offset + limit - 1)
     res = query.execute()
     return res.data or []

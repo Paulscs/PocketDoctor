@@ -229,24 +229,26 @@ function SelectField({
   const [ddItems, setDdItems] = useState(items);
 
   return (
-    <View style={{ zIndex, position: "relative" }}>
-      {/* posición agregada para que el menú se superponga correctamente */}
+    <View style={{ zIndex, position: 'relative' }}> {/* <-- position agregado */}
       <Label required={required} styles={styles}>
         {label}
       </Label>
-
-      {/* Estas dos líneas arreglan el stacking del dropdown */}
       <DropDownPicker
         open={open}
         value={value}
         items={ddItems}
         setOpen={setOpen}
         setItems={setDdItems}
-        setValue={(cb) => onChange((cb(value) as string) ?? "")}
+        setValue={cb => onChange((cb(value) as string) ?? "")}
         placeholder={placeholder}
         style={[styles.ddInput, invalid && styles.fieldErrorBottom]}
-        dropDownContainerStyle={[styles.ddMenu, invalid && styles.fieldErrorBox]}
+        dropDownContainerStyle={[
+          styles.ddMenu,
+          invalid && styles.fieldErrorBox,
+        ]}
         listMode="SCROLLVIEW"
+
+        // 👇 Estas dos líneas son las que arreglan el problema
         zIndex={zIndex}
         zIndexInverse={zIndex}
         multiple={false}
@@ -257,7 +259,6 @@ function SelectField({
     </View>
   );
 }
-
 
 
 function RegisterScreenInner() {
@@ -355,6 +356,7 @@ function RegisterScreenInner() {
     requiredStr(lastName) &&
     requiredStr(email) &&
     requiredStr(password) &&
+    password.length > 6 &&
     requiredStr(confirmPassword) &&
     requiredStr(height) &&
     requiredStr(weight) &&
@@ -432,15 +434,15 @@ function RegisterScreenInner() {
       await register({
         email,
         password,
-        nombre: firstName,
-        apellido: lastName,
-        fecha_nacimiento: dateOfBirth ? dateOfBirth.toISOString() : undefined,
-        sexo: gender,
-        estatura: height ? parseInt(height) : undefined,
-        peso: weight ? parseInt(weight) : undefined,
-        tipo_sangre: bloodType,
-        alergias: selectedAllergies,
-        condiciones_medicas: selectedConditions,
+        firstName,
+        lastName,
+        height: height ? parseInt(height) : undefined,
+        weight: weight ? parseInt(weight) : undefined,
+        bloodType,
+        gender,
+        dateOfBirth,
+        allergies: selectedAllergies,
+        medicalConditions: selectedConditions,
       });
       router.push("/(tabs)/home");
     } catch (err) {
@@ -552,7 +554,7 @@ function RegisterScreenInner() {
               <View
                 style={[
                   styles.inputContainer,
-                  submitted && !requiredStr(password) && styles.fieldError,
+                  submitted && (!requiredStr(password) || password.length <= 6) && styles.fieldError,
                 ]}
               >
                 <TextInput
@@ -577,6 +579,9 @@ function RegisterScreenInner() {
               </View>
               {submitted && !requiredStr(password) && (
                 <Text style={styles.err}>Requerido</Text>
+              )}
+              {submitted && requiredStr(password) && password.length <= 6 && (
+                <Text style={styles.err}>La contraseña debe tener más de 6 caracteres</Text>
               )}
 
               <Label required styles={styles}>
@@ -830,6 +835,10 @@ function RegisterScreenInner() {
               />
               {submitted && !accepted && (
                 <Text style={styles.err}>Debe aceptar los términos</Text>
+              )}
+
+              {submitted && !formValid && (
+                <Text style={styles.err}>Faltan campos requeridos. Por favor, complete todos los campos obligatorios.</Text>
               )}
 
               <TouchableOpacity
