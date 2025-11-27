@@ -5,6 +5,7 @@ import httpx
 
 router = APIRouter(prefix="/ocr", tags=["ocr"])
 
+
 @router.post("/from-url")
 def ocr_from_url(
     image_url: str = Form(...),

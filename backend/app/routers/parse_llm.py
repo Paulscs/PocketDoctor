@@ -83,10 +83,11 @@ async def parse_with_llm(payload: LLMParseRequest = Body(...)):
     - Revisar/completar el análisis estructurado (analysis_input)
     - Devolver un resumen y advertencias para el paciente
     """
-    if not OPENAI_API_KEY:
+    # Asegurarnos de que la IA esté configurada
+    if not OPENAI_API_KEY or openai_client is None:
         raise HTTPException(
             status_code=500,
-            detail="OPENAI_API_KEY no configurada en el servidor",
+            detail="OpenAI no está configurado en el servidor (falta OPENAI_API_KEY)",
         )
 
     # Lo que le vamos a pasar a la LLM como "user" message
@@ -115,7 +116,7 @@ async def parse_with_llm(payload: LLMParseRequest = Body(...)):
             temperature=0.1,
         )
 
-        raw_text = resp.choices[0].message.content
+        raw_text = resp.choices[0].message.content or ""
 
         # Intentar parsear el JSON que devuelve la IA
         try:

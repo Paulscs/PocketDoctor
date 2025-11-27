@@ -181,7 +181,7 @@ const handleProcessDocuments = async () => {
       JSON.stringify(llmPayload, null, 2)
     );
 
-    const llmRes = await fetch(`${API_BASE_URL}/parse-llm`, {
+    const llmRes = await fetch(`${API_BASE_URL}/ocr-local/parse-llm`, {
       method: "POST",
       headers: {
         Accept: "application/json",

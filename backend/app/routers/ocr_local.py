@@ -14,9 +14,20 @@ from datetime import date
 from typing import Dict
 from openai import OpenAI
 
-
+from dotenv import load_dotenv
+load_dotenv()
+# Intenta leer la API key desde el entorno
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
+openai_client: Optional[OpenAI] = None
+
+if not OPENAI_API_KEY:
+    # No rompemos el servidor aquí, solo avisamos en consola
+    print("[OpenAI] WARNING: OPENAI_API_KEY no configurada. "
+          "Los endpoints que usan la IA devolverán error 500 hasta que la configures.")
+else:
+    openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
 
 
 router = APIRouter(prefix="/ocr-local", tags=["OCR local"])
