@@ -5,11 +5,12 @@ import json
 import re
 
 # Importamos las configuraciones y modelos desde ocr_local
+# IMPORTANTE: Hemos cambiado lo que importamos ya que ocr_local ahora usa Gemini
+import google.generativeai as genai
 from .ocr_local import (
     LLMParseRequest,
     LLMInterpretation,
-    DEEPSEEK_API_KEY,
-    llm_client,
+    gemini_configured,  # Variable para verificar si hay key
 )
 
 router = APIRouter(
@@ -19,7 +20,7 @@ router = APIRouter(
 
 # Prompt del sistema (sin cambios)
 LLM_PARSER_SYSTEM_PROMPT = """
-Eres un asistente médico digital experto (DeepSeek V3). Tu tarea es analizar texto OCR y devolver UNICAMENTE un objeto JSON válido.
+Eres un asistente médico digital experto. Tu tarea es analizar texto OCR y devolver UNICAMENTE un objeto JSON válido.
 
 Reglas ESTRICTAS:
 1. NO escribas introducciones, ni conclusiones, ni bloques de código markdown (```json).
@@ -79,12 +80,12 @@ def extract_json_from_text(text: str) -> str:
 @router.post("/parse-llm", response_model=LLMInterpretation)
 async def parse_with_llm(payload: LLMParseRequest = Body(...)):
     """
-    Usa DeepSeek para interpretar los resultados médicos.
+    Usa Google Gemini para interpretar los resultados médicos.
     """
-    if not DEEPSEEK_API_KEY or llm_client is None:
+    if not gemini_configured:
         raise HTTPException(
             status_code=500,
-            detail="La IA no está configurada en el servidor (falta DEEPSEEK_API_KEY en .env)",
+            detail="La IA no está configurada en el servidor (falta GOOGLE_API_KEY en .env)",
         )
 
     user_content = {
@@ -100,31 +101,32 @@ async def parse_with_llm(payload: LLMParseRequest = Body(...)):
     }
 
     try:
-        resp = llm_client.chat.completions.create(
-            model="deepseek-chat", 
-            messages=[
-                {"role": "system", "content": LLM_PARSER_SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": json.dumps(user_content, ensure_ascii=False),
-                },
-            ],
-            temperature=0.1,
-            response_format={"type": "json_object"}, 
-            
-            # --- CAMBIO IMPORTANTE AQUI ---
-            max_tokens=8000  # Subido de 4000 a 8000 para evitar cortes en reportes largos
-            # ------------------------------
+        # Inicializamos el modelo de Gemini. 
+        # Usamos 'gemini-1.5-flash' por ser eficiente para OCR/JSON tasks.
+        model = genai.GenerativeModel(
+            model_name="gemini-2.5-pro",
+            system_instruction=LLM_PARSER_SYSTEM_PROMPT
         )
 
-        raw_text = resp.choices[0].message.content or ""
+        # Configuración de generación para forzar salida JSON
+        generation_config = genai.GenerationConfig(
+            response_mime_type="application/json",
+            temperature=0.1,
+        )
+
+        response = model.generate_content(
+            json.dumps(user_content, ensure_ascii=False),
+            generation_config=generation_config
+        )
+
+        raw_text = response.text
         json_str = extract_json_from_text(raw_text)
 
         try:
             data = json.loads(json_str)
         except json.JSONDecodeError as e:
             print("--------------------------------------------------")
-            print("ERROR PARSEANDO JSON DE DEEPSEEK:")
+            print("ERROR PARSEANDO JSON DE GEMINI:")
             # Imprimimos solo los últimos 200 caracteres para ver dónde cortó
             print(f"Final del texto recibido: ...{raw_text[-200:]}")
             print(f"Error: {e}")
@@ -141,8 +143,8 @@ async def parse_with_llm(payload: LLMParseRequest = Body(...)):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error DeepSeek General: {e}")
+        print(f"Error Gemini General: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Error interno al procesar con DeepSeek: {str(e)}",
+            detail=f"Error interno al procesar con Gemini: {str(e)}",
         )

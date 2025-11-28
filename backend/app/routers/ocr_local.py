@@ -12,29 +12,29 @@ from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 from datetime import date
 from typing import Dict
-from openai import OpenAI
+# Eliminamos openai e importamos google-generativeai
+import google.generativeai as genai
 
 from dotenv import load_dotenv
 load_dotenv()
 
 # ---------------------------
-# Configuración DeepSeek
+# Configuración Google Gemini
 # ---------------------------
-# Asegúrate de tener DEEPSEEK_API_KEY en tu archivo .env
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+# Asegúrate de tener GOOGLE_API_KEY en tu archivo .env
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-llm_client: Optional[OpenAI] = None
+# Variable de control para saber si podemos usar la IA
+gemini_configured = False
 
-if not DEEPSEEK_API_KEY:
+if not GOOGLE_API_KEY:
     # No rompemos el servidor aquí, solo avisamos en consola
-    print("[DeepSeek] WARNING: DEEPSEEK_API_KEY no configurada. "
+    print("[Gemini] WARNING: GOOGLE_API_KEY no configurada. "
           "Los endpoints que usan la IA devolverán error 500.")
 else:
-    # Inicializamos el cliente apuntando a la URL de DeepSeek
-    llm_client = OpenAI(
-        api_key=DEEPSEEK_API_KEY,
-        base_url="https://api.deepseek.com"
-    )
+    # Configuramos la librería globalmente
+    genai.configure(api_key=GOOGLE_API_KEY)
+    gemini_configured = True
 
 
 router = APIRouter(prefix="/ocr-local", tags=["OCR local"])
