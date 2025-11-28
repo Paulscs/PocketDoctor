@@ -6,6 +6,7 @@ import {
   ScrollView,
   Image,
   Alert,
+  ActivityIndicator, // Added for visual feedback
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,14 +17,13 @@ import { router } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
 
-
 type SelectedFile = {
   name: string;
-  type: string; // MIME type, e.g. "application/pdf"
+  type: string;
   uri: string;
 };
 
-// Ajusta esta URL según tu entorno (emulador, dispositivo físico, etc.)
+// Ensure this points to your FastAPI server
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:8000";
 
@@ -35,197 +35,137 @@ export default function UploadScreen() {
   } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // 👇 NUEVO: leemos la sesión desde el store de auth
-  const session = useAuthStore(state => state.session);
+  const session = useAuthStore((state) => state.session);
   const accessToken = session?.access_token;
 
   const handleFilePress = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: "application/pdf", // solo PDF por ahora
+        type: "application/pdf",
         copyToCacheDirectory: true,
       });
 
-      if (result.canceled) {
-        return;
-      }
+      if (result.canceled) return;
 
       const asset = result.assets[0];
-
       setSelectedFile({
         name: asset.name || "documento.pdf",
         type: asset.mimeType || "application/pdf",
         uri: asset.uri,
       });
     } catch (error) {
-      console.error("Error seleccionando archivo:", error);
+      console.error("Error selecting file:", error);
       Alert.alert("Error", "No se pudo seleccionar el archivo");
     }
   };
 
-const handleCameraPress = () => {
-    // Por ahora, puedes dejarlo de prueba
-    setSelectedFile({
-      name: "foto_laboratorio.jpg",
-      type: "image/jpeg",
-      uri: "camera://photo.jpg",
-    });
+  const handleCameraPress = () => {
+    // Placeholder for camera logic
+    Alert.alert("Info", "Funcionalidad de cámara en desarrollo.");
   };
 
-const handleProcessDocuments = async () => {
-  if (!selectedFile) {
-    Alert.alert("Error", "Por favor selecciona un archivo primero");
-    return;
-  }
-
-  // Por ahora solo aceptamos PDF
-  if (!selectedFile.type.toLowerCase().includes("pdf")) {
-    Alert.alert(
-      "Formato no soportado",
-      "Por ahora solo podemos procesar archivos PDF."
-    );
-    return;
-  }
-
-  if (!accessToken) {
-    Alert.alert(
-      "Sesión requerida",
-      "Debes iniciar sesión antes de subir documentos."
-    );
-    return;
-  }
-
-  setIsProcessing(true);
-
-  try {
-    // 1) SUBIR A /files/upload  (Supabase Storage)
-    const uploadFormData = new FormData();
-    uploadFormData.append("file", {
-      uri: selectedFile.uri,
-      name: selectedFile.name,
-      type: selectedFile.type,
-    } as any);
-
-    const uploadRes = await fetch(`${API_BASE_URL}/files/upload`, {
-      method: "POST",
-      body: uploadFormData,
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${accessToken}`, // tu JWT de Supabase
-      },
-    });
-
-    if (!uploadRes.ok) {
-      const errorText = await uploadRes.text();
-      console.error("Error subiendo archivo:", errorText);
-      throw new Error(errorText || "Error al subir el archivo");
+  // ✅ ENABLED AND UPDATED FUNCTION
+  const handleProcessDocuments = async () => {
+    if (!selectedFile) {
+      Alert.alert("Error", "Por favor selecciona un archivo primero");
+      return;
     }
 
-    const uploadResult = await uploadRes.json();
-    console.log("Upload result:", uploadResult);
-    // Aquí ya está guardado en el bucket 🎉
-
-    // 2) LLAMAR AL OCR: /ocr-local/pdf (usa el mismo archivo)
-    const ocrFormData = new FormData();
-    ocrFormData.append("file", {
-      uri: selectedFile.uri,
-      name: selectedFile.name,
-      type: selectedFile.type,
-    } as any);
-
-    const ocrRes = await fetch(`${API_BASE_URL}/ocr-local/pdf`, {
-      method: "POST",
-      body: ocrFormData,
-      headers: {
-        Accept: "application/json",
-        // No hace falta Authorization si tu /ocr-local/pdf no lo usa
-      },
-    });
-
-    if (!ocrRes.ok) {
-      const errorText = await ocrRes.text();
-      console.error("Error en OCR:", errorText);
-      throw new Error(errorText || "Error al analizar el documento");
+    // Optional: Ensure user is logged in
+    /* if (!accessToken) {
+      Alert.alert("Sesión requerida", "Inicia sesión para continuar.");
+      return;
     }
+    */
 
-    const ocrResult = await ocrRes.json();
+    setIsProcessing(true);
 
-    // Log completo del resultado
-    console.log("OCR result:", JSON.stringify(ocrResult, null, 2));
+    try {
+      // 1. Prepare FormData for FastAPI
+      const formData = new FormData();
+      formData.append("file", {
+        uri: selectedFile.uri,
+        name: selectedFile.name,
+        type: selectedFile.type,
+      } as any);
 
-    // Log específico del payload que le vas a mandar a la LLM
-    if (ocrResult.analysis_input) {
-      console.log(
-        "analysis_input:",
-        JSON.stringify(ocrResult.analysis_input, null, 2)
+      // 2. Call your local OCR Endpoint
+      console.log("Sending to:", `${API_BASE_URL}/ocr-local/pdf`);
+      
+      const response = await fetch(`${API_BASE_URL}/ocr-local/pdf`, {
+        method: "POST",
+        body: formData,
+        headers: {
+          // 'Content-Type': 'multipart/form-data', // Do NOT set this manually in React Native fetch, it breaks boundaries
+          Accept: "application/json",
+          // Authorization: `Bearer ${accessToken}`, // Uncomment if your OCR endpoint needs auth
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Error en el servidor");
+      }
+
+      const ocrResult = await response.json();
+      console.log("OCR Success:", ocrResult.items?.length, "items found");
+
+      // 3. Navigate to Validate Data Screen
+      // We pass the entire result as a JSON string to be parsed by the next screen
+      router.push({
+        pathname: "/validate-data",
+        params: { ocrData: JSON.stringify(ocrResult) },
+      });
+
+      // ---------------------------------------------------------
+      // 🔽 LLM SECTION (COMMENTED AS REQUESTED)
+      // ---------------------------------------------------------
+      /*
+      // The logic below would run AFTER OCR if you wanted to chain them immediately,
+      // but typically you validate OCR data first, THEN send to LLM.
+
+      // 3b) LLAMAR A LA LLM: /parse-llm
+      const llmPayload = {
+        ocr_text: ocrResult.text ?? "",
+        patient_profile: {
+          age: null,
+          sex: null,
+          weight_kg: null,
+          height_cm: null,
+          conditions: [],
+          medications: [],
+        },
+        draft_analysis_input: ocrResult.analysis_input ?? null,
+      };
+
+      const llmRes = await fetch(`${API_BASE_URL}/ocr-local/parse-llm`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(llmPayload),
+      });
+
+      if (!llmRes.ok) {
+        throw new Error("Error al analizar resultados con IA");
+      }
+
+      const llmResult = await llmRes.json();
+      console.log("LLM Result:", llmResult);
+      */
+      // ---------------------------------------------------------
+
+    } catch (error: any) {
+      console.error("Upload Error:", error);
+      Alert.alert(
+        "Error",
+        error.message || "No se pudo procesar el documento."
       );
+    } finally {
+      setIsProcessing(false);
     }
-
-    // 3) LLAMAR A LA LLM: /parse-llm
-    // Ajusta la ruta si tu router tiene prefix (por ejemplo /llm/parse-llm)
-    const llmPayload = {
-      ocr_text: ocrResult.text ?? "",              // texto crudo del OCR
-      patient_profile: {
-        age: null,
-        sex: null,
-        weight_kg: null,
-        height_cm: null,
-        conditions: [],                           // luego puedes llenarlo con datos reales del usuario
-        medications: [],
-      },
-      draft_analysis_input: ocrResult.analysis_input ?? null, // lo que ya parseaste en el backend
-    };
-
-    console.log(
-      "LLM payload (LLMParseRequest):",
-      JSON.stringify(llmPayload, null, 2)
-    );
-
-    const llmRes = await fetch(`${API_BASE_URL}/ocr-local/parse-llm`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        // Si en el futuro quieres proteger este endpoint, aquí puedes poner Authorization también
-      },
-      body: JSON.stringify(llmPayload),
-    });
-
-    if (!llmRes.ok) {
-      const llmErrorText = await llmRes.text();
-      console.error("Error en parse-llm:", llmErrorText);
-      throw new Error(llmErrorText || "Error al analizar resultados con IA");
-    }
-
-    const llmResult = await llmRes.json();
-
-    console.log(
-      "LLM interpretation (LLMInterpretation):",
-      JSON.stringify(llmResult, null, 2)
-    );
-
-    // Por ahora, solo mostramos el resumen en un Alert
-    Alert.alert(
-      "Análisis listo",
-      llmResult.summary ||
-        "La IA analizó tus resultados. (No es un diagnóstico médico)."
-    );
-
-    // Más adelante: aquí puedes
-    // - guardar ocrResult en algún estado global
-    // - navegar a /validate-data pasando esos datos
-    // router.push({ pathname: "/validate-data", params: { ... } });
-  } catch (error) {
-    console.error("Error procesando documento:", error);
-    Alert.alert(
-      "Error",
-      "No se pudo procesar el documento. Inténtalo de nuevo más tarde."
-    );
-  } finally {
-    setIsProcessing(false);
-  }
-};
-
+  };
 
   const handleCancel = () => {
     router.back();
@@ -233,7 +173,7 @@ const handleProcessDocuments = async () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Custom Header */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -392,9 +332,13 @@ const handleProcessDocuments = async () => {
             onPress={handleProcessDocuments}
             disabled={!selectedFile || isProcessing}
           >
-            <ThemedText style={styles.processButtonText}>
-              {isProcessing ? "Procesando..." : "Procesar Documentos"}
-            </ThemedText>
+            {isProcessing ? (
+               <ActivityIndicator color={Colors.light.white} />
+            ) : (
+              <ThemedText style={styles.processButtonText}>
+                Procesar Documentos
+              </ThemedText>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
