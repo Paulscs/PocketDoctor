@@ -65,6 +65,7 @@ export default {
           ],
         },
       ],
+      "expo-web-browser",
     ],
 
     experiments: {

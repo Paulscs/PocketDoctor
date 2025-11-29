@@ -4,18 +4,22 @@ from typing import List, Optional
 import os
 import uuid
 import json
+from datetime import date
+from typing import Dict
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel
 from supabase import create_client, Client
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
-from datetime import date
-from typing import Dict
+
 # Eliminamos openai e importamos google-generativeai
 import google.generativeai as genai
 
 from dotenv import load_dotenv
+from app.core.security import get_current_user, AuthUser
+from app.core.config import settings
+
 load_dotenv()
 
 # ---------------------------
@@ -97,6 +101,7 @@ class PatientProfile(BaseModel):
     height_cm: Optional[float] = None
     conditions: List[str] = []
     medications: List[str] = []
+    allergies: List[str] = []
 
 
 class LabMetadata(BaseModel):
@@ -492,6 +497,7 @@ def build_analysis_input(
     full_text: str,
     storage_path: Optional[str] = None,
     public_url: Optional[str] = None,
+    patient_profile: Optional[PatientProfile] = None,
 ) -> AnalysisInput:
     # TODO: aquí podrías parsear full_text para sacar la fecha de colección y el nombre del lab
     lab_metadata = LabMetadata(
@@ -499,15 +505,16 @@ def build_analysis_input(
         lab_name=None,
     )
 
-    # TODO: más adelante puedes recibir estos datos del perfil del usuario/logged in user
-    patient_profile = PatientProfile(
-        age=None,
-        sex=None,
-        weight_kg=None,
-        height_cm=None,
-        conditions=[],
-        medications=[],
-    )
+    if patient_profile is None:
+        patient_profile = PatientProfile(
+            age=None,
+            sex=None,
+            weight_kg=None,
+            height_cm=None,
+            conditions=[],
+            medications=[],
+            allergies=[],
+        )
 
     lab_results = [lab_item_to_lab_result(it) for it in items]
 
@@ -787,7 +794,10 @@ def parse_row_to_item(row: str) -> Optional[LabItem]:
 # ---------------------------
 
 @router.post("/pdf", response_model=OCRResponse)
-async def ocr_pdf(file: UploadFile = File(...)):
+async def ocr_pdf(
+    file: UploadFile = File(...),
+    user: AuthUser = Depends(get_current_user)
+):
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Solo se permiten archivos PDF")
 
@@ -798,6 +808,49 @@ async def ocr_pdf(file: UploadFile = File(...)):
 
         # Subir el PDF a Supabase (si está configurado)
         storage_path, public_url = upload_pdf_to_supabase(content, file.filename)
+
+        # ---------------------------------------------------------
+        # Obtener datos del usuario logueado
+        # ---------------------------------------------------------
+        user_profile_data = None
+        try:
+            # Creamos cliente con el token del usuario para respetar RLS
+            client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+            client.postgrest.auth(user.token)
+            
+            resp = client.table("usuarios").select("*").eq("user_auth_id", user.sub).single().execute()
+            if resp.data:
+                user_profile_data = resp.data
+        except Exception as e:
+            print(f"[OCR] Error obteniendo perfil de usuario: {e}")
+
+        # Mapear a PatientProfile
+        patient_profile = None
+        if user_profile_data:
+            # Calcular edad
+            age = None
+            if user_profile_data.get("fecha_nacimiento"):
+                try:
+                    dob = date.fromisoformat(user_profile_data["fecha_nacimiento"])
+                    today = date.today()
+                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                except Exception:
+                    pass
+            
+            # Mapear sexo
+            sex_map = {"Masculino": "M", "Femenino": "F", "M": "M", "F": "F"}
+            raw_sex = user_profile_data.get("sexo")
+            sex = sex_map.get(raw_sex, raw_sex)
+
+            patient_profile = PatientProfile(
+                age=age,
+                sex=sex,
+                weight_kg=user_profile_data.get("peso_kg"),
+                height_cm=user_profile_data.get("altura_cm"),
+                conditions=user_profile_data.get("condiciones_medicas") or [],
+                medications=[],
+                allergies=user_profile_data.get("alergias") or []
+            )
 
         doc = DocumentFile.from_pdf(io.BytesIO(content))
 
@@ -840,6 +893,7 @@ async def ocr_pdf(file: UploadFile = File(...)):
             full_text=full_text,
             storage_path=storage_path,
             public_url=public_url,
+            patient_profile=patient_profile
         )
 
         return OCRResponse(

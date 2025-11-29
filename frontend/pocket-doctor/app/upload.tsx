@@ -6,7 +6,7 @@ import {
   ScrollView,
   Image,
   Alert,
-  ActivityIndicator, // Added for visual feedback
+  ActivityIndicator,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -14,7 +14,7 @@ import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
 
 type SelectedFile = {
@@ -28,11 +28,7 @@ const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:8000";
 
 export default function UploadScreen() {
-  const [selectedFile, setSelectedFile] = useState<{
-    name: string;
-    type: string;
-    uri: string;
-  } | null>(null);
+  const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const session = useAuthStore((state) => state.session);
@@ -60,28 +56,18 @@ export default function UploadScreen() {
   };
 
   const handleCameraPress = () => {
-    // Placeholder for camera logic
     Alert.alert("Info", "Funcionalidad de cámara en desarrollo.");
   };
 
-  // ✅ ENABLED AND UPDATED FUNCTION
   const handleProcessDocuments = async () => {
     if (!selectedFile) {
       Alert.alert("Error", "Por favor selecciona un archivo primero");
       return;
     }
 
-    // Optional: Ensure user is logged in
-    /* if (!accessToken) {
-      Alert.alert("Sesión requerida", "Inicia sesión para continuar.");
-      return;
-    }
-    */
-
     setIsProcessing(true);
 
     try {
-      // 1. Prepare FormData for FastAPI
       const formData = new FormData();
       formData.append("file", {
         uri: selectedFile.uri,
@@ -89,16 +75,14 @@ export default function UploadScreen() {
         type: selectedFile.type,
       } as any);
 
-      // 2. Call your local OCR Endpoint
       console.log("Sending to:", `${API_BASE_URL}/ocr-local/pdf`);
-      
+
       const response = await fetch(`${API_BASE_URL}/ocr-local/pdf`, {
         method: "POST",
         body: formData,
         headers: {
-          // 'Content-Type': 'multipart/form-data', // Do NOT set this manually in React Native fetch, it breaks boundaries
           Accept: "application/json",
-          // Authorization: `Bearer ${accessToken}`, // Uncomment if your OCR endpoint needs auth
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
@@ -110,51 +94,11 @@ export default function UploadScreen() {
       const ocrResult = await response.json();
       console.log("OCR Success:", ocrResult.items?.length, "items found");
 
-      // 3. Navigate to Validate Data Screen
-      // We pass the entire result as a JSON string to be parsed by the next screen
+      // Direct navigation to AI Analytics as requested
       router.push({
-        pathname: "/validate-data",
+        pathname: "/ai-analytics",
         params: { ocrData: JSON.stringify(ocrResult) },
       });
-
-      // ---------------------------------------------------------
-      // 🔽 LLM SECTION (COMMENTED AS REQUESTED)
-      // ---------------------------------------------------------
-      /*
-      // The logic below would run AFTER OCR if you wanted to chain them immediately,
-      // but typically you validate OCR data first, THEN send to LLM.
-
-      // 3b) LLAMAR A LA LLM: /parse-llm
-      const llmPayload = {
-        ocr_text: ocrResult.text ?? "",
-        patient_profile: {
-          age: null,
-          sex: null,
-          weight_kg: null,
-          height_cm: null,
-          conditions: [],
-          medications: [],
-        },
-        draft_analysis_input: ocrResult.analysis_input ?? null,
-      };
-
-      const llmRes = await fetch(`${API_BASE_URL}/ocr-local/parse-llm`, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(llmPayload),
-      });
-
-      if (!llmRes.ok) {
-        throw new Error("Error al analizar resultados con IA");
-      }
-
-      const llmResult = await llmRes.json();
-      console.log("LLM Result:", llmResult);
-      */
-      // ---------------------------------------------------------
 
     } catch (error: any) {
       console.error("Upload Error:", error);
@@ -173,7 +117,6 @@ export default function UploadScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -205,7 +148,6 @@ export default function UploadScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Upload Icon */}
         <View style={styles.uploadIconContainer}>
           <View style={styles.uploadIcon}>
             <IconSymbol
@@ -216,10 +158,8 @@ export default function UploadScreen() {
           </View>
         </View>
 
-        {/* Title */}
         <ThemedText style={styles.title}>Subir resultados médicos</ThemedText>
 
-        {/* File Upload Area */}
         <View style={styles.uploadArea}>
           <TouchableOpacity
             style={styles.uploadButton}
@@ -264,7 +204,6 @@ export default function UploadScreen() {
               </View>
             </View>
 
-            {/* Upload Options */}
             <View style={styles.uploadOptions}>
               <TouchableOpacity
                 style={styles.optionButton}
@@ -294,7 +233,6 @@ export default function UploadScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Selected File Display */}
         {selectedFile && (
           <View style={styles.selectedFileContainer}>
             <View style={styles.selectedFile}>
@@ -322,7 +260,6 @@ export default function UploadScreen() {
           </View>
         )}
 
-        {/* Action Buttons */}
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={[
@@ -333,7 +270,7 @@ export default function UploadScreen() {
             disabled={!selectedFile || isProcessing}
           >
             {isProcessing ? (
-               <ActivityIndicator color={Colors.light.white} />
+              <ActivityIndicator color={Colors.light.white} />
             ) : (
               <ThemedText style={styles.processButtonText}>
                 Procesar Documentos
@@ -410,7 +347,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-
   uploadIconContainer: {
     alignItems: "center",
     marginTop: 40,
@@ -424,7 +360,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   title: {
     fontSize: 24,
     fontWeight: "700",
@@ -433,7 +368,6 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     textDecorationLine: "underline",
   },
-
   uploadArea: {
     marginBottom: 32,
   },
@@ -502,7 +436,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: Colors.light.brandBlue,
   },
-
   selectedFileContainer: {
     marginBottom: 24,
   },
@@ -529,7 +462,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.light.gray,
   },
-
   actionButtons: {
     marginTop: "auto",
     gap: 12,
