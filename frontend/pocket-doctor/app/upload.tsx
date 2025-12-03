@@ -6,36 +6,57 @@ import {
   ScrollView,
   Image,
   Alert,
+  ActivityIndicator,
 } from "react-native";
+import * as DocumentPicker from "expo-document-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { Colors } from "@/constants/theme";
+import { useAuthStore } from "@/src/store";
+
+type SelectedFile = {
+  name: string;
+  type: string;
+  uri: string;
+};
+
+// Ensure this points to your FastAPI server
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:8000";
 
 export default function UploadScreen() {
-  const [selectedFile, setSelectedFile] = useState<{
-    name: string;
-    type: string;
-    uri: string;
-  } | null>(null);
+  const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleCameraPress = () => {
-    setSelectedFile({
-      name: "foto_laboratorio.jpg",
-      type: "JPG",
-      uri: "camera://photo.jpg",
-    });
+  const session = useAuthStore((state) => state.session);
+  const accessToken = session?.access_token;
+
+  const handleFilePress = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "application/pdf",
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) return;
+
+      const asset = result.assets[0];
+      setSelectedFile({
+        name: asset.name || "documento.pdf",
+        type: asset.mimeType || "application/pdf",
+        uri: asset.uri,
+      });
+    } catch (error) {
+      console.error("Error selecting file:", error);
+      Alert.alert("Error", "No se pudo seleccionar el archivo");
+    }
   };
 
-  const handleFilePress = () => {
-    setSelectedFile({
-      name: "resultados_laboratorio.pdf",
-      type: "PDF",
-      uri: "file://document.pdf",
-    });
+  const handleCameraPress = () => {
+    Alert.alert("Info", "Funcionalidad de cámara en desarrollo.");
   };
 
   const handleProcessDocuments = async () => {
@@ -45,11 +66,46 @@ export default function UploadScreen() {
     }
 
     setIsProcessing(true);
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      router.push("/validate-data");
-    } catch {
-      Alert.alert("Error", "No se pudo procesar el documento");
+      const formData = new FormData();
+      formData.append("file", {
+        uri: selectedFile.uri,
+        name: selectedFile.name,
+        type: selectedFile.type,
+      } as any);
+
+      console.log("Sending to:", `${API_BASE_URL}/ocr-local/pdf`);
+
+      const response = await fetch(`${API_BASE_URL}/ocr-local/pdf`, {
+        method: "POST",
+        body: formData,
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Error en el servidor");
+      }
+
+      const ocrResult = await response.json();
+      console.log("OCR Success:", ocrResult.items?.length, "items found");
+
+      // Direct navigation to AI Analytics as requested
+      router.push({
+        pathname: "/ai-analytics",
+        params: { ocrData: JSON.stringify(ocrResult) },
+      });
+
+    } catch (error: any) {
+      console.error("Upload Error:", error);
+      Alert.alert(
+        "Error",
+        error.message || "No se pudo procesar el documento."
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -61,7 +117,6 @@ export default function UploadScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Custom Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -93,7 +148,6 @@ export default function UploadScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Upload Icon */}
         <View style={styles.uploadIconContainer}>
           <View style={styles.uploadIcon}>
             <IconSymbol
@@ -104,10 +158,8 @@ export default function UploadScreen() {
           </View>
         </View>
 
-        {/* Title */}
         <ThemedText style={styles.title}>Subir resultados médicos</ThemedText>
 
-        {/* File Upload Area */}
         <View style={styles.uploadArea}>
           <TouchableOpacity
             style={styles.uploadButton}
@@ -152,7 +204,6 @@ export default function UploadScreen() {
               </View>
             </View>
 
-            {/* Upload Options */}
             <View style={styles.uploadOptions}>
               <TouchableOpacity
                 style={styles.optionButton}
@@ -182,7 +233,6 @@ export default function UploadScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Selected File Display */}
         {selectedFile && (
           <View style={styles.selectedFileContainer}>
             <View style={styles.selectedFile}>
@@ -210,7 +260,6 @@ export default function UploadScreen() {
           </View>
         )}
 
-        {/* Action Buttons */}
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={[
@@ -220,9 +269,13 @@ export default function UploadScreen() {
             onPress={handleProcessDocuments}
             disabled={!selectedFile || isProcessing}
           >
-            <ThemedText style={styles.processButtonText}>
-              {isProcessing ? "Procesando..." : "Procesar Documentos"}
-            </ThemedText>
+            {isProcessing ? (
+              <ActivityIndicator color={Colors.light.white} />
+            ) : (
+              <ThemedText style={styles.processButtonText}>
+                Procesar Documentos
+              </ThemedText>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -294,7 +347,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-
   uploadIconContainer: {
     alignItems: "center",
     marginTop: 40,
@@ -308,7 +360,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   title: {
     fontSize: 24,
     fontWeight: "700",
@@ -317,7 +368,6 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     textDecorationLine: "underline",
   },
-
   uploadArea: {
     marginBottom: 32,
   },
@@ -386,7 +436,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: Colors.light.brandBlue,
   },
-
   selectedFileContainer: {
     marginBottom: 24,
   },
@@ -413,7 +462,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.light.gray,
   },
-
   actionButtons: {
     marginTop: "auto",
     gap: 12,

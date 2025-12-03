@@ -5,20 +5,81 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Colors } from "@/constants/theme";
+import { useAuthStore } from "@/src/store";
 
 export default function IAAnalyticsScreen() {
+  const params = useLocalSearchParams();
+  const [loading, setLoading] = React.useState(true);
+  const [analysisData, setAnalysisData] = React.useState<any>(null);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const session = useAuthStore((state) => state.session);
+  const accessToken = session?.access_token;
+
   const backgroundColor = useThemeColor(
     { light: Colors.light.white, dark: Colors.dark.background },
     "background"
   );
+
+  // Ensure this points to your FastAPI server
+  const API_BASE_URL =
+    process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:8000";
+
+  React.useEffect(() => {
+    const fetchAnalysis = async () => {
+      try {
+        if (!params.ocrData) {
+          throw new Error("No se recibieron datos del documento.");
+        }
+
+        const ocrResult = typeof params.ocrData === 'string'
+          ? JSON.parse(params.ocrData)
+          : params.ocrData;
+
+        // Prepare payload for LLM analysis
+        const payload = {
+          ocr_text: ocrResult.text || "",
+          patient_profile: ocrResult.analysis_input?.patient_profile || null,
+          draft_analysis_input: ocrResult.analysis_input || null,
+        };
+
+        console.log("Requesting AI Analysis...");
+
+        const response = await fetch(`${API_BASE_URL}/ocr-local/parse-llm`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(errText || "Error al analizar con IA");
+        }
+
+        const data = await response.json();
+        setAnalysisData(data);
+      } catch (err: any) {
+        console.error("Analysis Error:", err);
+        setError(err.message || "Error desconocido");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalysis();
+  }, [params.ocrData]);
 
   const handleViewDetailedRecommendations = () => {
     router.push("/recommendations");
@@ -31,6 +92,27 @@ export default function IAAnalyticsScreen() {
   const handleBack = () => {
     router.back();
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.light.brandBlue} />
+        <ThemedText style={{ marginTop: 20 }}>Analizando con IA...</ThemedText>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor, justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
+        <Ionicons name="alert-circle" size={48} color={Colors.light.error} />
+        <ThemedText style={{ marginTop: 20, textAlign: 'center', color: Colors.light.error }}>{error}</ThemedText>
+        <TouchableOpacity style={styles.actionButton} onPress={handleBack}>
+          <ThemedText style={styles.actionButtonText}>Volver</ThemedText>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
@@ -82,9 +164,7 @@ export default function IAAnalyticsScreen() {
               </ThemedText>
             </View>
             <ThemedText style={styles.overviewText}>
-              La IA ha analizado los resultados de su laboratorio e identificado
-              2 áreas que requieren atención. La evaluación general muestra
-              marcadores de salud manejables con intervenciones recomendadas.
+              {analysisData?.summary || "No hay resumen disponible."}
             </ThemedText>
           </View>
 
@@ -94,84 +174,61 @@ export default function IAAnalyticsScreen() {
               Detalles médicos
             </ThemedText>
 
-            {/* Elevated Cholesterol Card */}
-            <View style={styles.medicalCard}>
-              <View style={styles.medicalCardHeader}>
-                <ThemedText style={styles.medicalCardTitle}>
-                  Colesterol elevado
-                </ThemedText>
-                <View style={styles.priorityPill}>
-                  <ThemedText style={styles.priorityText}>
-                    Prioridad media
+            {analysisData?.analysis_input?.lab_results?.map((item: any, index: number) => (
+              <View key={index} style={styles.medicalCard}>
+                <View style={styles.medicalCardHeader}>
+                  <ThemedText style={styles.medicalCardTitle}>
+                    {item.name}
+                  </ThemedText>
+                  <View style={[
+                    styles.priorityPill,
+                    item.status === 'alto' ? { backgroundColor: Colors.light.error + '20', borderColor: Colors.light.error } :
+                      item.status === 'bajo' ? { backgroundColor: Colors.light.warningBg, borderColor: Colors.light.warningBorder } :
+                        { backgroundColor: Colors.light.friendlyGreenBg, borderColor: Colors.light.friendlyGreenBorder }
+                  ]}>
+                    <ThemedText style={[
+                      styles.priorityText,
+                      item.status === 'alto' ? { color: Colors.light.error } :
+                        item.status === 'bajo' ? { color: Colors.light.warning } :
+                          { color: Colors.light.success }
+                    ]}>
+                      {item.status ? item.status.toUpperCase() : "NORMAL"}
+                    </ThemedText>
+                  </View>
+                </View>
+
+                {/* Value Section */}
+                <View style={styles.analysisSection}>
+                  <ThemedText style={styles.analysisTitle}>Resultado</ThemedText>
+                  <ThemedText style={styles.analysisText}>
+                    {item.value} {item.unit} (Ref: {item.ref_low} - {item.ref_high})
                   </ThemedText>
                 </View>
               </View>
-
-              {/* Analysis Section */}
-              <View style={styles.analysisSection}>
-                <ThemedText style={styles.analysisTitle}>Análisis</ThemedText>
-                <ThemedText style={styles.analysisText}>
-                  El nivel total de colesterol de 245 mg/dL está por encima del
-                  umbral recomendado de &lt;200 mg/dL, lo que indica un mayor
-                  riesgo cardiovascular.
-                </ThemedText>
-              </View>
-
-              {/* Recommendations Section */}
-              <View style={styles.recommendationsSection}>
-                <ThemedText style={styles.recommendationsTitle}>
-                  Recomendaciones
-                </ThemedText>
-                <ThemedText style={styles.recommendationsText}>
-                  Considere modificaciones dietéticas, ejercicio regular y
-                  potencialmente terapia con estatinas. Panel lipídico de
-                  seguimiento en 6-8 semanas.
-                </ThemedText>
-              </View>
-            </View>
+            ))}
           </View>
 
           {/* Possible Risks Section */}
-          <View style={styles.risksCard}>
-            <View style={styles.risksHeader}>
-              <View style={styles.warningIcon}>
-                <Ionicons
-                  name="warning"
-                  size={20}
-                  color={Colors.light.warning}
-                />
+          {analysisData?.warnings && analysisData.warnings.length > 0 && (
+            <View style={styles.risksCard}>
+              <View style={styles.risksHeader}>
+                <View style={styles.warningIcon}>
+                  <Ionicons
+                    name="warning"
+                    size={20}
+                    color={Colors.light.warning}
+                  />
+                </View>
+                <ThemedText style={styles.risksTitle}>
+                  Posibles Riesgos
+                </ThemedText>
               </View>
-              <ThemedText style={styles.risksTitle}>
-                Posibles Riesgos
-              </ThemedText>
-            </View>
-            <ThemedText style={styles.risksText}>
-              Según los resultados actuales, el paciente muestra signos
-              tempranos de factores de riesgo para el síndrome metabólico.
-            </ThemedText>
 
-            <View style={styles.riskItems}>
-              <View style={styles.riskItem}>
-                <ThemedText style={styles.riskItemLabel}>
-                  Cardiovascular
-                </ThemedText>
-                <ThemedText style={styles.riskItemValue}>
-                  Riesgo: Moderado
-                </ThemedText>
-              </View>
-              <View style={styles.riskItem}>
-                <ThemedText style={styles.riskItemLabel}>Diabetes</ThemedText>
-                <ThemedText
-                  style={[
-                    styles.riskItemValue,
-                    { color: Colors.light.success },
-                  ]}
-                >
-                  Riesgo: Bajo
-                </ThemedText>
-              </View>
+              {analysisData.warnings.map((warning: string, index: number) => (
+                <ThemedText key={index} style={styles.risksText}>• {warning}</ThemedText>
+              ))}
             </View>
-          </View>
+          )}
 
           {/* Action Button */}
           <TouchableOpacity

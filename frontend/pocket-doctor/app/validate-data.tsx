@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -8,52 +8,53 @@ import {
   TextInput,
   Alert,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router"; // 👈 IMPORTANT: Receives the data
 import { Colors } from "@/constants/theme";
+
+// --- Types matching Backend Response ---
+
+interface RefRange {
+  min: number | null;
+  max: number | null;
+}
+
+// Corresponds to 'LabItem' in ocr_local.py
+interface BackendLabItem {
+  name_raw: string;
+  name: string;
+  value: number | null;
+  unit: string | null;
+  ref_range: RefRange | null;
+  flag: string | null;
+  status: string | null;
+  line: string;
+}
+
+// --- Frontend UI Types ---
 
 interface MedicalData {
   id: string;
   name: string;
   value: string;
   normalRange: string;
-  status: "normal" | "elevated" | "low";
+  status: "normal" | "elevated" | "low" | "unknown";
 }
 
-const initialMockData: MedicalData[] = [
-  {
-    id: "1",
-    name: "Hemoglobina",
-    value: "12.5 g/dL",
-    normalRange: "12.0-15.5 g/dL",
-    status: "normal",
-  },
-  {
-    id: "2",
-    name: "Células blancas",
-    value: "8.2 K/μL",
-    normalRange: "4.0-11.0 K/μL",
-    status: "normal",
-  },
-  {
-    id: "3",
-    name: "Colesterol",
-    value: "245 mg/dL",
-    normalRange: "<200 mg/dL",
-    status: "elevated",
-  },
-  {
-    id: "4",
-    name: "Creatinina",
-    value: "0.9 mg/dL",
-    normalRange: "0.6-1.2 mg/dL",
-    status: "normal",
-  },
-];
+// Helper to map Python status to UI status
+const mapBackendStatus = (status: string | null): MedicalData["status"] => {
+  if (!status) return "unknown";
+  const s = status.toLowerCase();
+  if (s === "alto") return "elevated";
+  if (s === "bajo") return "low";
+  if (s === "normal") return "normal";
+  return "unknown";
+};
 
 const getStatusConfig = (status: string) => {
   switch (status) {
@@ -83,14 +84,17 @@ const getStatusConfig = (status: string) => {
         backgroundColor: Colors.light.lightGray,
         borderColor: Colors.light.borderGray,
         textColor: Colors.light.gray,
-        text: "Desconocido",
+        text: "Revisar",
       };
   }
 };
 
 export default function ValidateDataScreen() {
-  const [medicalData, setMedicalData] =
-    useState<MedicalData[]>(initialMockData);
+  // 👇 1. Receive data passed from previous screen
+  const params = useLocalSearchParams();
+  
+  const [medicalData, setMedicalData] = useState<MedicalData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editingData, setEditingData] = useState<MedicalData | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -100,8 +104,58 @@ export default function ValidateDataScreen() {
     "background"
   );
 
+  // 👇 2. Effect: Load and Parse Data
+  useEffect(() => {
+    if (params.ocrData) {
+      try {
+        // Parse the JSON string coming from upload.tsx
+        const parsedResponse = typeof params.ocrData === 'string' 
+          ? JSON.parse(params.ocrData) 
+          : params.ocrData;
+        
+        const items: BackendLabItem[] = parsedResponse.items || [];
+
+        // Map Backend Items to Frontend UI Model
+        const mappedData: MedicalData[] = items.map((item, index) => {
+          // Format Range: e.g., "12.0 - 15.0"
+          let rangeStr = "N/A";
+          if (item.ref_range) {
+            const min = item.ref_range.min ?? "?";
+            const max = item.ref_range.max ?? "?";
+            rangeStr = `${min} - ${max}`;
+          }
+
+          // Format Value: e.g. "12.5 g/dL"
+          const valStr = item.value !== null ? item.value.toString() : "-";
+          const unitStr = item.unit ? ` ${item.unit}` : "";
+
+          return {
+            id: index.toString(),
+            name: item.name,
+            value: `${valStr}${unitStr}`,
+            normalRange: `${rangeStr}${unitStr}`,
+            status: mapBackendStatus(item.status),
+          };
+        });
+
+        setMedicalData(mappedData);
+      } catch (e) {
+        Alert.alert("Error", "No se pudieron procesar los datos del servidor.");
+        console.error("Error parsing OCR data:", e);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+        setLoading(false);
+    }
+  }, [params.ocrData]);
+
   const handleProceedWithAI = () => {
-    router.push("/ai-analytics");
+    // Send valid data to the next step
+    router.push({
+      pathname: "/ai-analytics",
+      params: { validatedData: JSON.stringify(medicalData) }
+    });
   };
 
   const handleCancel = () => {
@@ -113,7 +167,7 @@ export default function ValidateDataScreen() {
   };
 
   const handleEditValue = (dataId: string) => {
-    const data = medicalData.find(d => d.id === dataId);
+    const data = medicalData.find((d) => d.id === dataId);
     if (data) {
       setEditingData(data);
       setEditValue(data.value);
@@ -123,8 +177,8 @@ export default function ValidateDataScreen() {
 
   const handleSaveEdit = () => {
     if (editingData && editValue.trim()) {
-      setMedicalData(prevData =>
-        prevData.map(data =>
+      setMedicalData((prevData) =>
+        prevData.map((data) =>
           data.id === editingData.id
             ? { ...data, value: editValue.trim() }
             : data
@@ -133,7 +187,6 @@ export default function ValidateDataScreen() {
       setIsEditModalVisible(false);
       setEditingData(null);
       setEditValue("");
-      Alert.alert("Éxito", "Valor actualizado correctamente");
     }
   };
 
@@ -187,75 +240,86 @@ export default function ValidateDataScreen() {
             </ThemedText>
           </View>
 
-          {/* Data List */}
-          <View style={styles.dataList}>
-            {medicalData.map(data => {
-              const statusConfig = getStatusConfig(data.status);
-              return (
-                <View key={data.id} style={styles.dataCard}>
-                  <View style={styles.dataHeader}>
-                    <View style={styles.dataIcon}>
-                      <Ionicons
-                        name="medical"
-                        size={16}
-                        color={Colors.light.white}
-                      />
-                    </View>
-                    <ThemedText style={styles.dataName}>{data.name}</ThemedText>
-                    <View
-                      style={[
-                        styles.statusPill,
-                        {
-                          backgroundColor: statusConfig.backgroundColor,
-                          borderColor: statusConfig.borderColor,
-                        },
-                      ]}
-                    >
-                      <ThemedText
+          {/* Loading State or Empty State */}
+          {loading ? (
+             <ActivityIndicator size="large" color={Colors.light.brandBlue} />
+          ) : medicalData.length === 0 ? (
+            <View style={styles.emptyContainer}>
+               <ThemedText style={{textAlign: 'center', color: Colors.light.gray}}>
+                 No se encontraron resultados legibles.
+               </ThemedText>
+            </View>
+          ) : (
+            /* Data List */
+            <View style={styles.dataList}>
+              {medicalData.map((data) => {
+                const statusConfig = getStatusConfig(data.status);
+                return (
+                  <View key={data.id} style={styles.dataCard}>
+                    <View style={styles.dataHeader}>
+                      <View style={styles.dataIcon}>
+                        <Ionicons
+                          name="medical"
+                          size={16}
+                          color={Colors.light.white}
+                        />
+                      </View>
+                      <ThemedText style={styles.dataName}>{data.name}</ThemedText>
+                      <View
                         style={[
-                          styles.statusText,
-                          { color: statusConfig.textColor },
+                          styles.statusPill,
+                          {
+                            backgroundColor: statusConfig.backgroundColor,
+                            borderColor: statusConfig.borderColor,
+                          },
                         ]}
                       >
-                        {statusConfig.text}
-                      </ThemedText>
-                    </View>
-                  </View>
-
-                  <View style={styles.dataContent}>
-                    <View style={styles.valueContainer}>
-                      <ThemedText style={styles.valueLabel}>Valor</ThemedText>
-                      <View style={styles.valueRow}>
-                        <ThemedText style={styles.valueText}>
-                          {data.value}
-                        </ThemedText>
-                        <TouchableOpacity
-                          style={styles.editButton}
-                          onPress={() => handleEditValue(data.id)}
-                          activeOpacity={0.7}
+                        <ThemedText
+                          style={[
+                            styles.statusText,
+                            { color: statusConfig.textColor },
+                          ]}
                         >
-                          <Ionicons
-                            name="pencil"
-                            size={14}
-                            color={Colors.light.medicalBlue}
-                          />
-                        </TouchableOpacity>
+                          {statusConfig.text}
+                        </ThemedText>
                       </View>
                     </View>
 
-                    <View style={styles.rangeContainer}>
-                      <ThemedText style={styles.rangeLabel}>
-                        Rango normal
-                      </ThemedText>
-                      <ThemedText style={styles.rangeText}>
-                        {data.normalRange}
-                      </ThemedText>
+                    <View style={styles.dataContent}>
+                      <View style={styles.valueContainer}>
+                        <ThemedText style={styles.valueLabel}>Valor</ThemedText>
+                        <View style={styles.valueRow}>
+                          <ThemedText style={styles.valueText}>
+                            {data.value}
+                          </ThemedText>
+                          <TouchableOpacity
+                            style={styles.editButton}
+                            onPress={() => handleEditValue(data.id)}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons
+                              name="pencil"
+                              size={14}
+                              color={Colors.light.medicalBlue}
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+
+                      <View style={styles.rangeContainer}>
+                        <ThemedText style={styles.rangeLabel}>
+                          Rango normal
+                        </ThemedText>
+                        <ThemedText style={styles.rangeText}>
+                          {data.normalRange}
+                        </ThemedText>
+                      </View>
                     </View>
                   </View>
-                </View>
-              );
-            })}
-          </View>
+                );
+              })}
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -569,6 +633,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.light.brandBlue,
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: 'center',
   },
   modalOverlay: {
     flex: 1,

@@ -1,5 +1,13 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
+
+class EspecialistaCentro(BaseModel):
+    especialista_id: int
+    nombre: str
+    apellido: str
+    especialidad: Optional[List[str]] = None
+    contacto: Optional[str] = None
+    centro_id: int
 
 class CentroBase(BaseModel):
     nombre: str
@@ -8,6 +16,7 @@ class CentroBase(BaseModel):
     ciudad: Optional[str] = None
     provincia: Optional[str] = None
     rnc: Optional[str] = None
+    ubicacion_geografica: Optional[str] = None
 
 class CentroCreate(CentroBase):
     pass
@@ -19,6 +28,7 @@ class CentroUpdate(BaseModel):
     ciudad: Optional[str] = None
     provincia: Optional[str] = None
     rnc: Optional[str] = None
+    ubicacion_geografica: Optional[str] = None
     estado: Optional[bool] = None
 
 class CentroOut(CentroBase):

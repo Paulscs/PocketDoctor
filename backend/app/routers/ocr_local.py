@@ -1,299 +1,913 @@
-# app/routers/ocr_local.py
-from typing import Optional, Callable, List, Dict, TypedDict, Literal
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from app.core.config import settings
-from app.core.security import get_current_user, AuthUser
-
-import shutil
+import io
 import re
-import pytesseract
-from PIL import Image, ImageOps
-from io import BytesIO
+from typing import List, Optional
+import os
+import uuid
+import json
+from datetime import date
+from typing import Dict
 
-# ---- PDF opcional (pdf2image) ----
-PDF2IMAGE_AVAILABLE: bool = False
-_convert_from_bytes: Optional[Callable[..., list]] = None  # lista de PIL.Image
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from pydantic import BaseModel
+from supabase import create_client, Client
+from doctr.io import DocumentFile
+from doctr.models import ocr_predictor
 
-try:
-    from pdf2image import convert_from_bytes as _pdf2image_convert_from_bytes  # type: ignore
-    _convert_from_bytes = _pdf2image_convert_from_bytes
-    PDF2IMAGE_AVAILABLE = True
-except Exception:
-    PDF2IMAGE_AVAILABLE = False
-    _convert_from_bytes = None  # asegura que exista
+# Eliminamos openai e importamos google-generativeai
+import google.generativeai as genai
 
-router = APIRouter(prefix="/ocr", tags=["ocr"])
+from dotenv import load_dotenv
+from app.core.security import get_current_user, AuthUser
+from app.core.config import settings
 
-# Configura tesseract desde .env o PATH
-pytesseract.pytesseract.tesseract_cmd = (
-    settings.TESSERACT_CMD
-    or shutil.which("tesseract")
-    or "tesseract"
-)
+load_dotenv()
 
-# =========================================================
-#                 PREPROCESADO Y OCR
-# =========================================================
+# ---------------------------
+# Configuración Google Gemini
+# ---------------------------
+# Asegúrate de tener GOOGLE_API_KEY en tu archivo .env
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-def _preprocess(img: Image.Image) -> Image.Image:
-    """Mejoras simples para OCR: reescalado, gris, autocontraste y binarización."""
-    w, h = img.size
-    if max(w, h) < 1800:
-        img = img.resize((int(w * 1.5), int(h * 1.5)))
-    img = ImageOps.grayscale(img)
-    img = ImageOps.autocontrast(img)
-    img = img.point(lambda x: 255 if x > 180 else 0, mode="1")
-    return img
+# Variable de control para saber si podemos usar la IA
+gemini_configured = False
 
-def _ocr_image_bytes(img_bytes: bytes, lang: str) -> str:
-    img = Image.open(BytesIO(img_bytes))
-    if img.mode in ("RGBA", "P"):
-        img = img.convert("RGB")
-    img = _preprocess(img)
-    config = "--oem 1 --psm 6"  # tablas alineadas; si hay columnas, prueba --psm 4
-    text = pytesseract.image_to_string(img, lang=lang, config=config)
-    return text.strip()
+if not GOOGLE_API_KEY:
+    # No rompemos el servidor aquí, solo avisamos en consola
+    print("[Gemini] WARNING: GOOGLE_API_KEY no configurada. "
+          "Los endpoints que usan la IA devolverán error 500.")
+else:
+    # Configuramos la librería globalmente
+    genai.configure(api_key=GOOGLE_API_KEY)
+    gemini_configured = True
 
-# =========================================================
-#           PARSER GENÉRICO ROBUSTO → JSON
-#     Busca primero el rango y luego el valor correcto
-# =========================================================
 
-class RefRange(TypedDict, total=False):
-    min: float
-    max: float
+router = APIRouter(prefix="/ocr-local", tags=["OCR local"])
 
-class ParsedItem(TypedDict, total=False):
-    name_raw: str
+# ---------------------------
+# Supabase
+# ---------------------------
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+SUPABASE_BUCKET = "uploads"
+
+supabase_client: Optional[Client] = None
+if SUPABASE_URL and SUPABASE_SERVICE_KEY:
+    try:
+        supabase_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+    except Exception as e:
+        print(f"[Supabase] Error creando cliente: {e}")
+else:
+    print("[Supabase] SUPABASE_URL o SUPABASE_SERVICE_KEY no configurados")
+
+
+def upload_pdf_to_supabase(content: bytes, filename: str) -> tuple[Optional[str], Optional[str]]:
+    """
+    Sube el PDF al bucket 'uploads' de Supabase.
+    Devuelve (storage_path, public_url) o (None, None) si falla o no hay cliente.
+    """
+    if supabase_client is None:
+        print("[Supabase] Cliente no inicializado, no se subirá el archivo")
+        return None, None
+
+    unique_name = f"{uuid.uuid4()}_{filename}"
+    storage_path = f"labs/{unique_name}"
+
+    try:
+        supabase_client.storage.from_(SUPABASE_BUCKET).upload(
+            path=storage_path,
+            file=content,
+        )
+        public_url = supabase_client.storage.from_(SUPABASE_BUCKET).get_public_url(
+            storage_path
+        )
+        return storage_path, public_url
+    except Exception as e:
+        print(f"[Supabase] Error subiendo archivo: {e}")
+        return None, None
+
+# ---------------------------
+# Modelos de respuesta
+# ---------------------------
+
+class RefRange(BaseModel):
+    min: Optional[float] = None
+    max: Optional[float] = None
+
+class PatientProfile(BaseModel):
+    age: Optional[int] = None
+    sex: Optional[str] = None  # "M", "F", etc.
+    weight_kg: Optional[float] = None
+    height_cm: Optional[float] = None
+    conditions: List[str] = []
+    medications: List[str] = []
+    allergies: List[str] = []
+
+
+class LabMetadata(BaseModel):
+    collection_date: Optional[date] = None
+    lab_name: Optional[str] = None
+
+
+class LabResult(BaseModel):
+    group: Optional[str] = None
     name: str
-    value: float
-    unit: Optional[str]
-    ref_range: Optional[RefRange]
-    flag: Optional[Literal["H", "L"]]
-    status: Optional[Literal["bajo", "normal", "alto"]]
+    code: Optional[str] = None
+    value: Optional[float] = None
+    unit: Optional[str] = None
+    ref_low: Optional[float] = None
+    ref_high: Optional[float] = None
+    status: Optional[str] = None        # "bajo", "normal", "alto", etc.
+    flag_from_lab: Optional[str] = None # equivalente a tu flag
     line: str
 
-_DASH = r"[-\-–—]"  # variantes de guiones
-_NUM = r"\d+(?:[.,]\d+)?"
 
-RANGE_RE = re.compile(
-    rf"(?P<low>{_NUM})\s*(?:{_DASH}|(?:\bto\b)|(?:\ba\b))\s*(?P<high>{_NUM})",
-    re.IGNORECASE,
+class AnalysisInput(BaseModel):
+    patient_profile: PatientProfile
+    lab_metadata: LabMetadata
+    lab_results: List[LabResult]
+
+class LLMParseRequest(BaseModel):
+    ocr_text: str
+    patient_profile: Optional[PatientProfile] = None
+    draft_analysis_input: Optional[AnalysisInput] = None  # opcional: lo que ya tienes del parser actual
+
+
+class LLMInterpretation(BaseModel):
+    analysis_input: AnalysisInput  # reutilizamos tu schema
+    summary: str                   # resumen en lenguaje natural
+    warnings: List[str] = []       # cosas a vigilar / posibles riesgos
+    disclaimer: str                # recordatorio de que no es diagnóstico
+
+
+class LabItem(BaseModel):
+    name_raw: str
+    name: str
+    value: Optional[float] = None
+    unit: Optional[str] = None
+    ref_range: Optional[RefRange] = None
+    flag: Optional[str] = None  # "H", "L", etc.
+    status: Optional[str] = None  # "alto", "bajo", "normal"
+    line: str
+
+class OCRResponse(BaseModel):
+    text: str
+    table_text: str
+    items: List[LabItem]
+    pages_processed: int
+    storage_path: Optional[str] = None  # path en Supabase
+    public_url: Optional[str] = None    # URL pública (si aplica)
+    analysis_input: Optional[AnalysisInput] = None
+
+
+
+# ---------------------------
+# Modelo de docTR
+# ---------------------------
+
+OCR_PREDICTOR = ocr_predictor(pretrained=True)
+MAX_PAGES = 5
+
+
+# ---------------------------
+# Utilidades de texto
+# ---------------------------
+
+def normalize_whitespace(s: str) -> str:
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def preclean_lines(lines: List[str]) -> List[str]:
+    cleaned = []
+    for ln in lines:
+        ln = ln.replace("\u00a0", " ")
+        ln = ln.replace("µ", "u")  # homogeneizar µ -> u
+        ln = normalize_whitespace(ln)
+        if not ln:
+            continue
+        cleaned.append(ln)
+    return cleaned
+
+
+NUM_RE = re.compile(r"[<>]?\d+(?:\.\d+)?")
+
+
+def is_value_only(s: str) -> bool:
+    s = normalize_whitespace(s)
+    return re.fullmatch(r"[<>]?\s*\d+(?:\.\d+)?", s) is not None
+
+
+def is_range_only(s: str) -> bool:
+    s = normalize_whitespace(s)
+    return re.fullmatch(r"\d+(?:\.\d+)?\s*-\s*\d+(?:\.\d+)?", s) is not None
+
+
+def is_unit_like(s: str) -> bool:
+    up = s.upper().replace(" ", "")
+    candidates = [
+        "G/DL",
+        "MG/DL",
+        "U/L",
+        "FL",
+        "PG",
+        "%",
+        "UG/G",
+        "UG/GL",
+        "10*3/UL",
+        "10:3/UL",
+        "10-3/UL",
+        "10*6/UL",
+        "MM/1H",
+        "P/C",
+    ]
+    return any(c in up for c in candidates)
+
+
+def looks_like_full_row(line: str) -> bool:
+    s = normalize_whitespace(line)
+    m = re.match(
+        r"^(.+?)\s+([<>]?\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)(?:\s+\S.+)?$",
+        s,
+    )
+    return m is not None
+
+
+# ---------------------------
+# Nombres que NO son analitos
+# ---------------------------
+
+def is_patient_line(line: str) -> bool:
+    up = line.upper()
+    if "SR(A)" in up or "CED/PAS" in up:
+        return True
+    if "FEC NAC" in up or "EDAD" in up or "SEXO" in up:
+        return True
+    if "TEL." in up or "TEL:" in up or "TELEF" in up:
+        return True
+    if "LABORATORIO CLINICO" in up or "LABORATORIO CLÍNICO" in up:
+        return True
+    return False
+
+
+def is_banned_name(name: str) -> bool:
+    up = normalize_whitespace(name).upper()
+
+    # Encabezados genéricos de tabla
+    header_tokens = [
+        "DETERMINACION",
+        "DETERMINACIÓN",
+        "METODO",
+        "MÉTODO",
+        "RESULTADO",
+        "INTERVALO",
+        "UNIDADES",
+        "DE REFERENCIA",
+        "UNIDAD DE MEDIDA",
+        "TIPO MUESTRA",
+    ]
+    if any(tok in up for tok in header_tokens):
+        return True
+
+    # Títulos de secciones (no son analitos)
+    section_titles = [
+        "HEMOGRAMA",
+        "RECUENTO DIFERENCIAL",
+        "RECUENTO DIFERENCIAL:",
+        "DIGESTION MATERIAS FECALES",
+        "DIGESTIÓN MATERIAS FECALES",
+        "EXAMEN MACROSCOPICO",
+        "EXAMEN MACROSCÓPICO",
+        "EXAMEN MICROSCOPICO",
+        "EXAMEN MICROSCÓPICO",
+        "EXAMEN QUIMICO",
+        "EXAMEN QUÍMICO",
+        "INVESTIGACION PARASITOS",
+        "INVESTIGACIÓN PARÁSITOS",
+    ]
+    if up in section_titles:
+        return True
+
+    # Coincidencias parciales de secciones
+    partial_section = [
+        "EXAMEN MICROSC",
+        "EXAMEN MACROSC",
+        "DIGESTION MATERIAS",
+        "DIGESTIÓN MATERIAS",
+        "RECUENTO DIFERENCIAL",
+    ]
+    if any(tok in up for tok in partial_section):
+        return True
+
+    # Cosas de cabecera / admin
+    patient_tokens = [
+        "SR(A)",
+        "SR.",
+        "SRA.",
+        "FEC NAC",
+        "EDAD",
+        "SEXO",
+        "CED/PAS",
+        "TEL.",
+        "TEL:",
+        "TELEF",
+        "REFERENCIA LABORATORIO",
+        "INFORME DE RESULTADO",
+        "INFORME DE RESULTADO(S)",
+        "PAGINA:",
+        "PÁGINA:",
+        "RNC:",
+        "NO.",
+        "COLECCION:",
+        "COLECCIÓN:",
+        "RECEPCION:",
+        "RECEPCIÓN:",
+        "REPORTE",
+        "VALORES CRITICOS",
+        "VALORES CRÍTICOS",
+        "SERIAL: NO.R",
+        "TOMA DE MUESTRACS",
+        "HUMANO SEGUROS",
+    ]
+    if any(tok in up for tok in patient_tokens):
+        return True
+
+    # Nombres que son solo métodos
+    method_only = {
+        "ENZIMATICO",
+        "COLORIMETRICO",
+        "COLORIMÉTRICO",
+        "CALCULO",
+        "CINETICO",
+        "CINÉTICO",
+        "CITOM. DE FLUJO",
+        "INMUNOTURBID.",
+        "INMUNOTURBID",
+        "COLORIME TRICO",
+    }
+    if up in method_only:
+        return True
+
+    # Líneas tipo "SE OBSERVA BLASTOCYSTIS..." las descartamos por ahora
+    if "SE OBSERVA BLASTOCYSTIS" in up:
+        return True
+
+    return False
+
+
+# ---------------------------
+# Unidades
+# ---------------------------
+
+UNIT_FIXES = {
+    "10*3/UL": "10^3/µL",
+    "10:3/UL": "10^3/µL",
+    "10-3/UL": "10^3/µL",
+    "10*6/UL": "10^6/µL",
+    "UG/G": "µg/g",
+    "UG/GL": "µg/g",
+    "UL": "µL",
+}
+
+
+def normalize_unit(unit: Optional[str]) -> Optional[str]:
+    if not unit:
+        return None
+    u = normalize_whitespace(unit)
+    key = u.upper().replace(" ", "")
+    return UNIT_FIXES.get(key, u)
+
+
+# ---------------------------
+# Normalización de nombres de pruebas
+# ---------------------------
+
+def normalize_name(name_raw: str) -> str:
+    base = normalize_whitespace(name_raw)
+    up = base.upper()
+
+    mapping = {
+        "G. ROJOS": "GLOBULOS ROJOS",
+        "G ROJOS": "GLOBULOS ROJOS",
+        "G. BLANCOS": "GLOBULOS BLANCOS",
+        "G BLANCOS": "GLOBULOS BLANCOS",
+        "HEI MOGLOBINA": "HEMOGLOBINA",
+        "EOSINOF ILOS": "EOSINOFILOS",
+        "EOSINOF ILOS(#)": "EOSINOFILOS(#)",
+        "EOSINOFI ILOS(#)": "EOSINOFILOS(#)",
+        "BASOF ILOS": "BASOFILOS",
+    }
+
+    return mapping.get(up, base)
+
+# ---------------------------
+# Agrupación y códigos de pruebas
+# ---------------------------
+
+NAME_TO_GROUP: Dict[str, str] = {
+    # Hemograma
+    "HEMOGLOBINA": "Hemograma",
+    "HEMATOCRITO": "Hemograma",
+    "GLOBULOS ROJOS": "Hemograma",
+    "GLOBULOS BLANCOS": "Hemograma",
+    "PLAQUETAS": "Hemograma",
+    "VCM": "Hemograma",
+    "HCM": "Hemograma",
+    "CHCM": "Hemograma",
+    "RDW-CV": "Hemograma",
+    "NEUTROF: ILOS": "Hemograma",
+    "NEUTROF: ILOS(#)": "Hemograma",
+    "LINFOCITOS": "Hemograma",
+    "LINFOCITOS(#)": "Hemograma",
+    "MONOCITOS": "Hemograma",
+    "MONOCITOS(#)": "Hemograma",
+    "EOSINOFILOS": "Hemograma",
+    "EOSINOFILOS(#)": "Hemograma",
+    "BASOFILOS": "Hemograma",
+    "BASOFILOS(#)": "Hemograma",
+
+    # Perfil hepático
+    "AST (SGOT)": "Perfil hepático",
+    "ALT (SGPT)": "Perfil hepático",
+    "PROTEINAS TOTALES": "Perfil hepático",
+    "PROTEINAS TOTALES ": "Perfil hepático",  # por si acaso
+    "ALBUMINA": "Perfil hepático",
+    "AL BUMINA": "Perfil hepático",
+    "GLOBULINAS": "Perfil hepático",
+    "RELACION A/G": "Perfil hepático",
+
+    # Función renal
+    "CREATININA": "Función renal",
+    "BUN": "Función renal",
+    "TASA FILTRACION G.(EGFR)": "Función renal",
+
+    # Metabolismo de carbohidratos
+    "GLUCOSA": "Metabolismo de carbohidratos",
+
+    # Gastrointestinal / heces
+    "CALPROTECTINA FECAL": "Gastrointestinal",
+    "DIGESTION MATERIAS FECALES": "Gastrointestinal",
+    "DIGESTIÓN MATERIAS FECALES": "Gastrointestinal",
+}
+
+NAME_TO_CODE: Dict[str, str] = {
+    "HEMOGLOBINA": "HGB",
+    "HEMATOCRITO": "HCT",
+    "GLOBULOS ROJOS": "RBC",
+    "GLOBULOS BLANCOS": "WBC",
+    "PLAQUETAS": "PLT",
+    "VCM": "MCV",
+    "HCM": "MCH",
+    "CHCM": "MCHC",
+    "RDW-CV": "RDW",
+    "AST (SGOT)": "AST",
+    "ALT (SGPT)": "ALT",
+    "CREATININA": "CREAT",
+    "GLUCOSA": "GLU",
+    "BUN": "BUN",
+    "CALPROTECTINA FECAL": "CALPROT",
+}
+
+# ---------------------------
+# Construcción de filas tipo tabla
+# ---------------------------
+def lab_item_to_lab_result(item: LabItem) -> LabResult:
+    up_name = normalize_whitespace(item.name).upper()
+
+    group = NAME_TO_GROUP.get(up_name)
+    code = NAME_TO_CODE.get(up_name)
+
+    ref_low = item.ref_range.min if item.ref_range else None
+    ref_high = item.ref_range.max if item.ref_range else None
+
+    return LabResult(
+        group=group,
+        name=item.name,          # ya normalizado por normalize_name
+        code=code,
+        value=item.value,
+        unit=item.unit,
+        ref_low=ref_low,
+        ref_high=ref_high,
+        status=item.status,
+        flag_from_lab=item.flag,
+        line=item.line,
+    )
+
+def build_analysis_input(
+    items: List[LabItem],
+    full_text: str,
+    storage_path: Optional[str] = None,
+    public_url: Optional[str] = None,
+    patient_profile: Optional[PatientProfile] = None,
+) -> AnalysisInput:
+    # TODO: aquí podrías parsear full_text para sacar la fecha de colección y el nombre del lab
+    lab_metadata = LabMetadata(
+        collection_date=None,
+        lab_name=None,
+    )
+
+    if patient_profile is None:
+        patient_profile = PatientProfile(
+            age=None,
+            sex=None,
+            weight_kg=None,
+            height_cm=None,
+            conditions=[],
+            medications=[],
+            allergies=[],
+        )
+
+    lab_results = [lab_item_to_lab_result(it) for it in items]
+
+    return AnalysisInput(
+        patient_profile=patient_profile,
+        lab_metadata=lab_metadata,
+        lab_results=lab_results,
+    )
+
+
+def build_candidate_rows(lines: List[str]) -> List[str]:
+    rows: List[str] = []
+    i = 0
+    n = len(lines)
+
+    while i < n:
+        L0 = lines[i]
+
+        if is_patient_line(L0):
+            i += 1
+            continue
+
+        # Fila completa en una sola línea
+        if looks_like_full_row(L0):
+            rows.append(L0)
+            i += 1
+            continue
+
+        # name + value + range + unit (4 líneas)
+        if i + 3 < n:
+            L1 = lines[i + 1]
+            L2 = lines[i + 2]
+            L3 = lines[i + 3]
+            if is_value_only(L1) and is_range_only(L2) and is_unit_like(L3):
+                row = f"{L0} {L1} {L2} {L3}"
+                rows.append(row)
+                i += 4
+                continue
+
+        # name + value + range (3 líneas, sin unidad)
+        if i + 2 < n:
+            L1 = lines[i + 1]
+            L2 = lines[i + 2]
+            if is_value_only(L1) and is_range_only(L2):
+                row = f"{L0} {L1} {L2}"
+                rows.append(row)
+                i += 3
+                continue
+
+        # Método + analito + valor + rango + unidad (5 líneas)
+        # Ej: Citom. de Flujo / HEMOGLOBINA / 16.5 / 14-18 / g/dL
+        if i + 4 < n:
+            L1 = lines[i + 1]
+            L2 = lines[i + 2]
+            L3 = lines[i + 3]
+            L4 = lines[i + 4]
+            up0 = L0.upper()
+            has_digits_L1 = any(ch.isdigit() for ch in L1)
+            if (
+                any(tok in up0 for tok in ["ENZIM", "COLORIM", "CITOM", "INMUNOTURB", "CLIA"])
+                and not has_digits_L1
+                and is_value_only(L2)
+                and is_range_only(L3)
+                and is_unit_like(L4)
+            ):
+                row = f"{L1} {L2} {L3} {L4}"
+                rows.append(row)
+                i += 5
+                continue
+
+        # name + método + valor + rango + unidad (5 líneas)
+        # Ej: ERITRO / FOTOMETRIA / 2 / 0-15 / mm/1H
+        if i + 4 < n:
+            L1 = lines[i + 1]
+            L2 = lines[i + 2]
+            L3 = lines[i + 3]
+            L4 = lines[i + 4]
+
+            has_digits_L1 = any(ch.isdigit() for ch in L1)
+            if (
+                not has_digits_L1
+                and is_value_only(L2)
+                and is_range_only(L3)
+                and is_unit_like(L4)
+            ):
+                row = f"{L0} {L2} {L3} {L4}"
+                rows.append(row)
+                i += 5
+                continue
+
+        # Fallback: línea que contiene número, posible fila parcial
+        if NUM_RE.search(L0):
+            rows.append(L0)
+
+        i += 1
+
+    return rows
+
+
+# ---------------------------
+# Parsing fila -> LabItem
+# ---------------------------
+
+ROW_RANGE_RE = re.compile(
+    r"""
+    ^(?P<name>.+?)\s+
+    (?P<value>[<>]?\d+(?:\.\d+)?)\s+
+    (?P<min>\d+(?:\.\d+)?)\s*-\s*(?P<max>\d+(?:\.\d+)?)
+    (?:\s+(?P<unit>.+))?
+    $
+    """,
+    re.X,
 )
 
-UNIT_TAIL_RE = re.compile(r"([%A-Za-zµμ/^\d\.\-]+)\s*$")
+ROW_UPPER_ONLY_RE = re.compile(
+    r"""
+    ^(?P<name>.+?)\s+
+    (?P<value>[<>]?\d+(?:\.\d+)?)\s*
+    (?P<cmp><=|<|>=|>)\s*
+    (?P<max>\d+(?:\.\d+)?)
+    (?:\s+(?P<unit>.+))?
+    $
+    """,
+    re.X,
+)
 
-FLAG_RE = re.compile(r"\b([HL])\b|↑|↓|Tt", re.IGNORECASE)  # 'Tt' aparece a veces por OCR
 
-NOISE_REPLACEMENTS = [
-    (r"\bU\.?d\.?A\.?\b", ""),  # "U.d.A." ruido en tus informes
-]
+def safe_float(x: Optional[str]) -> Optional[float]:
+    if x is None:
+        return None
+    try:
+        return float(x.replace(",", "."))
+    except Exception:
+        return None
 
-METHOD_WORDS = [
-    "CLIA", "ENZIMATICO", "ENZIMÁTICO", "COLORIMETRICO", "COLORIMÉTRICO",
-    "CINETICO", "CINÉTICO", "CINETICA", "CINÉTICA", "INMUNOTURBID.",
-    "CALCULO", "CÁLCULO"
-]
 
-def _norm_dec(s: str) -> float:
-    return float(s.replace(",", "."))
-
-def _normalize_line(s: str) -> str:
-    s = s.replace("°", "^").replace("º", "^")
-    s = re.sub(r"(?<=\d),(?=\d)", ".", s)  # 47,4 -> 47.4
-    s = s.replace("uL", "µL").replace("mcL", "µL")
-    s = re.sub(r"\bTt\b", "↑", s, flags=re.IGNORECASE)  # flag raro
-    for pat, rep in NOISE_REPLACEMENTS:
-        s = re.sub(pat, rep, s, flags=re.IGNORECASE)
-    s = re.sub(r"\s+", " ", s).strip()
-    return s
-
-def _status_from_range(val: float, low: float, high: float) -> Literal["bajo", "normal", "alto"]:
-    if val < low:
+def classify_status(value: Optional[float], ref: Optional[RefRange]) -> Optional[str]:
+    if value is None or ref is None:
+        return None
+    if ref.min is not None and value < ref.min:
         return "bajo"
-    if val > high:
+    if ref.max is not None and value > ref.max:
         return "alto"
-    return "normal"
-
-def _extract_unit_after(text: str, start_idx: int) -> Optional[str]:
-    tail = text[start_idx:]
-    m = UNIT_TAIL_RE.search(tail)
-    if m:
-        return m.group(1).strip()
+    if ref.min is not None and ref.max is not None:
+        return "normal"
     return None
 
-def _clean_name_segment(seg: str) -> str:
-    seg = seg.strip()
-    # quita posibles palabras de método al final del nombre
-    tokens = [t for t in seg.split() if t.upper() not in METHOD_WORDS]
-    name = " ".join(tokens)
-    # quita adornos
-    name = re.sub(r"[\(\)#]", "", name)
-    name = re.sub(r"\s+", " ", name).strip()
-    return name
 
-def _parse_line_range_first(line: str) -> Optional[ParsedItem]:
-    """
-    Estrategia:
-      1) Buscar el RANGO (low-high). Si no hay, devolver None.
-      2) Tomar el número inmediato ANTERIOR al rango como VALUE.
-      3) UNIT: lo que hay después del rango al final de línea.
-      4) NAME: todo lo que está antes del VALUE (limpiando métodos).
-      5) FLAG: H/L/↑/↓ cerca del value/rango.
-    """
-    m = RANGE_RE.search(line)
-    if not m:
+def parse_row_to_item(row: str) -> Optional[LabItem]:
+    s = normalize_whitespace(row)
+
+    # Ignorar listas de muchas pruebas
+    if "," in s:
         return None
 
-    low_s, high_s = m.group("low"), m.group("high")
-    low, high = _norm_dec(low_s), _norm_dec(high_s)
-    range_start, range_end = m.span()
-
-    # Busca el último número ANTES del rango: ese es el valor
-    numbers_before = list(re.finditer(_NUM, line[:range_start]))
-    if not numbers_before:
-        return None  # no hay valor antes del rango
-    value_match = numbers_before[-1]
-    value_s = value_match.group(0)
-    value = _norm_dec(value_s)
-
-    # Nombre: todo antes del valor
-    name_seg = line[:value_match.start()]
-    name_raw = name_seg.strip()
-    name = _clean_name_segment(name_raw).upper()
-
-    # Flag cerca del valor/rango
-    vicinity = line[value_match.end():range_end]
-    f = FLAG_RE.search(vicinity)
-    flag: Optional[Literal["H", "L"]] = None
-    if f:
-        g = f.group(0).upper()
-        flag = "H" if (g == "H" or g == "↑") else "L" if (g == "L" or g == "↓") else None
-
-    unit = _extract_unit_after(line, range_end)
-
-    item: ParsedItem = {
-        "name_raw": name_raw,
-        "name": name if name else name_raw.upper(),
-        "value": value,
-        "unit": unit,
-        "ref_range": {"min": low, "max": high},
-        "flag": flag,
-        "status": _status_from_range(value, low, high),
-        "line": line,
-    }
-    return item
-
-def _parse_line_value_only(line: str) -> Optional[ParsedItem]:
-    """
-    Fallback: línea con NOMBRE + VALOR (+ UNIDAD opcional), sin rango.
-    Toma el PRIMER número como valor y lo que haya al final como unidad.
-    """
-    num = re.search(_NUM, line)
-    if not num:
+    # Ignorar líneas que empiezan solo con comparadores (<= 5.00, < 0.24, etc.)
+    if s.lstrip().startswith("<") or s.lstrip().startswith(">"):
         return None
-    value = _norm_dec(num.group(0))
-    name_seg = line[:num.start()]
-    name_raw = name_seg.strip()
-    name = _clean_name_segment(name_raw).upper()
 
-    # unidad (si existe) -> al final
-    unit = _extract_unit_after(line, num.end())
+    if is_patient_line(s):
+        return None
 
-    # flag (si está pegado al valor)
-    vicinity = line[num.end():]
-    f = FLAG_RE.search(vicinity)
-    flag: Optional[Literal["H", "L"]] = None
-    if f:
-        g = f.group(0).upper()
-        flag = "H" if (g == "H" or g == "↑") else "L" if (g == "L" or g == "↓") else None
+    # Patrón completo: name value min-max [unit]
+    m = ROW_RANGE_RE.match(s)
+    if m:
+        name_raw = m.group("name").strip()
 
-    return {
-        "name_raw": name_raw,
-        "name": name if name else name_raw.upper(),
-        "value": value,
-        "unit": unit,
-        "ref_range": None,
-        "flag": flag,
-        "status": None,
-        "line": line,
-    }
+        # nombre debe tener letras y más de 1 char útil
+        clean_for_len = re.sub(r"[.:]", "", name_raw).strip()
+        if not any(ch.isalpha() for ch in name_raw) or len(clean_for_len) <= 1:
+            return None
+        if is_banned_name(name_raw):
+            return None
 
-def parse_generic_labs(text: str) -> List[ParsedItem]:
-    items: List[ParsedItem] = []
-    for raw in re.split(r"[\r\n]+", text):
-        line = _normalize_line(raw)
-        if not line or len(line) < 3:
-            continue
+        value = safe_float(m.group("value"))
+        min_v = safe_float(m.group("min"))
+        max_v = safe_float(m.group("max"))
+        unit = normalize_unit(m.group("unit"))
 
-        # descarta encabezados "título" en mayúsculas puras (p. ej. HEMOGRAMA)
-        if re.fullmatch(r"[A-ZÁÉÍÓÚÜÑ ]{3,}", line) and " " not in line.strip():
-            continue
+        ref = RefRange(min=min_v, max=max_v) if (min_v is not None or max_v is not None) else None
+        status = classify_status(value, ref)
+        flag = None
+        if status == "alto":
+            flag = "H"
+        elif status == "bajo":
+            flag = "L"
 
-        parsed = _parse_line_range_first(line)
-        if not parsed:
-            parsed = _parse_line_value_only(line)
-        if parsed:
-            items.append(parsed)
-    return items
+        return LabItem(
+            name_raw=name_raw,
+            name=normalize_name(name_raw),
+            value=value,
+            unit=unit,
+            ref_range=ref,
+            flag=flag,
+            status=status,
+            line=row,
+        )
 
-# =========================================================
-#                     ENDPOINT
-# =========================================================
+    # Patrón: name value <= max (sin rango inferior)
+    m2 = ROW_UPPER_ONLY_RE.match(s)
+    if m2:
+        name_raw = m2.group("name").strip()
+        clean_for_len = re.sub(r"[.:]", "", name_raw).strip()
+        if not any(ch.isalpha() for ch in name_raw) or len(clean_for_len) <= 1:
+            return None
+        if is_banned_name(name_raw):
+            return None
 
-@router.post("/local-file")
-def ocr_local_file(
+        value = safe_float(m2.group("value"))
+        max_v = safe_float(m2.group("max"))
+        unit = normalize_unit(m2.group("unit"))
+        cmp_op = m2.group("cmp")
+
+        ref = None
+        if max_v is not None and cmp_op in ("<", "<="):
+            ref = RefRange(min=None, max=max_v)
+        elif max_v is not None and cmp_op in (">", ">="):
+            ref = RefRange(min=max_v, max=None)
+
+        status = classify_status(value, ref)
+        flag = None
+        if status == "alto":
+            flag = "H"
+        elif status == "bajo":
+            flag = "L"
+
+        return LabItem(
+            name_raw=name_raw,
+            name=normalize_name(name_raw),
+            value=value,
+            unit=unit,
+            ref_range=ref,
+            flag=flag,
+            status=status,
+            line=row,
+        )
+
+    # Fallback: nombre + valor sin rango
+    nums = list(NUM_RE.finditer(s))
+    if len(nums) >= 1:
+        first_num = nums[0]
+        name_raw = s[: first_num.start()].strip()
+        clean_for_len = re.sub(r"[.:]", "", name_raw).strip()
+
+        if not name_raw:
+            return None
+        if not any(ch.isalpha() for ch in name_raw) or len(clean_for_len) <= 1:
+            return None
+        if is_banned_name(name_raw):
+            return None
+
+        value_str = first_num.group()
+        value = safe_float(value_str)
+        unit = None
+
+        if len(nums) == 1:
+            tail = s[first_num.end():].strip()
+            if tail:
+                unit = normalize_unit(tail)
+
+        return LabItem(
+            name_raw=name_raw,
+            name=normalize_name(name_raw),
+            value=value,
+            unit=unit,
+            ref_range=None,
+            flag=None,
+            status=None,
+            line=row,
+        )
+
+    return None
+
+
+# ---------------------------
+# Endpoint principal
+# ---------------------------
+
+@router.post("/pdf", response_model=OCRResponse)
+async def ocr_pdf(
     file: UploadFile = File(...),
-    lang: str = Form(default=settings.OCR_LANG),
-    user: AuthUser = Depends(get_current_user),
+    user: AuthUser = Depends(get_current_user)
 ):
-    """
-    Sube una imagen o PDF local y devuelve:
-    - text: OCR crudo
-    - items: lista de objetos con {name_raw, name, value, unit, ref_range?, flag?, status?}
-    - pages_processed: para PDFs (si aplica)
-    """
-    mime = (file.content_type or "").lower()
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Solo se permiten archivos PDF")
 
-    # IMÁGENES
-    if mime.startswith("image/"):
+    try:
+        content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="Archivo vacío")
+
+        # Subir el PDF a Supabase (si está configurado)
+        storage_path, public_url = upload_pdf_to_supabase(content, file.filename)
+
+        # ---------------------------------------------------------
+        # Obtener datos del usuario logueado
+        # ---------------------------------------------------------
+        user_profile_data = None
         try:
-            content = file.file.read()
-            text = _ocr_image_bytes(content, lang=lang)
-            return {"text": text, "items": parse_generic_labs(text)}
+            # Creamos cliente con el token del usuario para respetar RLS
+            client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+            client.postgrest.auth(user.token)
+            
+            resp = client.table("usuarios").select("*").eq("user_auth_id", user.sub).single().execute()
+            if resp.data:
+                user_profile_data = resp.data
         except Exception as e:
-            raise HTTPException(500, f"OCR error: {e}")
+            print(f"[OCR] Error obteniendo perfil de usuario: {e}")
 
-    # PDF
-    if mime == "application/pdf":
-        if not PDF2IMAGE_AVAILABLE or _convert_from_bytes is None:
-            raise HTTPException(
-                400,
-                "Soporte PDF no activo: instala pdf2image y configura POPPLER_PATH (Windows)."
+        # Mapear a PatientProfile
+        patient_profile = None
+        if user_profile_data:
+            # Calcular edad
+            age = None
+            if user_profile_data.get("fecha_nacimiento"):
+                try:
+                    dob = date.fromisoformat(user_profile_data["fecha_nacimiento"])
+                    today = date.today()
+                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                except Exception:
+                    pass
+            
+            # Mapear sexo
+            sex_map = {"Masculino": "M", "Femenino": "F", "M": "M", "F": "F"}
+            raw_sex = user_profile_data.get("sexo")
+            sex = sex_map.get(raw_sex, raw_sex)
+
+            patient_profile = PatientProfile(
+                age=age,
+                sex=sex,
+                weight_kg=user_profile_data.get("peso_kg"),
+                height_cm=user_profile_data.get("altura_cm"),
+                conditions=user_profile_data.get("condiciones_medicas") or [],
+                medications=[],
+                allergies=user_profile_data.get("alergias") or []
             )
-        try:
-            pdf_content = file.file.read()
-            images = _convert_from_bytes(
-                pdf_content,
-                dpi=300,
-                poppler_path=settings.POPPLER_PATH or None
-            )
-            if not images:
-                raise ValueError("PDF sin páginas procesables")
 
-            texts = []
-            for img in images:
-                buf = BytesIO()
-                img.save(buf, format="PNG")
-                texts.append(_ocr_image_bytes(buf.getvalue(), lang=lang))
+        doc = DocumentFile.from_pdf(io.BytesIO(content))
 
-            full_text = "\n\n".join(texts)
-            return {
-                "text": full_text,
-                "items": parse_generic_labs(full_text),
-                "pages_processed": len(images),
-            }
-        except Exception as e:
-            raise HTTPException(500, f"OCR/PDF error: {e}")
+        if len(doc) == 0:
+            raise HTTPException(status_code=400, detail="El PDF no contiene páginas")
 
-    raise HTTPException(415, f"MIME no soportado: {mime}. Usa image/* o application/pdf.")
+        pages_to_process = min(len(doc), MAX_PAGES)
+
+        result = OCR_PREDICTOR(doc)
+        export = result.export()
+
+        all_text_lines: List[str] = []
+        logical_lines: List[str] = []
+
+        for page_idx, page in enumerate(export["pages"][:pages_to_process]):
+            for block in page.get("blocks", []):
+                for line in block.get("lines", []):
+                    words = [w["value"] for w in line.get("words", [])]
+                    if not words:
+                        continue
+                    line_text = " ".join(words)
+                    all_text_lines.append(line_text)
+                    logical_lines.append(line_text)
+
+        full_text = "\n".join(all_text_lines)
+
+        cleaned_lines = preclean_lines(logical_lines)
+        candidate_rows = build_candidate_rows(cleaned_lines)
+        table_text = "\n".join(candidate_rows)
+
+        items: List[LabItem] = []
+        for row in candidate_rows:
+            item = parse_row_to_item(row)
+            if item is None:
+                continue
+            items.append(item)
+
+        analysis_input = build_analysis_input(
+            items=items,
+            full_text=full_text,
+            storage_path=storage_path,
+            public_url=public_url,
+            patient_profile=patient_profile
+        )
+
+        return OCRResponse(
+            text=full_text,
+            table_text=table_text,
+            items=items,
+            pages_processed=pages_to_process,
+            storage_path=storage_path,
+            public_url=public_url,
+            analysis_input=analysis_input,
+        )
+
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OCR/PDF error: {e}")

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Alert,
   ScrollView,
   ImageSourcePropType,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +17,7 @@ import { router } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAuthStore } from "@/src/store";
+import { getUserProfile } from "@/src/services/user";
 
 import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri } from "expo-auth-session";
@@ -125,7 +127,7 @@ const createStyles = (colors: ThemeColors) =>
       borderRadius: 10,
       paddingVertical: 14,
       alignItems: "center",
-      marginBottom: 24,
+      marginBottom: 16,
     },
     buttonDisabled: { opacity: 0.7 },
     buttonText: { color: colors.white, fontSize: 16, fontWeight: "600" },
@@ -157,6 +159,30 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.brandBlue,
       fontWeight: "600",
       fontSize: 14,
+    },
+
+    errorToast: {
+      backgroundColor: "#EF4444",
+      borderRadius: 8,
+      padding: 16,
+      marginBottom: 20,
+      marginHorizontal: 0,
+      flexDirection: "row",
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+    },
+    errorIcon: {
+      marginRight: 12,
+    },
+    errorText: {
+      color: colors.white,
+      fontSize: 14,
+      fontWeight: "500",
+      flex: 1,
     },
 
     footerWarnings: {
@@ -227,9 +253,11 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showError, setShowError] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   // Global state
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { login, isLoading, error, clearError, session } = useAuthStore();
 
   // Theme colors
   const brandBlue = useThemeColor(
@@ -590,6 +618,15 @@ export default function LoginScreen() {
               {isLoading ? "Iniciando..." : "Iniciar Sesión"}
             </Text>
           </TouchableOpacity>
+
+          {showError && (
+            <Animated.View style={[styles.errorToast, { opacity: fadeAnim }]}>
+              <Ionicons name="close-circle" size={24} color={white} style={styles.errorIcon} />
+              <Text style={styles.errorText}>
+                El correo electrónico o la contraseña son incorrectos.
+              </Text>
+            </Animated.View>
+          )}
 
           {/* Divider */}
           <View style={styles.divider}>
