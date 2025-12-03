@@ -18,7 +18,7 @@ router = APIRouter(
     tags=["OCR + LLM"],
 )
 
-# Prompt del sistema (sin cambios)
+# Prompt del sistema
 LLM_PARSER_SYSTEM_PROMPT = """
 Eres un asistente médico digital experto. Tu tarea es analizar texto OCR y devolver UNICAMENTE un objeto JSON válido.
 
@@ -27,7 +27,10 @@ Reglas ESTRICTAS:
 2. Devuelve solo el JSON crudo.
 3. Si el OCR tiene errores obvios, corrígelos en el JSON.
 4. Tu respuesta debe empezar con '{' y terminar con '}'.
-5. Sigue estrictamente este esquema:
+5. IMPORTANTE: Analiza los resultados en el contexto del perfil del paciente (edad, sexo, condiciones, alergias).
+   - Si el paciente tiene condiciones preexistentes (ej. Diabetes, Anemia), menciona si los resultados son consistentes o preocupantes respecto a esas condiciones en el 'summary' y 'warnings'.
+   - Si hay medicamentos o alergias relevantes para los resultados, menciónalo.
+6. Sigue estrictamente este esquema:
 
 {
   "analysis_input": {
@@ -37,7 +40,8 @@ Reglas ESTRICTAS:
       "weight_kg": float | null,
       "height_cm": float | null,
       "conditions": [string],
-      "medications": [string]
+      "medications": [string],
+      "allergies": [string]
     },
     "lab_metadata": {
       "collection_date": "YYYY-MM-DD" | null,
@@ -58,7 +62,7 @@ Reglas ESTRICTAS:
       }
     ]
   },
-  "summary": "Resumen en español...",
+  "summary": "Resumen en español. DEBES mencionar explícitamente cómo se relacionan los resultados con las condiciones del paciente si las hay.",
   "warnings": ["Warning 1", ...],
   "disclaimer": "Este análisis es generado por IA y no sustituye el consejo médico profesional."
 }
