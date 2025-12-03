@@ -2,95 +2,96 @@
 
 from fastapi import APIRouter, Body, HTTPException
 import json
+import re
 
-# Importamos TODO lo que ya definiste en ocr_local.py
+# Importamos las configuraciones y modelos desde ocr_local
+# IMPORTANTE: Hemos cambiado lo que importamos ya que ocr_local ahora usa Gemini
+import google.generativeai as genai
 from .ocr_local import (
     LLMParseRequest,
     LLMInterpretation,
-    OPENAI_API_KEY,
-    openai_client,
+    gemini_configured,  # Variable para verificar si hay key
 )
 
 router = APIRouter(
-    prefix="/ocr-local",          # => endpoint final: /ocr-local/parse-llm
+    prefix="/ocr-local",
     tags=["OCR + LLM"],
 )
 
-# Prompt del sistema para la LLM
+# Prompt del sistema
 LLM_PARSER_SYSTEM_PROMPT = """
-Eres un asistente médico digital que ayuda a interpretar resultados de laboratorio.
-Recibes:
+Eres un asistente médico digital experto. Tu tarea es analizar texto OCR y devolver UNICAMENTE un objeto JSON válido.
 
-- Texto OCR crudo de un informe de laboratorio.
-- (Opcional) Un perfil básico del paciente.
-- (Opcional) Un borrador de análisis estructurado (draft_analysis_input) con los
-  resultados ya medio parseados pero no completos.
-
-Tu tarea es:
-
-1. Revisar el borrador de análisis (draft_analysis_input) y corregirlo solo si ves
-   errores claros. Si no estás seguro, deja los valores tal como están.
-2. Completar el objeto "analysis_input" con esta estructura:
+Reglas ESTRICTAS:
+1. NO escribas introducciones, ni conclusiones, ni bloques de código markdown (```json).
+2. Devuelve solo el JSON crudo.
+3. Si el OCR tiene errores obvios, corrígelos en el JSON.
+4. Tu respuesta debe empezar con '{' y terminar con '}'.
+5. IMPORTANTE: Analiza los resultados en el contexto del perfil del paciente (edad, sexo, condiciones, alergias).
+   - Si el paciente tiene condiciones preexistentes (ej. Diabetes, Anemia), menciona si los resultados son consistentes o preocupantes respecto a esas condiciones en el 'summary' y 'warnings'.
+   - Si hay medicamentos o alergias relevantes para los resultados, menciónalo.
+6. Sigue estrictamente este esquema:
 
 {
-  "patient_profile": {
-    "age": int | null,
-    "sex": "M" | "F" | null,
-    "weight_kg": float | null,
-    "height_cm": float | null,
-    "conditions": [string],
-    "medications": [string]
+  "analysis_input": {
+    "patient_profile": {
+      "age": int | null,
+      "sex": "M" | "F" | null,
+      "weight_kg": float | null,
+      "height_cm": float | null,
+      "conditions": [string],
+      "medications": [string],
+      "allergies": [string]
+    },
+    "lab_metadata": {
+      "collection_date": "YYYY-MM-DD" | null,
+      "lab_name": string | null
+    },
+    "lab_results": [
+      {
+        "group": string | null,
+        "name": string,
+        "code": string | null,
+        "value": float | null,
+        "unit": string | null,
+        "ref_low": float | null,
+        "ref_high": float | null,
+        "status": "bajo" | "normal" | "alto" | null,
+        "flag_from_lab": string | null,
+        "line": string
+      }
+    ]
   },
-  "lab_metadata": {
-    "collection_date": "YYYY-MM-DD" | null,
-    "lab_name": string | null
-  },
-  "lab_results": [
-    {
-      "group": string | null,
-      "name": string,
-      "code": string | null,
-      "value": float | null,
-      "unit": string | null,
-      "ref_low": float | null,
-      "ref_high": float | null,
-      "status": "bajo" | "normal" | "alto" | null,
-      "flag_from_lab": string | null,
-      "line": string
-    }
-  ]
+  "summary": "Resumen en español. DEBES mencionar explícitamente cómo se relacionan los resultados con las condiciones del paciente si las hay.",
+  "warnings": ["Warning 1", ...],
+  "disclaimer": "Este análisis es generado por IA y no sustituye el consejo médico profesional."
 }
-
-3. Generar:
-   - "summary": explicación en lenguaje sencillo (en español) de los hallazgos
-     más importantes para el paciente (qué está normal, qué está alto/bajo, etc.).
-   - "warnings": lista de advertencias o puntos a vigilar (puede estar vacía).
-   - "disclaimer": recordatorio claro de que esto NO sustituye una consulta médica
-     y que siempre debe comentarlo con su médico.
-
-IMPORTANTE:
-- Responde SIEMPRE con UN ÚNICO JSON VÁLIDO.
-- No incluyas texto antes ni después del JSON.
-- Si hay datos dudosos en el OCR, puedes mencionarlo en "warnings".
 """
 
+def extract_json_from_text(text: str) -> str:
+    """
+    Busca el primer '{' y el último '}' para extraer solo el objeto JSON.
+    """
+    try:
+        match = re.search(r"(\{.*\})", text, re.DOTALL)
+        if match:
+            return match.group(1)
+        text = text.replace("```json", "").replace("```", "").strip()
+        return text
+    except Exception:
+        return text
 
 @router.post("/parse-llm", response_model=LLMInterpretation)
 async def parse_with_llm(payload: LLMParseRequest = Body(...)):
     """
-    Usa una LLM para:
-    - Leer el texto OCR del informe de laboratorio
-    - Revisar/completar el análisis estructurado (analysis_input)
-    - Devolver un resumen y advertencias para el paciente
+    Usa Google Gemini para interpretar los resultados médicos.
     """
-    # Asegurarnos de que la IA esté configurada
-    if not OPENAI_API_KEY or openai_client is None:
+    if not gemini_configured:
         raise HTTPException(
             status_code=500,
-            detail="OpenAI no está configurado en el servidor (falta OPENAI_API_KEY)",
+            detail="La IA no está configurada en el servidor (falta GOOGLE_API_KEY en .env)",
         )
 
-    # Lo que le vamos a pasar a la LLM como "user" message
     user_content = {
         "ocr_text": payload.ocr_text,
         "patient_profile": (
@@ -104,37 +105,50 @@ async def parse_with_llm(payload: LLMParseRequest = Body(...)):
     }
 
     try:
-        resp = openai_client.chat.completions.create(
-            model="gpt-4.1-mini",   # puedes cambiar el modelo si quieres
-            messages=[
-                {"role": "system", "content": LLM_PARSER_SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": json.dumps(user_content, ensure_ascii=False),
-                },
-            ],
+        # Inicializamos el modelo de Gemini. 
+        # Usamos 'gemini-1.5-flash' por ser eficiente para OCR/JSON tasks.
+        model = genai.GenerativeModel(
+            model_name="gemini-2.5-pro",
+            system_instruction=LLM_PARSER_SYSTEM_PROMPT
+        )
+
+        # Configuración de generación para forzar salida JSON
+        generation_config = genai.GenerationConfig(
+            response_mime_type="application/json",
             temperature=0.1,
         )
 
-        raw_text = resp.choices[0].message.content or ""
+        response = model.generate_content(
+            json.dumps(user_content, ensure_ascii=False),
+            generation_config=generation_config
+        )
 
-        # Intentar parsear el JSON que devuelve la IA
+        raw_text = response.text
+        json_str = extract_json_from_text(raw_text)
+
         try:
-            data = json.loads(raw_text)
-        except json.JSONDecodeError:
+            data = json.loads(json_str)
+        except json.JSONDecodeError as e:
+            print("--------------------------------------------------")
+            print("ERROR PARSEANDO JSON DE GEMINI:")
+            # Imprimimos solo los últimos 200 caracteres para ver dónde cortó
+            print(f"Final del texto recibido: ...{raw_text[-200:]}")
+            print(f"Error: {e}")
+            print("--------------------------------------------------")
+            
             raise HTTPException(
                 status_code=500,
-                detail="La IA no devolvió JSON válido",
+                detail="La IA devolvió un formato inválido o incompleto (JSON cortado).",
             )
 
-        # Validar contra el modelo Pydantic que ya definiste
         interpretation = LLMInterpretation(**data)
         return interpretation
 
     except HTTPException:
         raise
     except Exception as e:
+        print(f"Error Gemini General: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Error al llamar a la IA: {e}",
+            detail=f"Error interno al procesar con Gemini: {str(e)}",
         )

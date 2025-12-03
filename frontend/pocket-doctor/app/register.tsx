@@ -96,6 +96,11 @@ const createStyles = (colors: ThemeColors) =>
     fieldErrorBottom: { borderBottomColor: colors.error, borderBottomWidth: 1 },
     fieldErrorBox: { borderColor: colors.error },
     err: { color: colors.error, fontSize: 12, marginTop: 4 },
+    strengthContainer: { marginTop: 8, marginBottom: 6 },
+    strengthBarContainer: { flexDirection: 'row', height: 6, gap: 6, marginTop: 6 },
+    strengthSegment: { flex: 1, borderRadius: 3, backgroundColor: '#E6E8EB' },
+    strengthText: { fontSize: 12, marginTop: 6, color: colors.textGray },
+    policyText: { fontSize: 12, color: colors.muted, marginTop: 6, marginBottom: 8 },
     eyeBtn: { padding: 6, marginLeft: 8 },
     registerButton: {
       backgroundColor: colors.borderGray,
@@ -351,12 +356,42 @@ function RegisterScreenInner() {
   );
 
   const requiredStr = (s: string) => s.trim().length > 0;
+  const passwordMeetsPolicy = (p: string) =>
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/.test(p);
+
+  const passwordStrength = useMemo(() => {
+    if (!password) return 0;
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    // normalize to 0..4
+    return Math.min(4, score);
+  }, [password]);
+
+  const strengthLabel = useMemo(() => {
+    switch (passwordStrength) {
+      case 0:
+      case 1:
+        return { text: "Muy débil", color: "#E74C3C" };
+      case 2:
+        return { text: "Débil", color: "#F39C12" };
+      case 3:
+        return { text: "Regular", color: "#F1C40F" };
+      case 4:
+      default:
+        return { text: "Fuerte", color: "#27AE60" };
+    }
+  }, [passwordStrength]);
+
   const formValid =
     requiredStr(firstName) &&
     requiredStr(lastName) &&
     requiredStr(email) &&
     requiredStr(password) &&
-    password.length > 6 &&
+    passwordMeetsPolicy(password) &&
     requiredStr(confirmPassword) &&
     requiredStr(height) &&
     requiredStr(weight) &&
@@ -554,7 +589,7 @@ function RegisterScreenInner() {
               <View
                 style={[
                   styles.inputContainer,
-                  submitted && (!requiredStr(password) || password.length <= 6) && styles.fieldError,
+                  submitted && (!requiredStr(password) || !passwordMeetsPolicy(password)) && styles.fieldError,
                 ]}
               >
                 <TextInput
@@ -577,11 +612,39 @@ function RegisterScreenInner() {
                   />
                 </TouchableOpacity>
               </View>
+              <Text style={styles.policyText}>
+                Mínimo de 8 caracteres: mayúscula, minúscula, número, carácter especial
+              </Text>
               {submitted && !requiredStr(password) && (
                 <Text style={styles.err}>Requerido</Text>
               )}
-              {submitted && requiredStr(password) && password.length <= 6 && (
-                <Text style={styles.err}>La contraseña debe tener más de 6 caracteres</Text>
+              {submitted && requiredStr(password) && !passwordMeetsPolicy(password) && (
+                <Text style={styles.err}>La contraseña debe tener al menos 8 caracteres e incluir mayúsculas, minúsculas y un carácter especial</Text>
+              )}
+
+              {/* Password strength meter */}
+              {password.length > 0 && (
+                <View style={styles.strengthContainer}>
+                  <View style={styles.strengthBarContainer}>
+                    {[0, 1, 2, 3].map(i => (
+                      <View
+                        key={i}
+                        style={[
+                          styles.strengthSegment,
+                          {
+                            backgroundColor:
+                              i <= (passwordStrength - 1)
+                                ? strengthLabel.color
+                                : '#E6E8EB',
+                          },
+                        ]}
+                      />
+                    ))}
+                  </View>
+                  <Text style={[styles.strengthText, { color: strengthLabel.color }]}>
+                    {strengthLabel.text}
+                  </Text>
+                </View>
               )}
 
               <Label required styles={styles}>
@@ -616,14 +679,16 @@ function RegisterScreenInner() {
                   />
                 </TouchableOpacity>
               </View>
+              {/* real-time mismatch alert */}
+              {!submitted && confirmPassword.length > 0 && password !== confirmPassword && (
+                <Text style={styles.err}>Las contraseñas no coinciden</Text>
+              )}
               {submitted && !requiredStr(confirmPassword) && (
                 <Text style={styles.err}>Requerido</Text>
               )}
-              {submitted &&
-                requiredStr(confirmPassword) &&
-                password !== confirmPassword && (
-                  <Text style={styles.err}>Las contraseñas no coinciden</Text>
-                )}
+              {submitted && requiredStr(confirmPassword) && password !== confirmPassword && (
+                <Text style={styles.err}>Las contraseñas no coinciden</Text>
+              )}
 
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Información de Salud</Text>
