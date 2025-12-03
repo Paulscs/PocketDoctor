@@ -20,8 +20,8 @@ export type AuthActions = {
     apellido?: string;
     fecha_nacimiento?: string;
     sexo?: string;
-    estatura?: number;
-    peso?: number;
+    altura_cm?: number;
+    peso_kg?: number;
     tipo_sangre?: string;
     alergias?: string[];
     condiciones_medicas?: string[];
