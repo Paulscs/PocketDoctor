@@ -1,8 +1,26 @@
 // src/lib/supabase.ts
+import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
-// ⚠️ Usa los de tu proyecto Supabase
-const SUPABASE_URL = 'https://nmcpndumjvpaztctibkn.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tY3BuZHVtanZwYXp0Y3RpYmtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyODg4ODMsImV4cCI6MjA3Mzg2NDg4M30.vUZHF76bG8TTkxzEBYdjO2Tj4zqVtDkCXLeM4CTGbZE';
+// Leemos desde las env de Expo (asegúrate de que existen en tu .env)
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.warn(
+    '⚠️ Falta configurar EXPO_PUBLIC_SUPABASE_URL o EXPO_PUBLIC_SUPABASE_ANON_KEY en el archivo .env'
+  );
+}
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    // En móvil usamos AsyncStorage para persistir el token
+    ...(Platform.OS !== 'web' ? { storage: AsyncStorage } : {}),
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false, // en RN no hay query en URL como en web
+    flowType: 'pkce',          // necesario para OAuth (Google, etc.) en mobile
+  },
+});

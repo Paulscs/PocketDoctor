@@ -19,6 +19,14 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAuthStore } from "@/src/store";
 import { getUserProfile } from "@/src/services/user";
 
+import * as WebBrowser from "expo-web-browser";
+import { makeRedirectUri } from "expo-auth-session";
+import { supabase } from "@/src/lib/supabase";
+
+WebBrowser.maybeCompleteAuthSession();
+
+const scheme = "pocketdoctor"; // mismo que en app.json
+
 const SIZES = {
   ICON: 18,
   BORDER_RADIUS: 8,
@@ -211,7 +219,6 @@ const createStyles = (colors: ThemeColors) =>
       lineHeight: 11,
     },
 
-    // Medical card styles (friendly blue)
     medicalCard: {
       backgroundColor: colors.friendlyBlueBg,
       borderColor: colors.friendlyBlueBorder,
@@ -226,7 +233,6 @@ const createStyles = (colors: ThemeColors) =>
       color: "#1E40AF",
     },
 
-    // Security card styles (friendly green)
     securityCard: {
       backgroundColor: colors.friendlyGreenBg,
       borderColor: colors.friendlyGreenBorder,
@@ -347,6 +353,8 @@ export default function LoginScreen() {
     ]
   );
 
+  // ------------ EMAIL + PASSWORD LOGIN ------------
+
   const validate = useCallback(() => {
     if (!email.trim() || !password.trim()) {
       Alert.alert("Error", "Por favor, completa todos los campos");
@@ -364,54 +372,144 @@ export default function LoginScreen() {
     if (!validate()) return;
     clearError();
     try {
-      await login(email, password);
+      await login(email, password); // tu store debe llamar a supabase.auth.signInWithPassword
       router.push("/(tabs)/home");
     } catch (err) {
-      // Error is handled by the store
+      // el store ya maneja error
     }
   }, [validate, login, email, password, clearError]);
 
-  useEffect(() => {
-    if (error) {
-      setShowError(true);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => {
-        setTimeout(() => {
-          Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }).start(() => {
-            setShowError(false);
-            clearError();
-          });
-        }, 3000);
+  // ------------ GOOGLE LOGIN (SUPABASE OAUTH) ------------
+
+  // ------------ GOOGLE LOGIN (SUPABASE OAUTH) ------------
+
+  const handleGoogleLogin = useCallback(async () => {
+    try {
+      const redirectTo = makeRedirectUri({
+        scheme,
+        path: "auth/callback",
       });
-    }
-  }, [error, fadeAnim, clearError]);
 
-  // When someone logs in (session access token present), call backend /users/me
-  // and log the response here on the login page for debugging/inspection.
-  useEffect(() => {
-    const token = session?.access_token;
-    console.log('[login] user profile before login:', token);
-    if (!token) return;
+      console.log("[GOOGLE] redirectTo:", redirectTo);
 
-    let mounted = true;
-    (async () => {
-      try {
-        const profile = await getUserProfile(token);
-        if (mounted) console.log('[login] user profile after login:', profile);
-      } catch (e) {
-        console.error('[login] failed to fetch user profile after login:', e);
+      // 1) Pedimos a Supabase la URL de login con Google
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true, // usamos nuestro propio navegador
+        },
+      });
+
+      if (error || !data?.url) {
+        console.error("[GOOGLE] signInWithOAuth error:", error);
+        Alert.alert(
+          "Error",
+          error?.message ?? "No se pudo iniciar sesión con Google"
+        );
+        return;
       }
-    })();
 
-    return () => { mounted = false; };
-  }, [session?.access_token]);
+      console.log("[GOOGLE] auth URL:", data.url);
+
+      // 2) Abrimos el navegador para hacer el login con Google
+      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      console.log("[GOOGLE] WebBrowser result:", res);
+
+      // 3) Polling a getSession() hasta que Supabase cree la sesión
+      let session: any = null;
+      let lastError: any = null;
+
+      for (let i = 0; i < 8; i++) {
+        const { data: sessionData, error: sessionError } =
+          await supabase.auth.getSession();
+
+        console.log(
+          `[GOOGLE] poll ${i}: hasSession =`,
+          !!sessionData?.session,
+          sessionError ? "con error" : "sin error"
+        );
+
+        if (sessionError) {
+          lastError = sessionError;
+        }
+
+        if (sessionData?.session) {
+          session = sessionData.session;
+          break;
+        }
+
+        // pequeño delay antes del siguiente intento
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      if (!session) {
+        console.warn("[GOOGLE] No se obtuvo sesión tras el login.");
+        if (lastError) console.error("[GOOGLE] getSession lastError:", lastError);
+        Alert.alert(
+          "Error",
+          "No se encontró una sesión activa después del login con Google."
+        );
+        return;
+      }
+
+      const user = session.user;
+      console.log("[GOOGLE] usuario autenticado:", user);
+
+      // --- nombre / apellido desde metadata de Google ---
+      const meta: any = user.user_metadata ?? {};
+      const fullName: string =
+        meta.full_name ||
+        meta.name ||
+        `${meta.given_name ?? ""} ${meta.family_name ?? ""}`.trim();
+
+      let nombre = "";
+      let apellido: string | null = null;
+
+      if (meta.given_name) {
+        nombre = meta.given_name;
+        apellido = meta.family_name ?? null;
+      } else if (fullName) {
+        const parts = fullName.split(" ");
+        nombre = parts.shift() ?? "";
+        apellido = parts.length ? parts.join(" ") : null;
+      }
+
+      console.log("[GOOGLE] nombre/apellido para guardar:", { nombre, apellido });
+
+      // --- upsert en tu tabla usuarios ---
+      const { error: upsertError } = await supabase
+        .from("usuarios")
+        .upsert(
+          {
+            user_auth_id: user.id,
+            email: user.email ?? "",
+            nombre: nombre || null,
+            apellido,
+          },
+          { onConflict: "user_auth_id" }
+        );
+
+      if (upsertError) {
+        console.error("[GOOGLE] upsert usuarios error:", upsertError);
+        // no bloqueamos el acceso, solo lo logueamos
+      }
+
+      console.log("[GOOGLE] login OK, navegando al home");
+      Alert.alert("Bienvenido", "Inicio de sesión correcto con Google ✅");
+      router.replace("/(tabs)/home"); // uso replace para sacar /login del stack
+    } catch (err) {
+      console.error("[GOOGLE] error inesperado:", err);
+      Alert.alert(
+        "Error",
+        "Ocurrió un problema al iniciar sesión con Google. Inténtalo de nuevo."
+      );
+    }
+  }, []);
+
+
+
+
 
   const navigateToForgotPassword = () => router.push("/forgot-password");
   const navigateToRegister = () => router.push("/register");
@@ -539,8 +637,20 @@ export default function LoginScreen() {
 
           {/* Social Login */}
           <View style={styles.socialRow}>
+            {/* Google: real login */}
+            <TouchableOpacity
+              style={styles.socialButton}
+              onPress={handleGoogleLogin}
+            >
+              <Image
+                source={require("@/assets/images/google.png")}
+                style={styles.socialIcon}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+
+            {/* Microsoft / Apple: por ahora solo UI */}
             {[
-              require("@/assets/images/google.png"),
               require("@/assets/images/microsoft.png"),
               require("@/assets/images/apple.png"),
             ].map((src, i) => renderSocial(src, `social-${i}`))}

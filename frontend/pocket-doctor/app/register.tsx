@@ -9,6 +9,7 @@ import {
   Platform,
   Text,
   TextInput,
+  Alert
 } from "react-native";
 import * as Linking from "expo-linking";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
@@ -23,6 +24,13 @@ import DropDownPicker, {
 import { Colors } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAuthStore } from "@/src/store";
+import * as WebBrowser from "expo-web-browser";
+import { supabase } from "@/src/lib/supabase";
+import { makeRedirectUri } from "expo-auth-session"; // 👈 solo esto de auth-session
+
+WebBrowser.maybeCompleteAuthSession(); // ayuda a cerrar el navegador al volver
+const scheme = "pocketdoctor"; // mismo scheme que tienes en app.json
+
 
 type Item = { label: string; value: string };
 
@@ -238,6 +246,7 @@ function SelectField({
       <Label required={required} styles={styles}>
         {label}
       </Label>
+
       <DropDownPicker
         open={open}
         value={value}
@@ -354,6 +363,106 @@ function RegisterScreenInner() {
       white,
     ]
   );
+ const handleGoogleSignUp = useCallback(async () => {
+  try {
+    const redirectTo = makeRedirectUri({
+      scheme,
+      path: "auth/callback",
+    });
+
+    // 1) Pedimos URL de login a Supabase
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+        skipBrowserRedirect: true,
+      },
+    });
+
+    if (error || !data?.url) {
+      console.error(error);
+      Alert.alert(
+        "Error",
+        error?.message ?? "No se pudo iniciar sesión con Google"
+      );
+      return;
+    }
+
+    // 2) Abrimos el navegador / pestaña del sistema
+    const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
+    if (res.type === "success") {
+      // 3) Obtener sesión y usuario de Supabase
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error(sessionError);
+        Alert.alert("Error", "No se pudo obtener la sesión de Supabase");
+        return;
+      }
+
+      const session = sessionData.session;
+      if (!session) {
+        Alert.alert(
+          "Error",
+          "No se encontró una sesión activa después del login con Google."
+        );
+        return;
+      }
+
+      const user = session.user;
+      
+      console.log("USER:", JSON.stringify(user, null, 2));
+      console.log("USER METADATA:", JSON.stringify(user.user_metadata, null, 2));
+      // ---- AQUÍ SOLO EXTRAEMOS DATOS BÁSICOS ----
+      const email = user.email ?? "";
+      const fullName =
+        (user.user_metadata.full_name as string) ||
+        (user.user_metadata.name as string) ||
+        "";
+      const givenName = user.user_metadata.given_name as string | undefined;
+      const familyName = user.user_metadata.family_name as string | undefined;
+      const avatarUrl = user.user_metadata.avatar_url as string | undefined;
+
+      // 4) Upsert mínimo en tu tabla usuarios
+      const { error: upsertError } = await supabase
+        .from("usuarios") // 👈 ajusta si tu tabla se llama distinto
+        .upsert(
+          {
+            auth_id: user.id,              // FK a auth.users.id
+            email,
+            nombre: givenName || fullName, // nombre de pila o completo
+            apellido: familyName || null,
+            avatar_url: avatarUrl ?? null, // solo si existe la columna
+            // completed_profile: false,   // si creas este campo
+          },
+          {
+            onConflict: "auth_id", // que no duplique si ya existe
+          }
+        );
+
+      if (upsertError) {
+        console.warn("Error al sincronizar perfil básico:", upsertError);
+        // No bloqueamos la sesión; puedes mostrar solo un aviso si quieres.
+      }
+
+      // 5) Navegar dentro de la app
+      router.push("/(tabs)/home");
+    } else if (res.type === "cancel") {
+      console.log("Login con Google cancelado por el usuario");
+    } else {
+      console.log("Resultado OAuth inesperado:", res);
+    }
+  } catch (err) {
+    console.error(err);
+    Alert.alert(
+      "Error",
+      "Ocurrió un problema al iniciar sesión con Google. Inténtalo de nuevo."
+    );
+  }
+}, [router]);
+
 
   const requiredStr = (s: string) => s.trim().length > 0;
   const passwordMeetsPolicy = (p: string) =>
@@ -469,15 +578,15 @@ function RegisterScreenInner() {
       await register({
         email,
         password,
-        firstName,
-        lastName,
-        height: height ? parseInt(height) : undefined,
-        weight: weight ? parseInt(weight) : undefined,
-        bloodType,
-        gender,
-        dateOfBirth,
-        allergies: selectedAllergies,
-        medicalConditions: selectedConditions,
+        nombre: firstName,
+        apellido: lastName,
+        fecha_nacimiento: dateOfBirth ? dateOfBirth.toISOString() : undefined,
+        sexo: gender,
+        altura_cm: height ? parseInt(height) : undefined,
+        peso_kg: weight ? parseInt(weight) : undefined,
+        tipo_sangre: bloodType,
+        alergias: selectedAllergies,
+        condiciones_medicas: selectedConditions,
       });
       router.push("/(tabs)/home");
     } catch (err) {
@@ -506,7 +615,7 @@ function RegisterScreenInner() {
             </View>
 
             <View style={styles.header}>
-              <ThemedText style={styles.title}>Crear Cuenta</ThemedText>
+              <ThemedText style={styles.title}>Crear CuentaXXXXxx</ThemedText>
               <ThemedText style={styles.subtitle}>
                 Unos pocos pasos y estará listo para comenzar.
               </ThemedText>
@@ -931,7 +1040,10 @@ function RegisterScreenInner() {
               </View>
 
               <View style={styles.socialButtonsContainer}>
-                <TouchableOpacity style={styles.socialButton}>
+                <TouchableOpacity 
+                style={styles.socialButton} 
+                onPress={handleGoogleSignUp}
+                >
                   <Image
                     source={require("@/assets/images/google.png")}
                     style={styles.socialIcon}
