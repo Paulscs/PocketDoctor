@@ -20,7 +20,7 @@ export interface UserProfile {
 }
 
 export async function getUserProfile(accessToken: string): Promise<UserProfile> {
-    console.log(`${API_BASE_URL}`);
+  console.log(`${API_BASE_URL}`);
   const response = await fetch(`${API_BASE_URL}/users/me`, {
     method: 'GET',
     headers: {
@@ -30,7 +30,8 @@ export async function getUserProfile(accessToken: string): Promise<UserProfile> 
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch user profile: ${response.statusText}}`);
+    const errorBody = await response.text();
+    throw new Error(`Failed to fetch user profile: ${response.status} ${response.statusText} - ${errorBody}`);
   }
 
   return response.json();

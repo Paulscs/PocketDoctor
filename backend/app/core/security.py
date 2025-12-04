@@ -24,6 +24,7 @@ def _decode_supabase_jwt(token: str) -> dict:
             settings.SUPABASE_JWT_SECRET,
             algorithms=["HS256"],
             options={"verify_aud": False},
+            leeway=60,
         )
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expirado")
