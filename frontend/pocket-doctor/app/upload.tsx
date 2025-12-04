@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
+import { uploadAsync, FileSystemUploadType } from "expo-file-system/legacy";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -68,30 +69,22 @@ export default function UploadScreen() {
     setIsProcessing(true);
 
     try {
-      const formData = new FormData();
-      formData.append("file", {
-        uri: selectedFile.uri,
-        name: selectedFile.name,
-        type: selectedFile.type,
-      } as any);
-
       console.log("Sending to:", `${API_BASE_URL}/ocr-local/pdf`);
 
-      const response = await fetch(`${API_BASE_URL}/ocr-local/pdf`, {
-        method: "POST",
-        body: formData,
+      const response = await uploadAsync(`${API_BASE_URL}/ocr-local/pdf`, selectedFile.uri, {
+        fieldName: 'file',
+        httpMethod: 'POST',
+        uploadType: FileSystemUploadType.MULTIPART,
         headers: {
-          Accept: "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Error en el servidor");
+      if (response.status !== 200) {
+        throw new Error(response.body || "Error en el servidor");
       }
 
-      const ocrResult = await response.json();
+      const ocrResult = JSON.parse(response.body);
       console.log("OCR Success:", ocrResult.items?.length, "items found");
 
       // Direct navigation to AI Analytics as requested
