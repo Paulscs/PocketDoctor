@@ -89,7 +89,10 @@ def upload_pdf_to_supabase(content: bytes, filename: str) -> tuple[Optional[str]
 # ---------------------------
 # Modelos de respuesta
 # ---------------------------
-
+LLM_PARSER_SYSTEM_PROMPT = """
+Eres un modelo de IA especializado en interpretar OCR médico.
+Debes devolver SIEMPRE un JSON válido, sin texto adicional.
+"""
 class RefRange(BaseModel):
     min: Optional[float] = None
     max: Optional[float] = None
