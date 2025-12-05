@@ -20,6 +20,7 @@ export default {
 
     android: {
       edgeToEdgeEnabled: true,
+      usesCleartextTraffic: true,
       predictiveBackGestureEnabled: false,
       adaptiveIcon: {
         backgroundColor: "#E6F4FE",
@@ -65,6 +66,7 @@ export default {
           ],
         },
       ],
+      "expo-web-browser",
     ],
 
     experiments: {

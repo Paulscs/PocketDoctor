@@ -6,226 +6,103 @@ import {
   ScrollView,
   Image,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
+import { uploadAsync, FileSystemUploadType } from "expo-file-system/legacy";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
-
 
 type SelectedFile = {
   name: string;
-  type: string; // MIME type, e.g. "application/pdf"
+  type: string;
   uri: string;
 };
 
-// Ajusta esta URL según tu entorno (emulador, dispositivo físico, etc.)
+// Ensure this points to your FastAPI server
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:8000";
 
 export default function UploadScreen() {
-  const [selectedFile, setSelectedFile] = useState<{
-    name: string;
-    type: string;
-    uri: string;
-  } | null>(null);
+  const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // 👇 NUEVO: leemos la sesión desde el store de auth
-  const session = useAuthStore(state => state.session);
+  const session = useAuthStore((state) => state.session);
   const accessToken = session?.access_token;
 
   const handleFilePress = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: "application/pdf", // solo PDF por ahora
+        type: "application/pdf",
         copyToCacheDirectory: true,
       });
 
-      if (result.canceled) {
-        return;
-      }
+      if (result.canceled) return;
 
       const asset = result.assets[0];
-
       setSelectedFile({
         name: asset.name || "documento.pdf",
         type: asset.mimeType || "application/pdf",
         uri: asset.uri,
       });
     } catch (error) {
-      console.error("Error seleccionando archivo:", error);
+      console.error("Error selecting file:", error);
       Alert.alert("Error", "No se pudo seleccionar el archivo");
     }
   };
 
-const handleCameraPress = () => {
-    // Por ahora, puedes dejarlo de prueba
-    setSelectedFile({
-      name: "foto_laboratorio.jpg",
-      type: "image/jpeg",
-      uri: "camera://photo.jpg",
-    });
+  const handleCameraPress = () => {
+    Alert.alert("Info", "Funcionalidad de cámara en desarrollo.");
   };
 
-const handleProcessDocuments = async () => {
-  if (!selectedFile) {
-    Alert.alert("Error", "Por favor selecciona un archivo primero");
-    return;
-  }
-
-  // Por ahora solo aceptamos PDF
-  if (!selectedFile.type.toLowerCase().includes("pdf")) {
-    Alert.alert(
-      "Formato no soportado",
-      "Por ahora solo podemos procesar archivos PDF."
-    );
-    return;
-  }
-
-  if (!accessToken) {
-    Alert.alert(
-      "Sesión requerida",
-      "Debes iniciar sesión antes de subir documentos."
-    );
-    return;
-  }
-
-  setIsProcessing(true);
-
-  try {
-    // 1) SUBIR A /files/upload  (Supabase Storage)
-    const uploadFormData = new FormData();
-    uploadFormData.append("file", {
-      uri: selectedFile.uri,
-      name: selectedFile.name,
-      type: selectedFile.type,
-    } as any);
-
-    const uploadRes = await fetch(`${API_BASE_URL}/files/upload`, {
-      method: "POST",
-      body: uploadFormData,
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${accessToken}`, // tu JWT de Supabase
-      },
-    });
-
-    if (!uploadRes.ok) {
-      const errorText = await uploadRes.text();
-      console.error("Error subiendo archivo:", errorText);
-      throw new Error(errorText || "Error al subir el archivo");
+  const handleProcessDocuments = async () => {
+    if (!selectedFile) {
+      Alert.alert("Error", "Por favor selecciona un archivo primero");
+      return;
     }
 
-    const uploadResult = await uploadRes.json();
-    console.log("Upload result:", uploadResult);
-    // Aquí ya está guardado en el bucket 🎉
+    setIsProcessing(true);
 
-    // 2) LLAMAR AL OCR: /ocr-local/pdf (usa el mismo archivo)
-    const ocrFormData = new FormData();
-    ocrFormData.append("file", {
-      uri: selectedFile.uri,
-      name: selectedFile.name,
-      type: selectedFile.type,
-    } as any);
+    try {
+      console.log("Sending to:", `${API_BASE_URL}/ocr-local/pdf`);
 
-    const ocrRes = await fetch(`${API_BASE_URL}/ocr-local/pdf`, {
-      method: "POST",
-      body: ocrFormData,
-      headers: {
-        Accept: "application/json",
-        // No hace falta Authorization si tu /ocr-local/pdf no lo usa
-      },
-    });
+      const response = await uploadAsync(`${API_BASE_URL}/ocr-local/pdf`, selectedFile.uri, {
+        fieldName: 'file',
+        httpMethod: 'POST',
+        uploadType: FileSystemUploadType.MULTIPART,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
-    if (!ocrRes.ok) {
-      const errorText = await ocrRes.text();
-      console.error("Error en OCR:", errorText);
-      throw new Error(errorText || "Error al analizar el documento");
-    }
+      if (response.status !== 200) {
+        throw new Error(response.body || "Error en el servidor");
+      }
 
-    const ocrResult = await ocrRes.json();
+      const ocrResult = JSON.parse(response.body);
+      console.log("OCR Success:", ocrResult.items?.length, "items found");
 
-    // Log completo del resultado
-    console.log("OCR result:", JSON.stringify(ocrResult, null, 2));
+      // Direct navigation to AI Analytics as requested
+      router.push({
+        pathname: "/ai-analytics",
+        params: { ocrData: JSON.stringify(ocrResult) },
+      });
 
-    // Log específico del payload que le vas a mandar a la LLM
-    if (ocrResult.analysis_input) {
-      console.log(
-        "analysis_input:",
-        JSON.stringify(ocrResult.analysis_input, null, 2)
+    } catch (error: any) {
+      console.error("Upload Error:", error);
+      Alert.alert(
+        "Error",
+        error.message || "No se pudo procesar el documento."
       );
+    } finally {
+      setIsProcessing(false);
     }
-
-    // 3) LLAMAR A LA LLM: /parse-llm
-    // Ajusta la ruta si tu router tiene prefix (por ejemplo /llm/parse-llm)
-    const llmPayload = {
-      ocr_text: ocrResult.text ?? "",              // texto crudo del OCR
-      patient_profile: {
-        age: null,
-        sex: null,
-        weight_kg: null,
-        height_cm: null,
-        conditions: [],                           // luego puedes llenarlo con datos reales del usuario
-        medications: [],
-      },
-      draft_analysis_input: ocrResult.analysis_input ?? null, // lo que ya parseaste en el backend
-    };
-
-    console.log(
-      "LLM payload (LLMParseRequest):",
-      JSON.stringify(llmPayload, null, 2)
-    );
-
-    const llmRes = await fetch(`${API_BASE_URL}/ocr-local/parse-llm`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        // Si en el futuro quieres proteger este endpoint, aquí puedes poner Authorization también
-      },
-      body: JSON.stringify(llmPayload),
-    });
-
-    if (!llmRes.ok) {
-      const llmErrorText = await llmRes.text();
-      console.error("Error en parse-llm:", llmErrorText);
-      throw new Error(llmErrorText || "Error al analizar resultados con IA");
-    }
-
-    const llmResult = await llmRes.json();
-
-    console.log(
-      "LLM interpretation (LLMInterpretation):",
-      JSON.stringify(llmResult, null, 2)
-    );
-
-    // Por ahora, solo mostramos el resumen en un Alert
-    Alert.alert(
-      "Análisis listo",
-      llmResult.summary ||
-        "La IA analizó tus resultados. (No es un diagnóstico médico)."
-    );
-
-    // Más adelante: aquí puedes
-    // - guardar ocrResult en algún estado global
-    // - navegar a /validate-data pasando esos datos
-    // router.push({ pathname: "/validate-data", params: { ... } });
-  } catch (error) {
-    console.error("Error procesando documento:", error);
-    Alert.alert(
-      "Error",
-      "No se pudo procesar el documento. Inténtalo de nuevo más tarde."
-    );
-  } finally {
-    setIsProcessing(false);
-  }
-};
-
+  };
 
   const handleCancel = () => {
     router.back();
@@ -233,7 +110,6 @@ const handleProcessDocuments = async () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Custom Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -265,7 +141,6 @@ const handleProcessDocuments = async () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Upload Icon */}
         <View style={styles.uploadIconContainer}>
           <View style={styles.uploadIcon}>
             <IconSymbol
@@ -276,10 +151,8 @@ const handleProcessDocuments = async () => {
           </View>
         </View>
 
-        {/* Title */}
         <ThemedText style={styles.title}>Subir resultados médicos</ThemedText>
 
-        {/* File Upload Area */}
         <View style={styles.uploadArea}>
           <TouchableOpacity
             style={styles.uploadButton}
@@ -324,7 +197,6 @@ const handleProcessDocuments = async () => {
               </View>
             </View>
 
-            {/* Upload Options */}
             <View style={styles.uploadOptions}>
               <TouchableOpacity
                 style={styles.optionButton}
@@ -354,7 +226,6 @@ const handleProcessDocuments = async () => {
           </TouchableOpacity>
         </View>
 
-        {/* Selected File Display */}
         {selectedFile && (
           <View style={styles.selectedFileContainer}>
             <View style={styles.selectedFile}>
@@ -382,7 +253,6 @@ const handleProcessDocuments = async () => {
           </View>
         )}
 
-        {/* Action Buttons */}
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={[
@@ -392,9 +262,13 @@ const handleProcessDocuments = async () => {
             onPress={handleProcessDocuments}
             disabled={!selectedFile || isProcessing}
           >
-            <ThemedText style={styles.processButtonText}>
-              {isProcessing ? "Procesando..." : "Procesar Documentos"}
-            </ThemedText>
+            {isProcessing ? (
+              <ActivityIndicator color={Colors.light.white} />
+            ) : (
+              <ThemedText style={styles.processButtonText}>
+                Procesar Documentos
+              </ThemedText>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -466,7 +340,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-
   uploadIconContainer: {
     alignItems: "center",
     marginTop: 40,
@@ -480,7 +353,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   title: {
     fontSize: 24,
     fontWeight: "700",
@@ -489,7 +361,6 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     textDecorationLine: "underline",
   },
-
   uploadArea: {
     marginBottom: 32,
   },
@@ -558,7 +429,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: Colors.light.brandBlue,
   },
-
   selectedFileContainer: {
     marginBottom: 24,
   },
@@ -585,7 +455,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.light.gray,
   },
-
   actionButtons: {
     marginTop: "auto",
     gap: 12,

@@ -9,6 +9,7 @@ import {
   Platform,
   Text,
   TextInput,
+  Alert
 } from "react-native";
 import * as Linking from "expo-linking";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
@@ -23,6 +24,13 @@ import DropDownPicker, {
 import { Colors } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAuthStore } from "@/src/store";
+import * as WebBrowser from "expo-web-browser";
+import { supabase } from "@/src/lib/supabase";
+import { makeRedirectUri } from "expo-auth-session"; // 👈 solo esto de auth-session
+
+WebBrowser.maybeCompleteAuthSession(); // ayuda a cerrar el navegador al volver
+const scheme = "pocketdoctor"; // mismo scheme que tienes en app.json
+
 
 type Item = { label: string; value: string };
 
@@ -96,6 +104,11 @@ const createStyles = (colors: ThemeColors) =>
     fieldErrorBottom: { borderBottomColor: colors.error, borderBottomWidth: 1 },
     fieldErrorBox: { borderColor: colors.error },
     err: { color: colors.error, fontSize: 12, marginTop: 4 },
+    strengthContainer: { marginTop: 8, marginBottom: 6 },
+    strengthBarContainer: { flexDirection: 'row', height: 6, gap: 6, marginTop: 6 },
+    strengthSegment: { flex: 1, borderRadius: 3, backgroundColor: '#E6E8EB' },
+    strengthText: { fontSize: 12, marginTop: 6, color: colors.textGray },
+    policyText: { fontSize: 12, color: colors.muted, marginTop: 6, marginBottom: 8 },
     eyeBtn: { padding: 6, marginLeft: 8 },
     registerButton: {
       backgroundColor: colors.borderGray,
@@ -233,6 +246,7 @@ function SelectField({
       <Label required={required} styles={styles}>
         {label}
       </Label>
+
       <DropDownPicker
         open={open}
         value={value}
@@ -349,14 +363,144 @@ function RegisterScreenInner() {
       white,
     ]
   );
+ const handleGoogleSignUp = useCallback(async () => {
+  try {
+    const redirectTo = makeRedirectUri({
+      scheme,
+      path: "auth/callback",
+    });
+
+    // 1) Pedimos URL de login a Supabase
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+        skipBrowserRedirect: true,
+      },
+    });
+
+    if (error || !data?.url) {
+      console.error(error);
+      Alert.alert(
+        "Error",
+        error?.message ?? "No se pudo iniciar sesión con Google"
+      );
+      return;
+    }
+
+    // 2) Abrimos el navegador / pestaña del sistema
+    const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
+    if (res.type === "success") {
+      // 3) Obtener sesión y usuario de Supabase
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error(sessionError);
+        Alert.alert("Error", "No se pudo obtener la sesión de Supabase");
+        return;
+      }
+
+      const session = sessionData.session;
+      if (!session) {
+        Alert.alert(
+          "Error",
+          "No se encontró una sesión activa después del login con Google."
+        );
+        return;
+      }
+
+      const user = session.user;
+      
+      console.log("USER:", JSON.stringify(user, null, 2));
+      console.log("USER METADATA:", JSON.stringify(user.user_metadata, null, 2));
+      // ---- AQUÍ SOLO EXTRAEMOS DATOS BÁSICOS ----
+      const email = user.email ?? "";
+      const fullName =
+        (user.user_metadata.full_name as string) ||
+        (user.user_metadata.name as string) ||
+        "";
+      const givenName = user.user_metadata.given_name as string | undefined;
+      const familyName = user.user_metadata.family_name as string | undefined;
+      const avatarUrl = user.user_metadata.avatar_url as string | undefined;
+
+      // 4) Upsert mínimo en tu tabla usuarios
+      const { error: upsertError } = await supabase
+        .from("usuarios") // 👈 ajusta si tu tabla se llama distinto
+        .upsert(
+          {
+            auth_id: user.id,              // FK a auth.users.id
+            email,
+            nombre: givenName || fullName, // nombre de pila o completo
+            apellido: familyName || null,
+            avatar_url: avatarUrl ?? null, // solo si existe la columna
+            // completed_profile: false,   // si creas este campo
+          },
+          {
+            onConflict: "auth_id", // que no duplique si ya existe
+          }
+        );
+
+      if (upsertError) {
+        console.warn("Error al sincronizar perfil básico:", upsertError);
+        // No bloqueamos la sesión; puedes mostrar solo un aviso si quieres.
+      }
+
+      // 5) Navegar dentro de la app
+      router.push("/(tabs)/home");
+    } else if (res.type === "cancel") {
+      console.log("Login con Google cancelado por el usuario");
+    } else {
+      console.log("Resultado OAuth inesperado:", res);
+    }
+  } catch (err) {
+    console.error(err);
+    Alert.alert(
+      "Error",
+      "Ocurrió un problema al iniciar sesión con Google. Inténtalo de nuevo."
+    );
+  }
+}, [router]);
+
 
   const requiredStr = (s: string) => s.trim().length > 0;
+  const passwordMeetsPolicy = (p: string) =>
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/.test(p);
+
+  const passwordStrength = useMemo(() => {
+    if (!password) return 0;
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    // normalize to 0..4
+    return Math.min(4, score);
+  }, [password]);
+
+  const strengthLabel = useMemo(() => {
+    switch (passwordStrength) {
+      case 0:
+      case 1:
+        return { text: "Muy débil", color: "#E74C3C" };
+      case 2:
+        return { text: "Débil", color: "#F39C12" };
+      case 3:
+        return { text: "Regular", color: "#F1C40F" };
+      case 4:
+      default:
+        return { text: "Fuerte", color: "#27AE60" };
+    }
+  }, [passwordStrength]);
+
   const formValid =
     requiredStr(firstName) &&
     requiredStr(lastName) &&
     requiredStr(email) &&
     requiredStr(password) &&
-    password.length > 6 &&
+    passwordMeetsPolicy(password) &&
     requiredStr(confirmPassword) &&
     requiredStr(height) &&
     requiredStr(weight) &&
@@ -434,15 +578,15 @@ function RegisterScreenInner() {
       await register({
         email,
         password,
-        firstName,
-        lastName,
-        height: height ? parseInt(height) : undefined,
-        weight: weight ? parseInt(weight) : undefined,
-        bloodType,
-        gender,
-        dateOfBirth,
-        allergies: selectedAllergies,
-        medicalConditions: selectedConditions,
+        nombre: firstName,
+        apellido: lastName,
+        fecha_nacimiento: dateOfBirth ? dateOfBirth.toISOString() : undefined,
+        sexo: gender,
+     estatura: height ? parseInt(height) : undefined,
+        peso: weight ? parseInt(weight) : undefined,
+        tipo_sangre: bloodType,
+        alergias: selectedAllergies,
+        condiciones_medicas: selectedConditions,
       });
       router.push("/(tabs)/home");
     } catch (err) {
@@ -471,7 +615,7 @@ function RegisterScreenInner() {
             </View>
 
             <View style={styles.header}>
-              <ThemedText style={styles.title}>Crear Cuenta</ThemedText>
+              <ThemedText style={styles.title}>Crear CuentaXXXXxx</ThemedText>
               <ThemedText style={styles.subtitle}>
                 Unos pocos pasos y estará listo para comenzar.
               </ThemedText>
@@ -554,7 +698,7 @@ function RegisterScreenInner() {
               <View
                 style={[
                   styles.inputContainer,
-                  submitted && (!requiredStr(password) || password.length <= 6) && styles.fieldError,
+                  submitted && (!requiredStr(password) || !passwordMeetsPolicy(password)) && styles.fieldError,
                 ]}
               >
                 <TextInput
@@ -577,11 +721,39 @@ function RegisterScreenInner() {
                   />
                 </TouchableOpacity>
               </View>
+              <Text style={styles.policyText}>
+                Mínimo de 8 caracteres: mayúscula, minúscula, número, carácter especial
+              </Text>
               {submitted && !requiredStr(password) && (
                 <Text style={styles.err}>Requerido</Text>
               )}
-              {submitted && requiredStr(password) && password.length <= 6 && (
-                <Text style={styles.err}>La contraseña debe tener más de 6 caracteres</Text>
+              {submitted && requiredStr(password) && !passwordMeetsPolicy(password) && (
+                <Text style={styles.err}>La contraseña debe tener al menos 8 caracteres e incluir mayúsculas, minúsculas y un carácter especial</Text>
+              )}
+
+              {/* Password strength meter */}
+              {password.length > 0 && (
+                <View style={styles.strengthContainer}>
+                  <View style={styles.strengthBarContainer}>
+                    {[0, 1, 2, 3].map(i => (
+                      <View
+                        key={i}
+                        style={[
+                          styles.strengthSegment,
+                          {
+                            backgroundColor:
+                              i <= (passwordStrength - 1)
+                                ? strengthLabel.color
+                                : '#E6E8EB',
+                          },
+                        ]}
+                      />
+                    ))}
+                  </View>
+                  <Text style={[styles.strengthText, { color: strengthLabel.color }]}>
+                    {strengthLabel.text}
+                  </Text>
+                </View>
               )}
 
               <Label required styles={styles}>
@@ -616,14 +788,16 @@ function RegisterScreenInner() {
                   />
                 </TouchableOpacity>
               </View>
+              {/* real-time mismatch alert */}
+              {!submitted && confirmPassword.length > 0 && password !== confirmPassword && (
+                <Text style={styles.err}>Las contraseñas no coinciden</Text>
+              )}
               {submitted && !requiredStr(confirmPassword) && (
                 <Text style={styles.err}>Requerido</Text>
               )}
-              {submitted &&
-                requiredStr(confirmPassword) &&
-                password !== confirmPassword && (
-                  <Text style={styles.err}>Las contraseñas no coinciden</Text>
-                )}
+              {submitted && requiredStr(confirmPassword) && password !== confirmPassword && (
+                <Text style={styles.err}>Las contraseñas no coinciden</Text>
+              )}
 
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Información de Salud</Text>
@@ -866,7 +1040,10 @@ function RegisterScreenInner() {
               </View>
 
               <View style={styles.socialButtonsContainer}>
-                <TouchableOpacity style={styles.socialButton}>
+                <TouchableOpacity 
+                style={styles.socialButton} 
+                onPress={handleGoogleSignUp}
+                >
                   <Image
                     source={require("@/assets/images/google.png")}
                     style={styles.socialIcon}

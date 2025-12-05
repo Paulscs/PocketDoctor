@@ -1,8 +1,8 @@
 // src/store/authStore.ts
-import { create } from 'zustand';
-import { supabase } from '@/src/lib/supabase';
-import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
-import { getUserProfile, UserProfile } from '../services/user';
+import { create } from "zustand";
+import { supabase } from "@/src/lib/supabase";
+import type { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import { getUserProfile, UserProfile } from "../services/user";
 
 export type User = SupabaseUser;
 
@@ -21,17 +21,17 @@ export type RegisterPayload = {
   // camelCase desde el frontend (register.tsx)
   firstName?: string;
   lastName?: string;
-  dateOfBirth?: string;        // "YYYY-MM-DD"
-  gender?: string;             // "Masculino" | "Femenino" | ...
-  height?: number;             // cm
-  weight?: number;             // kg
-  bloodType?: string;          // "A+","O-",...
-  allergies?: string[];        // array opcional
-  medicalConditions?: string[];// array opcional
+  dateOfBirth?: string; // "YYYY-MM-DD"
+  gender?: string; // "Masculino" | "Femenino" | ...
+  height?: number; // cm
+  weight?: number; // kg
+  bloodType?: string; // "A+","O-",...
+  allergies?: string[]; // array opcional
+  medicalConditions?: string[]; // array opcional
 };
 
 export type AuthActions = {
-   clearError: () => void;
+  clearError: () => void;
   login: (email: string, password: string) => Promise<void>;
   register: (p: {
     email: string;
@@ -53,10 +53,11 @@ export type AuthStore = AuthState & AuthActions;
 
 // Helpers para normalizar
 const nz = (v?: string) => (v && v.trim().length ? v : null);
-const nn = (v?: number) => (typeof v === 'number' && !Number.isNaN(v) ? v : null);
+const nn = (v?: number) =>
+  typeof v === "number" && !Number.isNaN(v) ? v : null;
 const na = (v?: string[]) => (Array.isArray(v) ? v : []);
 
-export const useAuthStore = create<AuthStore>((set) => ({
+export const useAuthStore = create<AuthStore>(set => ({
   user: null,
   session: null,
   userProfile: null,
@@ -66,18 +67,24 @@ export const useAuthStore = create<AuthStore>((set) => ({
   clearError: () => set({ error: null }),
 
   login: async (email, password) => {
-    console.log('[auth] login:start', { email });
+    console.log("[auth] login:start", { email });
     set({ isLoading: true, error: null });
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
       if (error) {
-        console.warn('[auth] login:error', { code: (error as any)?.status, message: error.message });
+        console.warn("[auth] login:error", {
+          code: (error as any)?.status,
+          message: error.message,
+        });
         set({ error: error.message, isLoading: false });
         throw error;
       }
 
-      console.log('[auth] login:success', {
+      console.log("[auth] login:success", {
         userId: data.user?.id,
         email: data.user?.email,
         hasSession: !!data.session,
@@ -87,27 +94,106 @@ export const useAuthStore = create<AuthStore>((set) => ({
       if (data.session?.access_token) {
         try {
           const profile = await getUserProfile(data.session.access_token);
-          set({ user: data.user ?? null, session: data.session ?? null, userProfile: profile, isLoading: false });
+          set({
+            user: data.user ?? null,
+            session: data.session ?? null,
+            userProfile: profile,
+            isLoading: false,
+          });
         } catch (profileError) {
-          console.error('[auth] failed to fetch user profile after login:', profileError);
-          set({ user: data.user ?? null, session: data.session ?? null, userProfile: null, isLoading: false });
+          console.error(
+            "[auth] failed to fetch user profile after login:",
+            profileError
+          );
+          set({
+            user: data.user ?? null,
+            session: data.session ?? null,
+            userProfile: null,
+            isLoading: false,
+          });
         }
       } else {
         // Fetch user profile after successful registration
         if (data.session?.access_token) {
           try {
             const profile = await getUserProfile(data.session.access_token);
-            set({ user: data.user ?? null, session: data.session ?? null, userProfile: profile, isLoading: false });
+            set({
+              user: data.user ?? null,
+              session: data.session ?? null,
+              userProfile: profile,
+              isLoading: false,
+            });
           } catch (profileError) {
-            console.error('[auth] failed to fetch user profile after register:', profileError);
-            set({ user: data.user ?? null, session: data.session ?? null, userProfile: null, isLoading: false });
+            console.error(
+              "[auth] failed to fetch user profile after register:",
+              profileError
+            );
+            set({
+              user: data.user ?? null,
+              session: data.session ?? null,
+              userProfile: null,
+              isLoading: false,
+            });
           }
         } else {
-          set({ user: data.user ?? null, session: data.session ?? null, isLoading: false });
+          // Fetch user profile after successful registration if session exists
+          if (data.session?.access_token) {
+            try {
+              const profile = await getUserProfile(data.session.access_token);
+              set({
+                user: data.user ?? null,
+                session: data.session ?? null,
+                userProfile: profile,
+                isLoading: false,
+              });
+            } catch (profileError) {
+              console.error(
+                "[auth] failed to fetch user profile after register:",
+                profileError
+              );
+              set({
+                user: data.user ?? null,
+                session: data.session ?? null,
+                userProfile: null,
+                isLoading: false,
+              });
+            }
+          } else {
+            // Fetch user profile after successful registration if session exists
+            if (data.session?.access_token) {
+              try {
+                const profile = await getUserProfile(data.session.access_token);
+                set({
+                  user: data.user ?? null,
+                  session: data.session ?? null,
+                  userProfile: profile,
+                  isLoading: false,
+                });
+              } catch (profileError) {
+                console.error(
+                  "[auth] failed to fetch user profile after register:",
+                  profileError
+                );
+                set({
+                  user: data.user ?? null,
+                  session: data.session ?? null,
+                  userProfile: upsertData || null,
+                  isLoading: false,
+                });
+              }
+            } else {
+              set({
+                user: data.user ?? null,
+                session: data.session ?? null,
+                userProfile: upsertData || null,
+                isLoading: false,
+              });
+            }
+          }
         }
       }
     } catch (e: any) {
-      console.error('[auth] login:exception', e?.message ?? String(e));
+      console.error("[auth] login:exception", e?.message ?? String(e));
       set({ isLoading: false });
       throw e;
     }
@@ -116,34 +202,44 @@ export const useAuthStore = create<AuthStore>((set) => ({
   register: async ({
     email,
     password,
-    firstName,
-    lastName,
-    dateOfBirth,
-    gender,
-    height,
-    weight,
-    bloodType,
-    allergies,
-    medicalConditions,
+    nombre,
+    apellido,
+    fecha_nacimiento,
+    sexo,
+    estatura,
+    peso,
+    tipo_sangre,
+    alergias,
+    condiciones_medicas,
   }) => {
-    console.log('[auth] register:start', {
+    console.log("[auth] register:start", {
       email,
-      meta: { firstName, lastName, dateOfBirth, gender, height, weight, bloodType, allergies, medicalConditions },
+      meta: {
+        nombre,
+        apellido,
+        fecha_nacimiento,
+        sexo,
+        estatura,
+        peso,
+        tipo_sangre,
+        alergias,
+        condiciones_medicas,
+      },
     });
 
     set({ isLoading: true, error: null });
 
     // 1) Guardar metadata en Auth (snake_case)
     const userMetadataSnake = {
-      nombre: nz(firstName),
-      apellido: nz(lastName),
-      fecha_nacimiento: nz(dateOfBirth),   // "YYYY-MM-DD"
-      sexo: nz(gender),
-      altura_cm: nn(height),
-      peso_kg: nn(weight),
-      tipo_sangre: nz(bloodType),
-      alergias: na(allergies),
-      condiciones_medicas: na(medicalConditions),
+      nombre: nz(nombre),
+      apellido: nz(apellido),
+      fecha_nacimiento: nz(fecha_nacimiento), // "YYYY-MM-DD"
+      sexo: nz(sexo),
+      altura_cm: nn(estatura),
+      peso_kg: nn(peso),
+      tipo_sangre: nz(tipo_sangre),
+      alergias: na(alergias),
+      condiciones_medicas: na(condiciones_medicas),
     };
 
     try {
@@ -157,18 +253,22 @@ export const useAuthStore = create<AuthStore>((set) => ({
       });
 
       if (error) {
-        console.warn('[auth] register:error', { code: (error as any)?.status, message: error.message });
+        console.warn("[auth] register:error", {
+          code: (error as any)?.status,
+          message: error.message,
+        });
         set({ error: error.message, isLoading: false });
         throw error;
       }
 
-      console.log('[auth] register:success', {
+      console.log("[auth] register:success", {
         userId: data.user?.id,
         email: data.user?.email,
         hasSession: !!data.session, // con verificación por email suele ser false
       });
 
       // 2) Upsert inmediato a public.usuarios (sin depender del trigger)
+      let upsertData = null;
       if (data.user) {
         const upsertPayload = {
           user_auth_id: data.user.id,
@@ -180,41 +280,54 @@ export const useAuthStore = create<AuthStore>((set) => ({
           altura_cm: userMetadataSnake.altura_cm,
           peso_kg: userMetadataSnake.peso_kg,
           tipo_sangre: userMetadataSnake.tipo_sangre,
-          alergias: userMetadataSnake.alergias?.length ? userMetadataSnake.alergias : null,
-          condiciones_medicas: userMetadataSnake.condiciones_medicas?.length ? userMetadataSnake.condiciones_medicas : null,
+          alergias: userMetadataSnake.alergias?.length
+            ? userMetadataSnake.alergias
+            : null,
+          condiciones_medicas: userMetadataSnake.condiciones_medicas?.length
+            ? userMetadataSnake.condiciones_medicas
+            : null,
         };
 
-        const { error: upsertErr } = await supabase
-          .from('usuarios')
-          .upsert(upsertPayload, { onConflict: 'user_auth_id' });
+        const { data: upsertResult, error: upsertErr } = await supabase
+          .from("usuarios")
+          .upsert(upsertPayload, { onConflict: "user_auth_id" })
+          .select()
+          .single();
 
         if (upsertErr) {
-          console.error('[auth] usuarios.upsert:error', upsertErr.message);
+          console.error("[auth] usuarios.upsert:error", upsertErr.message);
           // No tiramos el registro si falla el upsert, pero lo dejamos en consola:
           // throw upsertErr;
         } else {
-          console.log('[auth] usuarios.upsert:success', { user_auth_id: data.user.id });
+          console.log("[auth] usuarios.upsert:success", {
+            user_auth_id: data.user.id,
+          });
+          upsertData = upsertResult;
         }
       }
 
-      set({ user: data.user ?? null, session: data.session ?? null, isLoading: false });
+      set({
+        user: data.user ?? null,
+        session: data.session ?? null,
+        isLoading: false,
+      });
     } catch (e: any) {
-      console.error('[auth] register:exception', e?.message ?? String(e));
+      console.error("[auth] register:exception", e?.message ?? String(e));
       set({ isLoading: false });
       throw e;
     }
   },
 
   logout: async () => {
-    console.log('[auth] logout:start');
+    console.log("[auth] logout:start");
     set({ isLoading: true, error: null });
     try {
       await supabase.auth.signOut();
-      console.log('[auth] logout:success');
+      console.log("[auth] logout:success");
       set({ user: null, session: null, userProfile: null, isLoading: false });
     } catch (e: any) {
-      console.error('[auth] logout:exception', e?.message ?? String(e));
-      set({ error: e?.message ?? 'Error al cerrar sesión', isLoading: false });
+      console.error("[auth] logout:exception", e?.message ?? String(e));
+      set({ error: e?.message ?? "Error al cerrar sesión", isLoading: false });
       throw e;
     }
   },
@@ -222,18 +335,29 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
 // Log de cambios de sesión (útil para depurar)
 supabase.auth.onAuthStateChange(async (event, session) => {
-  console.log('[auth] onAuthStateChange', { event, userId: session?.user?.id, hasSession: !!session });
+  console.log("[auth] onAuthStateChange", {
+    event,
+    userId: session?.user?.id,
+    hasSession: !!session,
+  });
 
   // Update store when session changes
-  if (event === 'SIGNED_IN' && session?.access_token) {
+  if (event === "SIGNED_IN" && session?.access_token) {
     try {
       const profile = await getUserProfile(session.access_token);
-      useAuthStore.setState({ user: session.user, session, userProfile: profile });
+      useAuthStore.setState({
+        user: session.user,
+        session,
+        userProfile: profile,
+      });
     } catch (error) {
-      console.error('[auth] failed to fetch profile on auth state change:', error);
+      console.error(
+        "[auth] failed to fetch profile on auth state change:",
+        error
+      );
       useAuthStore.setState({ user: session.user, session, userProfile: null });
     }
-  } else if (event === 'SIGNED_OUT') {
+  } else if (event === "SIGNED_OUT") {
     useAuthStore.setState({ user: null, session: null, userProfile: null });
   }
 });
