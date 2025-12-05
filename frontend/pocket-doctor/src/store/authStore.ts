@@ -77,35 +77,24 @@ export const useAuthStore = create<AuthStore>((set) => ({
         throw error;
       }
 
-      console.log('[auth] login:success', {
-        userId: data.user?.id,
-        email: data.user?.email,
-        hasSession: !!data.session,
-      });
+      const user = data.user ?? null;
+      const session = data.session ?? null;
+      let profile = null as any;
 
-      // Fetch user profile after successful login
-      if (data.session?.access_token) {
+      // If we have a session token, fetch profile before resolving
+      if (session?.access_token) {
         try {
-          const profile = await getUserProfile(data.session.access_token);
-          set({ user: data.user ?? null, session: data.session ?? null, userProfile: profile, isLoading: false });
+          profile = await getUserProfile(session.access_token);
         } catch (profileError) {
-          console.error('[auth] failed to fetch user profile after login:', profileError);
-          set({ user: data.user ?? null, session: data.session ?? null, userProfile: null, isLoading: false });
-        }
-      } else {
-        // Fetch user profile after successful registration
-        if (data.session?.access_token) {
-          try {
-            const profile = await getUserProfile(data.session.access_token);
-            set({ user: data.user ?? null, session: data.session ?? null, userProfile: profile, isLoading: false });
-          } catch (profileError) {
-            console.error('[auth] failed to fetch user profile after register:', profileError);
-            set({ user: data.user ?? null, session: data.session ?? null, userProfile: null, isLoading: false });
-          }
-        } else {
-          set({ user: data.user ?? null, session: data.session ?? null, isLoading: false });
+          console.error(
+            "[auth] failed to fetch user profile after login:",
+            profileError
+          );
+          profile = null;
         }
       }
+
+      set({ user, session, userProfile: profile, isLoading: false });
     } catch (e: any) {
       console.error('[auth] login:exception', e?.message ?? String(e));
       set({ isLoading: false });
@@ -152,7 +141,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
         password,
         options: {
           data: userMetadataSnake,
-          // emailRedirectTo: 'pocketdoctor://auth-callback', // opcional si usas deep link
         },
       });
 
@@ -165,17 +153,18 @@ export const useAuthStore = create<AuthStore>((set) => ({
       console.log('[auth] register:success', {
         userId: data.user?.id,
         email: data.user?.email,
-        hasSession: !!data.session, // con verificación por email suele ser false
+        hasSession: !!data.session,
       });
 
       // 2) Upsert inmediato a public.usuarios (sin depender del trigger)
+      let upsertResult: any = null;
       if (data.user) {
         const upsertPayload = {
           user_auth_id: data.user.id,
           email: data.user.email,
           nombre: userMetadataSnake.nombre,
           apellido: userMetadataSnake.apellido,
-          fecha_nacimiento: userMetadataSnake.fecha_nacimiento, // "YYYY-MM-DD"
+          fecha_nacimiento: userMetadataSnake.fecha_nacimiento,
           sexo: userMetadataSnake.sexo,
           altura_cm: userMetadataSnake.altura_cm,
           peso_kg: userMetadataSnake.peso_kg,
@@ -184,20 +173,47 @@ export const useAuthStore = create<AuthStore>((set) => ({
           condiciones_medicas: userMetadataSnake.condiciones_medicas?.length ? userMetadataSnake.condiciones_medicas : null,
         };
 
-        const { error: upsertErr } = await supabase
-          .from('usuarios')
-          .upsert(upsertPayload, { onConflict: 'user_auth_id' });
+        try {
+          const { data: upsertData, error: upsertErr } = await supabase
+            .from("usuarios")
+            .upsert(upsertPayload, { onConflict: "user_auth_id" })
+            .select()
+            .single();
 
-        if (upsertErr) {
-          console.error('[auth] usuarios.upsert:error', upsertErr.message);
-          // No tiramos el registro si falla el upsert, pero lo dejamos en consola:
-          // throw upsertErr;
-        } else {
-          console.log('[auth] usuarios.upsert:success', { user_auth_id: data.user.id });
+          if (upsertErr) {
+            console.error("[auth] usuarios.upsert:error", upsertErr.message);
+          } else {
+            console.log("[auth] usuarios.upsert:success", {
+              user_auth_id: data.user.id,
+            });
+            upsertResult = upsertData;
+          }
+        } catch (upsertErr) {
+          console.error("[auth] usuarios.upsert:exception", upsertErr);
         }
       }
 
-      set({ user: data.user ?? null, session: data.session ?? null, isLoading: false });
+      const user = data.user ?? null;
+      const session = data.session ?? null;
+      let profile = null as any;
+
+      // If there's a session with token (sometimes signUp gives a session), fetch profile
+      if (session?.access_token) {
+        try {
+          profile = await getUserProfile(session.access_token);
+        } catch (profileError) {
+          console.error(
+            "[auth] failed to fetch profile after register:",
+            profileError
+          );
+          profile = null;
+        }
+      } else if (upsertResult) {
+        // If no session (email confirmation flows), but we have upserted user row, use it as profile
+        profile = upsertResult;
+      }
+
+      set({ user, session, userProfile: profile, isLoading: false });
     } catch (e: any) {
       console.error('[auth] register:exception', e?.message ?? String(e));
       set({ isLoading: false });
