@@ -90,8 +90,8 @@ export const useAuthStore = create<AuthStore>(set => ({
         hasSession: !!data.session,
       });
 
-      // Fetch user profile after successful login
-      if (data.session?.access_token) {
+      // If we have a session token, fetch profile before resolving
+      if (session?.access_token) {
         try {
           const profile = await getUserProfile(data.session.access_token);
           set({
@@ -192,6 +192,8 @@ export const useAuthStore = create<AuthStore>(set => ({
           }
         }
       }
+
+      set({ user, session, userProfile: profile, isLoading: false });
     } catch (e: any) {
       console.error("[auth] login:exception", e?.message ?? String(e));
       set({ isLoading: false });
@@ -248,7 +250,6 @@ export const useAuthStore = create<AuthStore>(set => ({
         password,
         options: {
           data: userMetadataSnake,
-          // emailRedirectTo: 'pocketdoctor://auth-callback', // opcional si usas deep link
         },
       });
 
@@ -264,7 +265,7 @@ export const useAuthStore = create<AuthStore>(set => ({
       console.log("[auth] register:success", {
         userId: data.user?.id,
         email: data.user?.email,
-        hasSession: !!data.session, // con verificación por email suele ser false
+        hasSession: !!data.session,
       });
 
       // 2) Upsert inmediato a public.usuarios (sin depender del trigger)
@@ -275,7 +276,7 @@ export const useAuthStore = create<AuthStore>(set => ({
           email: data.user.email,
           nombre: userMetadataSnake.nombre,
           apellido: userMetadataSnake.apellido,
-          fecha_nacimiento: userMetadataSnake.fecha_nacimiento, // "YYYY-MM-DD"
+          fecha_nacimiento: userMetadataSnake.fecha_nacimiento,
           sexo: userMetadataSnake.sexo,
           altura_cm: userMetadataSnake.altura_cm,
           peso_kg: userMetadataSnake.peso_kg,
@@ -304,6 +305,9 @@ export const useAuthStore = create<AuthStore>(set => ({
           });
           upsertData = upsertResult;
         }
+      } else if (upsertResult) {
+        // If no session (email confirmation flows), but we have upserted user row, use it as profile
+        profile = upsertResult;
       }
 
       set({

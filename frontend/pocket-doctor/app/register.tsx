@@ -412,9 +412,23 @@ function RegisterScreenInner() {
       }
 
       const user = session.user;
-      
+
       console.log("USER:", JSON.stringify(user, null, 2));
       console.log("USER METADATA:", JSON.stringify(user.user_metadata, null, 2));
+
+      // --- Fetch backend profile and populate store ---
+      if (session.access_token) {
+        try {
+          const { getUserProfile } = await import("@/src/services/user");
+          const profile = await getUserProfile(session.access_token);
+          // set store directly so the app has the profile available
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const { useAuthStore } = require("@/src/store");
+          useAuthStore.setState({ user: session.user, session, userProfile: profile });
+        } catch (err) {
+          console.warn("Error fetching profile after Google OAuth:", err);
+        }
+      }
       // ---- AQUÍ SOLO EXTRAEMOS DATOS BÁSICOS ----
       const email = user.email ?? "";
       const fullName =
@@ -465,6 +479,10 @@ function RegisterScreenInner() {
 
 
   const requiredStr = (s: string) => s.trim().length > 0;
+  const isValidEmail = (e: string) =>
+    /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(".+"))@(([^<>()[\]\\.,;:\s@\"]+\.)+[^<>()[\]\\.,;:\s@\"]{2,})$/i.test(
+      e.trim()
+    );
   const passwordMeetsPolicy = (p: string) =>
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/.test(p);
 
@@ -499,6 +517,7 @@ function RegisterScreenInner() {
     requiredStr(firstName) &&
     requiredStr(lastName) &&
     requiredStr(email) &&
+    isValidEmail(email) &&
     requiredStr(password) &&
     passwordMeetsPolicy(password) &&
     requiredStr(confirmPassword) &&
@@ -571,10 +590,70 @@ function RegisterScreenInner() {
 
   const onRegister = async () => {
     setSubmitted(true);
-    if (!formValid) return;
 
-    clearError();
+    // Basic client-side validations with user-friendly alerts
+    if (!isValidEmail(email)) {
+      Alert.alert("Correo inválido", "Introduzca un correo electrónico válido.");
+      return;
+    }
+
+    // collect missing required fields to show a helpful alert
+    const missing: string[] = [];
+    if (!requiredStr(firstName)) missing.push("Nombres");
+    if (!requiredStr(lastName)) missing.push("Apellidos");
+    if (!requiredStr(email)) missing.push("Correo electrónico");
+    if (!requiredStr(password)) missing.push("Contraseña");
+    if (!requiredStr(confirmPassword)) missing.push("Confirmar contraseña");
+    if (!requiredStr(height)) missing.push("Altura");
+    if (!requiredStr(weight)) missing.push("Peso");
+    if (!requiredStr(bloodType)) missing.push("Tipo de sangre");
+    if (!requiredStr(gender)) missing.push("Género");
+    if (!dateOfBirth) missing.push("Fecha de nacimiento");
+    if (!accepted) missing.push("Aceptar términos");
+
+    if (missing.length > 0) {
+      Alert.alert(
+        "Campos faltantes",
+        `Por favor complete los siguientes campos: ${missing.join(", ")}`
+      );
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert("Contraseñas no coinciden", "Revise que ambas contraseñas sean iguales.");
+      return;
+    }
+
+    if (!passwordMeetsPolicy(password)) {
+      Alert.alert(
+        "Contraseña débil",
+        "La contraseña debe tener al menos 8 caracteres e incluir mayúsculas, minúsculas y un carácter especial."
+      );
+      return;
+    }
+
+    // Check if email already registered in `usuarios` table
     try {
+      clearError();
+
+      const { data: existsData, error: existsError } = await supabase
+        .from("usuarios")
+        .select("id")
+        .eq("email", email)
+        .limit(1);
+
+      if (existsError) {
+        console.warn("Error checking existing email:", existsError);
+        // continue — we don't block registration if check fails, fallback to register
+      } else if (existsData && Array.isArray(existsData) && existsData.length > 0) {
+        Alert.alert(
+          "Correo ya registrado",
+          "El correo ya está en uso. Intente iniciar sesión o recuperar su contraseña."
+        );
+        return;
+      }
+
+      // proceed to register
       await register({
         email,
         password,
@@ -591,6 +670,7 @@ function RegisterScreenInner() {
       router.push("/(tabs)/home");
     } catch (err) {
       // Error is handled by the store
+      console.error(err);
     }
   };
 
@@ -672,7 +752,7 @@ function RegisterScreenInner() {
               <View
                 style={[
                   styles.inputContainer,
-                  submitted && !requiredStr(email) && styles.fieldError,
+                  submitted && (!requiredStr(email) || (requiredStr(email) && !isValidEmail(email))) && styles.fieldError,
                 ]}
               >
                 <TextInput
@@ -688,8 +768,15 @@ function RegisterScreenInner() {
                   placeholderTextColor={placeholderGray}
                 />
               </View>
+              {!submitted && email.length > 0 && !isValidEmail(email) && (
+                <Text style={styles.err}>Correo inválido</Text>
+              )}
+
               {submitted && !requiredStr(email) && (
                 <Text style={styles.err}>Requerido</Text>
+              )}
+              {submitted && requiredStr(email) && !isValidEmail(email) && (
+                <Text style={styles.err}>Correo inválido</Text>
               )}
 
               <Label required styles={styles}>

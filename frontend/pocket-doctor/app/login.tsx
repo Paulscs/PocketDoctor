@@ -495,6 +495,26 @@ export default function LoginScreen() {
         // no bloqueamos el acceso, solo lo logueamos
       }
 
+      // Intentar poblar el store con el perfil antes de navegar
+      try {
+        let profile: any = null;
+        if ((session as any)?.access_token) {
+          try {
+            profile = await getUserProfile((session as any).access_token);
+          } catch (pfErr) {
+            console.warn('[GOOGLE] getUserProfile error:', pfErr);
+            profile = null;
+          }
+        }
+
+        // Actualizamos el store explícitamente para evitar race conditions
+        // al montar la pantalla principal
+        // useAuthStore es un hook de zustand, pero tiene setState disponible
+        useAuthStore.setState({ user: user ?? null, session: session ?? null, userProfile: profile });
+      } catch (errSet) {
+        console.warn('[GOOGLE] failed to set auth store:', errSet);
+      }
+
       console.log("[GOOGLE] login OK, navegando al home");
       Alert.alert("Bienvenido", "Inicio de sesión correcto con Google ✅");
       router.replace("/(tabs)/home"); // uso replace para sacar /login del stack
