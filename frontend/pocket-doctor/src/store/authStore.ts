@@ -11,6 +11,7 @@ export type AuthState = {
   session: Session | null;
   userProfile: UserProfile | null;
   isLoading: boolean;
+  isInitialized: boolean;
   error: string | null;
 };
 
@@ -47,6 +48,7 @@ export type AuthActions = {
     condiciones_medicas?: string[];
   }) => Promise<void>;
   logout: () => Promise<void>;
+  initialize: () => Promise<void>;
 };
 
 export type AuthStore = AuthState & AuthActions;
@@ -62,6 +64,7 @@ export const useAuthStore = create<AuthStore>(set => ({
   session: null,
   userProfile: null,
   isLoading: false,
+  isInitialized: false,
   error: null,
 
   clearError: () => set({ error: null }),
@@ -262,6 +265,41 @@ export const useAuthStore = create<AuthStore>(set => ({
       throw e;
     }
   },
+  initialize: async () => {
+    // Only run once
+    if (useAuthStore.getState().isInitialized) return;
+
+    console.log("[auth] initialize:start");
+    try {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.warn("[auth] initialize:error", error);
+      }
+
+      const session = data.session;
+      const user = session?.user ?? null;
+
+      // Set state immediately to unlock the UI
+      set({
+        user,
+        session,
+        isInitialized: true,
+      });
+
+      console.log("[auth] initialize:success", { hasSession: !!session });
+
+      // Fetch profile in background if we have a session
+      if (session?.access_token) {
+        getUserProfile(session.access_token)
+          .then((profile) => useAuthStore.setState({ userProfile: profile }))
+          .catch((e) => console.warn("[auth] initialize:profileError", e));
+      }
+    } catch (e) {
+      console.error("[auth] initialize:exception", e);
+      set({ isInitialized: true });
+    }
+  },
 }));
 
 // Log de cambios de sesión (útil para depurar)
@@ -274,21 +312,24 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 
   // Update store when session changes
   if (event === "SIGNED_IN" && session?.access_token) {
+    // We set basic auth state immediately
+    useAuthStore.setState({
+      user: session.user,
+      session,
+      isInitialized: true,
+    });
+
+    // Then try to fetch profile
     try {
       const profile = await getUserProfile(session.access_token);
-      useAuthStore.setState({
-        user: session.user,
-        session,
-        userProfile: profile,
-      });
+      useAuthStore.setState({ userProfile: profile });
     } catch (error) {
       console.error(
         "[auth] failed to fetch profile on auth state change:",
         error
       );
-      useAuthStore.setState({ user: session.user, session, userProfile: null });
     }
   } else if (event === "SIGNED_OUT") {
-    useAuthStore.setState({ user: null, session: null, userProfile: null });
+    useAuthStore.setState({ user: null, session: null, userProfile: null, isInitialized: true });
   }
 });

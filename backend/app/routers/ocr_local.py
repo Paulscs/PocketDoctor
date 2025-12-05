@@ -855,7 +855,9 @@ async def ocr_pdf(
             raise HTTPException(status_code=400, detail="Archivo vacío")
 
         # Subir el PDF a Supabase (si está configurado)
+        print(f"[OCR] Starting processing for {file.filename}")
         storage_path, public_url = upload_pdf_to_supabase(content, file.filename)
+        print(f"[OCR] Upload to Supabase done: {storage_path}")
 
         # ---------------------------------------------------------
         # Obtener datos del usuario logueado
@@ -871,6 +873,8 @@ async def ocr_pdf(
                 user_profile_data = resp.data
         except Exception as e:
             print(f"[OCR] Error obteniendo perfil de usuario: {e}")
+
+        print(f"[OCR] User profile fetched: {user_profile_data is not None}")
 
         # Mapear a PatientProfile
         patient_profile = None
@@ -907,7 +911,11 @@ async def ocr_pdf(
 
         pages_to_process = min(len(doc), MAX_PAGES)
 
+        pages_to_process = min(len(doc), MAX_PAGES)
+        print(f"[OCR] Model ready. Pages to process: {pages_to_process}")
+
         result = OCR_PREDICTOR(doc)
+        print("[OCR] Model inference complete")
         export = result.export()
 
         all_text_lines: List[str] = []

@@ -3,7 +3,7 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments, useRootNavigationState } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import 'react-native-url-polyfill/auto';
@@ -18,6 +18,7 @@ import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useGlobalFont } from "@/hooks/useGlobalFont";
+import { useAuthStore } from "@/src/store/authStore";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -38,7 +39,55 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  if (!loaded) {
+  // Auth Guard
+  // Auth Guard
+  const segments = useSegments();
+  const router = useRouter();
+  const { session, isInitialized, initialize } = useAuthStore();
+  const rootNavigationState = useRootNavigationState();
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  useEffect(() => {
+    if (!loaded || !isInitialized || !rootNavigationState?.key) return;
+
+    // Define public routes that don't require authentication
+    // segments[0] for root files like index.tsx, login.tsx etc.
+    const inTabsGroup = segments[0] === "(tabs)";
+    const currentRoute = segments[0];
+
+    // Routes that are strictly for unauthenticated users (like login/register)
+    // "index" maps to app/index.tsx (which we use as login wrapper)
+    // "login", "register", "forgot-password" are public
+    const isPublicRoute =
+      currentRoute === undefined || // root /
+      currentRoute === "index" ||
+      currentRoute === "login" ||
+      currentRoute === "register" ||
+      currentRoute === "forgot-password";
+
+    console.log("[AuthGuard] Checking...", {
+      isInitialized,
+      hasSession: !!session,
+      segment: currentRoute,
+      isPublicRoute,
+      inTabsGroup
+    });
+
+    if (session && isPublicRoute) {
+      // User is logged in but trying to access public auth pages -> Go Home
+      console.log("[AuthGuard] Session active, redirecting from public route to Home");
+      router.replace("/(tabs)/home");
+    } else if (!session && !isPublicRoute) {
+      // User is NOT logged in but trying to access protected route (tabs, upload, etc) -> Go Login
+      console.log("[AuthGuard] No session, redirecting from protected route to Login");
+      router.replace("/");
+    }
+  }, [session, segments, loaded, isInitialized, rootNavigationState?.key]);
+
+  if (!loaded || !isInitialized) {
     return null;
   }
 
@@ -49,6 +98,10 @@ export default function RootLayout() {
         <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
         <Stack.Screen name="validate-data" options={{ headerShown: false }} />
         <Stack.Screen name="recommendations" options={{ headerShown: false }} />
+        <Stack.Screen name="ai-analytics" options={{ headerShown: false }} />
+        <Stack.Screen name="upload" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="register" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="modal"

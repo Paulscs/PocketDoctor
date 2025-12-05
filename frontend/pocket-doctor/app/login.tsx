@@ -373,7 +373,7 @@ export default function LoginScreen() {
     clearError();
     try {
       await login(email, password); // tu store debe llamar a supabase.auth.signInWithPassword
-      router.push("/(tabs)/home");
+      // Navigation is handled by useEffect when session updates
     } catch (err) {
       // el store ya maneja error
     }
@@ -517,7 +517,7 @@ export default function LoginScreen() {
 
       console.log("[GOOGLE] login OK, navegando al home");
       Alert.alert("Bienvenido", "Inicio de sesión correcto con Google ✅");
-      router.replace("/(tabs)/home"); // uso replace para sacar /login del stack
+      // Navigation is handled by useEffect when session updates
     } catch (err) {
       console.error("[GOOGLE] error inesperado:", err);
       Alert.alert(

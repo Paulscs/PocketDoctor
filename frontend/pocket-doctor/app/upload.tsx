@@ -71,20 +71,28 @@ export default function UploadScreen() {
     try {
       console.log("Sending to:", `${API_BASE_URL}/ocr-local/pdf`);
 
-      const response = await uploadAsync(`${API_BASE_URL}/ocr-local/pdf`, selectedFile.uri, {
-        fieldName: 'file',
-        httpMethod: 'POST',
-        uploadType: FileSystemUploadType.MULTIPART,
+      const formData = new FormData();
+      formData.append('file', {
+        uri: selectedFile.uri,
+        name: selectedFile.name,
+        type: selectedFile.type,
+      } as any);
+
+      const response = await fetch(`${API_BASE_URL}/ocr-local/pdf`, {
+        method: 'POST',
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'multipart/form-data',
         },
+        body: formData,
       });
 
-      if (response.status !== 200) {
-        throw new Error(response.body || "Error en el servidor");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server Error: ${response.status} ${errorText}`);
       }
 
-      const ocrResult = JSON.parse(response.body);
+      const ocrResult = await response.json();
       console.log("OCR Success:", ocrResult.items?.length, "items found");
 
       // Direct navigation to AI Analytics as requested
