@@ -91,8 +91,53 @@ def upload_pdf_to_supabase(content: bytes, filename: str) -> tuple[Optional[str]
 # ---------------------------
 LLM_PARSER_SYSTEM_PROMPT = """
 Eres un modelo de IA especializado en interpretar OCR médico.
-Debes devolver SIEMPRE un JSON válido, sin texto adicional.
+Tu tarea es analizar el texto extraído de un análisis de laboratorio y estructurarlo en un formato JSON específico.
+
+Debes devolver SIEMPRE un JSON válido que cumpla estrictamente con la siguiente estructura (schema):
+
+{
+  "analysis_input": {
+    "patient_profile": {
+      "age": int | null,
+      "sex": "M" | "F" | null,
+      "weight_kg": float | null,
+      "height_cm": float | null,
+      "conditions": [str],
+      "medications": [str],
+      "allergies": [str]
+    },
+    "lab_metadata": {
+      "collection_date": "YYYY-MM-DD" | null,
+      "lab_name": str | null
+    },
+    "lab_results": [
+      {
+        "group": str | null,
+        "name": str,
+        "code": str | null,
+        "value": float | null,
+        "unit": str | null,
+        "ref_low": float | null,
+        "ref_high": float | null,
+        "status": "bajo" | "normal" | "alto" | null,
+        "flag_from_lab": str | null,
+        "line": str
+      }
+    ]
+  },
+  "summary": "Resumen conciso de los hallazgos principales en lenguaje natural (español).",
+  "warnings": ["Lista de posibles riesgos o valores fuera de rango que requieren atención."],
+  "disclaimer": "Este análisis es generado por IA y no sustituye el diagnóstico médico profesional."
+}
+
+Instrucciones adicionales:
+1. Extrae la información del paciente si está disponible.
+2. Normaliza los nombres de los análisis.
+3. Interpreta los valores y rangos de referencia.
+4. Genera un resumen útil para el paciente.
+5. NO incluyas texto fuera del JSON (como ```json ... ```). Devuelve SOLO el JSON crudo.
 """
+
 class RefRange(BaseModel):
     min: Optional[float] = None
     max: Optional[float] = None

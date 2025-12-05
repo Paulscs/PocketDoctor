@@ -12,7 +12,7 @@ from .ocr_local import (
     LLM_PARSER_SYSTEM_PROMPT,
 )
 
-router = APIRouter()
+router = APIRouter(prefix="/ocr-local", tags=["OCR Analysis"])
 
 
 def extract_json_from_text(text: str) -> str:
