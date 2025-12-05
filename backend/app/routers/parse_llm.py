@@ -3,24 +3,36 @@
 from fastapi import APIRouter, Body, HTTPException
 import json
 import re
-
-# Importamos las configuraciones y modelos desde ocr_local
-# IMPORTANTE: Hemos cambiado lo que importamos ya que ocr_local ahora usa Gemini
 import google.generativeai as genai
+
 from .ocr_local import (
     LLMParseRequest,
     LLMInterpretation,
-    gemini_configured,  # Variable para verificar si hay key
+    gemini_configured,
+    LLM_PARSER_SYSTEM_PROMPT,
 )
 
+router = APIRouter()
+
+
+def extract_json_from_text(text: str) -> str:
+    """
+    Extrae el JSON de una respuesta del modelo Gemini.
+    Maneja casos donde viene mezclado con texto o envuelto en ```json.
+    """
     try:
+        # Intento 1: Buscar contenido entre llaves completas
         match = re.search(r"(\{.*\})", text, re.DOTALL)
         if match:
             return match.group(1)
-        text = text.replace("```json", "").replace("```", "").strip()
-        return text
+
+        # Intento 2: Limpiar marcas tipo ```json
+        cleaned = text.replace("```json", "").replace("```", "").strip()
+        return cleaned
+
     except Exception:
         return text
+
 
 @router.post("/parse-llm", response_model=LLMInterpretation)
 async def parse_with_llm(payload: LLMParseRequest = Body(...)):
@@ -35,25 +47,19 @@ async def parse_with_llm(payload: LLMParseRequest = Body(...)):
 
     user_content = {
         "ocr_text": payload.ocr_text,
-        "patient_profile": (
-            payload.patient_profile.dict() if payload.patient_profile else None
-        ),
-        "draft_analysis_input": (
-            payload.draft_analysis_input.dict()
-            if payload.draft_analysis_input
-            else None
-        ),
+        "patient_profile": payload.patient_profile.dict() if payload.patient_profile else None,
+        "draft_analysis_input": payload.draft_analysis_input.dict()
+        if payload.draft_analysis_input
+        else None,
     }
 
     try:
-        # Inicializamos el modelo de Gemini. 
-        # Usamos 'gemini-1.5-flash' por ser eficiente para OCR/JSON tasks.
+        # Modelo Gemini recomendado
         model = genai.GenerativeModel(
             model_name="gemini-2.5-pro",
-            system_instruction=LLM_PARSER_SYSTEM_PROMPT
+            system_instruction=LLM_PARSER_SYSTEM_PROMPT,
         )
 
-        # Configuración de generación para forzar salida JSON
         generation_config = genai.GenerationConfig(
             response_mime_type="application/json",
             temperature=0.1,
@@ -61,7 +67,7 @@ async def parse_with_llm(payload: LLMParseRequest = Body(...)):
 
         response = model.generate_content(
             json.dumps(user_content, ensure_ascii=False),
-            generation_config=generation_config
+            generation_config=generation_config,
         )
 
         raw_text = response.text
@@ -72,21 +78,20 @@ async def parse_with_llm(payload: LLMParseRequest = Body(...)):
         except json.JSONDecodeError as e:
             print("--------------------------------------------------")
             print("ERROR PARSEANDO JSON DE GEMINI:")
-            # Imprimimos solo los últimos 200 caracteres para ver dónde cortó
             print(f"Final del texto recibido: ...{raw_text[-200:]}")
             print(f"Error: {e}")
             print("--------------------------------------------------")
-            
+
             raise HTTPException(
                 status_code=500,
                 detail="La IA devolvió un formato inválido o incompleto (JSON cortado).",
             )
 
-        interpretation = LLMInterpretation(**data)
-        return interpretation
+        return LLMInterpretation(**data)
 
     except HTTPException:
         raise
+
     except Exception as e:
         print(f"Error Gemini General: {e}")
         raise HTTPException(

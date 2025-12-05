@@ -661,7 +661,7 @@ function RegisterScreenInner() {
         apellido: lastName,
         fecha_nacimiento: dateOfBirth ? dateOfBirth.toISOString() : undefined,
         sexo: gender,
-        estatura: height ? parseInt(height) : undefined,
+     estatura: height ? parseInt(height) : undefined,
         peso: weight ? parseInt(weight) : undefined,
         tipo_sangre: bloodType,
         alergias: selectedAllergies,
