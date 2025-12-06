@@ -177,7 +177,7 @@ export default function IAAnalyticsScreen() {
             {analysisData?.analysis_input?.lab_results?.map((item: any, index: number) => (
               <View key={index} style={styles.medicalCard}>
                 <View style={styles.medicalCardHeader}>
-                  <ThemedText style={styles.medicalCardTitle}>
+                  <ThemedText style={styles.medicalCardTitle} numberOfLines={2}>
                     {item.name}
                   </ThemedText>
                   <View style={[
@@ -378,34 +378,43 @@ const styles = StyleSheet.create({
   },
   medicalCard: {
     backgroundColor: Colors.light.white,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 16, // Back to 16 for softer look
+    padding: 16,
+    marginBottom: 20, // Increased to 20 to be very visible
     shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
     borderWidth: 1,
     borderColor: Colors.light.lightGray,
   },
   medicalCardHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 12,
+    width: '100%', // Ensure full width
   },
   medicalCardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
     color: Colors.light.textGray,
+    flex: 1, // Take available space
+    flexShrink: 1, // FORCE shrink
+    marginRight: 8,
   },
   priorityPill: {
     backgroundColor: Colors.light.warningBg,
     borderColor: Colors.light.warningBorder,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    minWidth: 60, // Ensure it doesn't collapse
+    alignItems: 'center',
+    flexShrink: 0, // DO NOT SHRINK
   },
   priorityText: {
     fontSize: 12,
