@@ -82,7 +82,12 @@ export default function IAAnalyticsScreen() {
   }, [params.ocrData]);
 
   const handleViewDetailedRecommendations = () => {
-    router.push("/recommendations");
+    router.push({
+      pathname: "/recommendations",
+      params: {
+        data: JSON.stringify(analysisData)
+      }
+    });
   };
 
   const handleDownloadPDF = () => {

@@ -11,10 +11,25 @@ import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 
 export default function RecommendationsScreen() {
+  const { data } = useLocalSearchParams();
+
+  // Parse findings from params
+  let analysisData: any = null;
+  try {
+    if (data && typeof data === 'string') {
+      analysisData = JSON.parse(data);
+    }
+  } catch (e) {
+    console.error("Error parsing recommendations data", e);
+  }
+
+  const recommendations = analysisData?.recommendations || [];
+  const warnings = analysisData?.warnings || [];
+
   const backgroundColor = useThemeColor(
     { light: Colors.light.white, dark: Colors.dark.background },
     "background"
@@ -80,58 +95,58 @@ export default function RecommendationsScreen() {
 
           {/* Recommendation Cards */}
           <View style={styles.recommendationsList}>
-            {/* Blood Pressure Card */}
-            <View style={styles.recommendationCard}>
-              <View style={styles.cardIcon}>
-                <Ionicons name="pulse" size={20} color={Colors.light.white} />
+            {recommendations.length > 0 ? (
+              recommendations.map((rec: string, index: number) => (
+                <View key={index} style={styles.recommendationCard}>
+                  <View style={styles.cardIcon}>
+                    <IconSymbol
+                      name="heart.fill"
+                      size={24}
+                      color={Colors.light.white}
+                    />
+                  </View>
+                  <View style={styles.cardContent}>
+                    <ThemedText style={styles.cardTitle}>
+                      Recomendación #{index + 1}
+                    </ThemedText>
+                    <ThemedText style={styles.cardDescription}>
+                      {rec}
+                    </ThemedText>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <View style={[styles.recommendationCard, { backgroundColor: Colors.light.lightGray, borderColor: Colors.light.borderGray }]}>
+                <View style={[styles.cardIcon, { backgroundColor: Colors.light.textGray }]}>
+                  <Ionicons name="information" size={24} color={Colors.light.white} />
+                </View>
+                <View style={styles.cardContent}>
+                  <ThemedText style={styles.cardTitle}>Sin recomendaciones</ThemedText>
+                  <ThemedText style={styles.cardDescription}>
+                    No se encontraron recomendaciones específicas para este análisis.
+                  </ThemedText>
+                </View>
               </View>
-              <View style={styles.cardContent}>
-                <ThemedText style={styles.cardTitle}>
-                  Presión Sanguínea
-                </ThemedText>
-                <ThemedText style={styles.cardDescription}>
-                  Mantén los hábitos de vida actuales, incluyendo ejercicio
-                  regular y una dieta equilibrada.
-                </ThemedText>
-              </View>
-            </View>
+            )}
 
-            {/* Heart Rate Card */}
-            <View style={styles.recommendationCard}>
-              <View style={styles.cardIcon}>
-                <IconSymbol
-                  name="heart.fill"
-                  size={20}
-                  color={Colors.light.white}
-                />
+            {/* Warnings Section if exists */}
+            {warnings.length > 0 && (
+              <View style={styles.sectionContainer}>
+                <ThemedText style={[styles.sectionTitle, { marginTop: 16, marginBottom: 8 }]}>Atención Requerida</ThemedText>
+                {warnings.map((warn: string, index: number) => (
+                  <View key={`warn-${index}`} style={styles.warningCard}>
+                    <View style={[styles.cardIcon, { backgroundColor: Colors.light.warning }]}>
+                      <Ionicons name="warning" size={24} color={Colors.light.white} />
+                    </View>
+                    <View style={styles.cardContent}>
+                      <ThemedText style={styles.cardTitle}>Alerta</ThemedText>
+                      <ThemedText style={styles.cardDescription}>{warn}</ThemedText>
+                    </View>
+                  </View>
+                ))}
               </View>
-              <View style={styles.cardContent}>
-                <ThemedText style={styles.cardTitle}>Ritmo Cardíaco</ThemedText>
-                <ThemedText style={styles.cardDescription}>
-                  Realiza 30 minutos de ejercicio moderado diariamente y
-                  practica la gestión del estrés.
-                </ThemedText>
-              </View>
-            </View>
+            )}
 
-            {/* Oxygen Saturation Card */}
-            <View style={styles.recommendationCard}>
-              <View style={styles.cardIcon}>
-                <IconSymbol
-                  name="lungs.fill"
-                  size={20}
-                  color={Colors.light.white}
-                />
-              </View>
-              <View style={styles.cardContent}>
-                <ThemedText style={styles.cardTitle}>
-                  Saturación de Oxígeno
-                </ThemedText>
-                <ThemedText style={styles.cardDescription}>
-                  Continúa con las prácticas saludables actuales y evita fumar.
-                </ThemedText>
-              </View>
-            </View>
           </View>
 
           {/* Action Buttons */}
@@ -342,5 +357,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.light.brandBlue,
+  },
+  sectionContainer: {
+    marginTop: 24,
+    gap: 18,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: Colors.light.textGray,
   },
 });
