@@ -13,6 +13,9 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors } from "@/constants/theme";
+import { useAuthStore } from "@/src/store";
+import { useState, useCallback } from "react";
+import { useFocusEffect } from "expo-router";
 
 interface MedicalResult {
   id: string;
@@ -21,43 +24,13 @@ interface MedicalResult {
   type: "blood" | "imaging" | "cardiac" | "other";
   status: "normal" | "elevated" | "low" | "critical";
   description: string;
+  raw_data: any;
 }
 
-const MOCK_MEDICAL_RESULTS: MedicalResult[] = [
-  {
-    id: "1",
-    title: "Resultados 14 Marzo 2025",
-    date: "2025-03-14",
-    type: "blood",
-    status: "normal",
-    description:
-      "Análisis de sangre completo - Todos los valores dentro del rango normal",
-  },
-  {
-    id: "2",
-    title: "Resultados 12 Marzo 2025",
-    date: "2025-03-12",
-    type: "cardiac",
-    status: "elevated",
-    description: "Electrocardiograma - Ritmo cardíaco ligeramente elevado",
-  },
-  {
-    id: "3",
-    title: "Resultados 8 Marzo 2025",
-    date: "2025-03-08",
-    type: "imaging",
-    status: "normal",
-    description: "Radiografía de tórax - Sin hallazgos patológicos",
-  },
-  {
-    id: "4",
-    title: "Resultados 5 Marzo 2025",
-    date: "2025-03-05",
-    type: "blood",
-    status: "elevated",
-    description: "Perfil lipídico - Colesterol elevado detectado",
-  },
-];
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:8000";
+
+// Mock removed
+
 
 const getResultIcon = (type: MedicalResult["type"]) => {
   switch (type) {
@@ -107,9 +80,61 @@ export default function HistoryScreen() {
     "background"
   );
 
+  const { session } = useAuthStore();
+  const [results, setResults] = useState<MedicalResult[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch history when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchHistory();
+    }, [])
+  );
+
+  const fetchHistory = async () => {
+    if (!session?.access_token) return;
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${API_BASE_URL}/ocr-local/history`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Error fetching history");
+
+      const data = await response.json();
+
+      // Map DB to UI model
+      const mappedResults: MedicalResult[] = data.map((item: any) => ({
+        id: item.id.toString(),
+        title: item.titulo || "Análisis",
+        date: item.created_at ? item.created_at.split("T")[0] : "Fecha desconocida",
+        type: item.tipo || "other",
+        status: item.estado === "alert" ? "elevated" : "normal", // simple mapping
+        description: item.resumen || "Sin resumen disponible",
+        raw_data: item.datos_completos
+      }));
+
+      setResults(mappedResults);
+    } catch (error) {
+      console.error("History fetch error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleResultPress = (result: MedicalResult) => {
     console.log("Viewing result:", result.title);
-    // TODO: Navigate to detailed result view
+    if (result.raw_data) {
+      router.push({
+        pathname: "/ai-analytics",
+        params: { historyData: JSON.stringify(result.raw_data) }
+      });
+    } else {
+      console.warn("No raw data for this history item");
+    }
   };
 
   const handleProfilePress = () => {
@@ -132,7 +157,7 @@ export default function HistoryScreen() {
       </View>
       <View style={styles.resultContent}>
         <ThemedText style={styles.resultTitle}>{result.title}</ThemedText>
-        <ThemedText style={styles.resultDescription}>
+        <ThemedText style={styles.resultDescription} numberOfLines={3}>
           {result.description}
         </ThemedText>
       </View>
@@ -191,7 +216,13 @@ export default function HistoryScreen() {
         </View>
 
         <View style={styles.resultsList}>
-          {MOCK_MEDICAL_RESULTS.map(renderResultItem)}
+          {isLoading ? (
+            <ThemedText style={{ textAlign: 'center', marginTop: 20 }}>Cargando historial...</ThemedText>
+          ) : results.length > 0 ? (
+            results.map(renderResultItem)
+          ) : (
+            null
+          )}
         </View>
 
         <View style={styles.emptySpace}>

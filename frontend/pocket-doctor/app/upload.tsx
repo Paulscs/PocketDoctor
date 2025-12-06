@@ -63,6 +63,25 @@ export default function UploadScreen() {
     Alert.alert("Info", "Funcionalidad de cámara en desarrollo.");
   };
 
+  const fetchWithTimeout = async (resource: string, options: RequestInit & { timeout?: number } = {}) => {
+    const { timeout = 120000 } = options; // Default 120 seconds
+    
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+  
+    try {
+      const response = await fetch(resource, {
+        ...options,
+        signal: controller.signal as AbortSignal, // Cast for RN compatibility
+      });
+      clearTimeout(id);
+      return response;
+    } catch (error) {
+      clearTimeout(id);
+      throw error;
+    }
+  };
+
   const handleProcessDocuments = async () => {
     if (!selectedFile) {
       Alert.alert("Error", "Por favor selecciona un archivo primero");
@@ -86,12 +105,13 @@ export default function UploadScreen() {
         type: selectedFile.type,
       } as any);
 
-      const response = await fetch(`${API_BASE_URL}/ocr-local/pdf`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/ocr-local/pdf`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },
         body: formData,
+        timeout: 120000, // 2 minutes
       });
 
       if (!response.ok) {
@@ -110,9 +130,16 @@ export default function UploadScreen() {
 
     } catch (error: any) {
       console.error("Upload Error:", error);
+      
+      let errorMessage = error.message || "No se pudo procesar el documento.";
+      
+      if (error.name === 'AbortError' || error.message === 'Aborted' || error.message.includes('Network request failed')) {
+        errorMessage = "El servidor tardó demasiado en responder. Es normal si es la primera vez. Por favor intenta de nuevo.";
+      }
+
       Alert.alert(
         "Error",
-        error.message || "No se pudo procesar el documento."
+        errorMessage
       );
     } finally {
       setIsProcessing(false);

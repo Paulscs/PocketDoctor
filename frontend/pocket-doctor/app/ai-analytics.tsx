@@ -35,51 +35,71 @@ export default function IAAnalyticsScreen() {
     process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:8000";
 
   React.useEffect(() => {
-    const fetchAnalysis = async () => {
-      try {
-        if (!params.ocrData) {
-          throw new Error("No se recibieron datos del documento.");
+    const loadAnalysis = async () => {
+      // 1. History mode (Offline/Cached data)
+      if (params.historyData) {
+        try {
+          const data = typeof params.historyData === 'string'
+            ? JSON.parse(params.historyData)
+            : params.historyData;
+          setAnalysisData(data);
+        } catch (err: any) {
+          setError("Error cargando datos del historial.");
+        } finally {
+          setLoading(false);
         }
-
-        const ocrResult = typeof params.ocrData === 'string'
-          ? JSON.parse(params.ocrData)
-          : params.ocrData;
-
-        // Prepare payload for LLM analysis
-        const payload = {
-          ocr_text: ocrResult.text || "",
-          patient_profile: ocrResult.analysis_input?.patient_profile || null,
-          draft_analysis_input: ocrResult.analysis_input || null,
-        };
-
-        console.log("Requesting AI Analysis...");
-
-        const response = await fetch(`${API_BASE_URL}/ocr-local/parse-llm`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(errText || "Error al analizar con IA");
-        }
-
-        const data = await response.json();
-        setAnalysisData(data);
-      } catch (err: any) {
-        console.error("Analysis Error:", err);
-        setError(err.message || "Error desconocido");
-      } finally {
-        setLoading(false);
+        return;
       }
+
+      // 2. New Analysis mode (OCR Data -> LLM)
+      const fetchNewAnalysis = async () => {
+        try {
+          if (!params.ocrData) {
+            throw new Error("No se recibieron datos del documento.");
+          }
+
+          const ocrResult = typeof params.ocrData === 'string'
+            ? JSON.parse(params.ocrData)
+            : params.ocrData;
+
+          // Prepare payload for LLM analysis
+          const payload = {
+            ocr_text: ocrResult.text || "",
+            patient_profile: ocrResult.analysis_input?.patient_profile || null,
+            draft_analysis_input: ocrResult.analysis_input || null,
+          };
+
+          console.log("Requesting AI Analysis...");
+
+          const response = await fetch(`${API_BASE_URL}/ocr-local/parse-llm`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(errText || "Error al analizar con IA");
+          }
+
+          const data = await response.json();
+          setAnalysisData(data);
+        } catch (err: any) {
+          console.error("Analysis Error:", err);
+          setError(err.message || "Error desconocido");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchNewAnalysis();
     };
 
-    fetchAnalysis();
-  }, [params.ocrData]);
+    loadAnalysis();
+  }, [params.ocrData, params.historyData]);
 
   const handleViewDetailedRecommendations = () => {
     router.push({
