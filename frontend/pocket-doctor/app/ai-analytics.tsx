@@ -201,7 +201,9 @@ export default function IAAnalyticsScreen() {
                 <View style={styles.analysisSection}>
                   <ThemedText style={styles.analysisTitle}>Resultado</ThemedText>
                   <ThemedText style={styles.analysisText}>
-                    {item.value} {item.unit} (Ref: {item.ref_low} - {item.ref_high})
+                    {item.value !== null && item.value !== undefined
+                      ? `${item.value} ${item.unit || ""} ${(item.ref_low !== null && item.ref_high !== null) ? `(Ref: ${item.ref_low} - ${item.ref_high})` : ""}`
+                      : (item.value_as_string || "Sin resultado numérico")}
                   </ThemedText>
                 </View>
               </View>

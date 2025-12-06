@@ -89,6 +89,9 @@ def upload_pdf_to_supabase(content: bytes, filename: str) -> tuple[Optional[str]
 # ---------------------------
 # Modelos de respuesta
 # ---------------------------
+# ---------------------------
+# Modelos de respuesta
+# ---------------------------
 LLM_PARSER_SYSTEM_PROMPT = """
 Eres un modelo de IA especializado en interpretar OCR médico.
 Tu tarea es analizar el texto extraído de un análisis de laboratorio y estructurarlo en un formato JSON específico.
@@ -116,6 +119,7 @@ Debes devolver SIEMPRE un JSON válido que cumpla estrictamente con la siguiente
         "name": str,
         "code": str | null,
         "value": float | null,
+        "value_as_string": str | null,
         "unit": str | null,
         "ref_low": float | null,
         "ref_high": float | null,
@@ -134,13 +138,10 @@ Instrucciones adicionales:
 1. Extrae la información del paciente si está disponible.
 2. Normaliza los nombres de los análisis.
 3. Interpreta los valores y rangos de referencia.
-4. Genera un resumen útil para el paciente.
-5. NO incluyas texto fuera del JSON (como ```json ... ```). Devuelve SOLO el JSON crudo.
+4. Si el valor NO es numérico (ej: "NEGATIVO", "POSITIVO", "NO REACTIVO", texto largo), usa "value_as_string" y deja "value" en null.
+5. Genera un resumen útil para el paciente.
+6. NO incluyas texto fuera del JSON (como ```json ... ```). Devuelve SOLO el JSON crudo.
 """
-
-class RefRange(BaseModel):
-    min: Optional[float] = None
-    max: Optional[float] = None
 
 class PatientProfile(BaseModel):
     age: Optional[int] = None
@@ -162,6 +163,7 @@ class LabResult(BaseModel):
     name: str
     code: Optional[str] = None
     value: Optional[float] = None
+    value_as_string: Optional[str] = None
     unit: Optional[str] = None
     ref_low: Optional[float] = None
     ref_high: Optional[float] = None
@@ -188,10 +190,17 @@ class LLMInterpretation(BaseModel):
     disclaimer: str                # recordatorio de que no es diagnóstico
 
 
+
+class RefRange(BaseModel):
+    min: Optional[float] = None
+    max: Optional[float] = None
+
+
 class LabItem(BaseModel):
     name_raw: str
     name: str
     value: Optional[float] = None
+    value_as_string: Optional[str] = None
     unit: Optional[str] = None
     ref_range: Optional[RefRange] = None
     flag: Optional[str] = None  # "H", "L", etc.
@@ -532,6 +541,7 @@ def lab_item_to_lab_result(item: LabItem) -> LabResult:
         name=item.name,          # ya normalizado por normalize_name
         code=code,
         value=item.value,
+        value_as_string=item.value_as_string,
         unit=item.unit,
         ref_low=ref_low,
         ref_high=ref_high,
