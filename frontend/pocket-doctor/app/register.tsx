@@ -695,7 +695,7 @@ function RegisterScreenInner() {
             </View>
 
             <View style={styles.header}>
-              <ThemedText style={styles.title}>Crear CuentaXXXXxx</ThemedText>
+              <ThemedText style={styles.title}>Crear Cuenta</ThemedText>
               <ThemedText style={styles.subtitle}>
                 Unos pocos pasos y estará listo para comenzar.
               </ThemedText>

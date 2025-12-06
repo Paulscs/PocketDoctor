@@ -379,6 +379,36 @@ export default function LoginScreen() {
     }
   }, [validate, login, email, password, clearError]);
 
+  // Sync store error with local state and animation
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (error) {
+      setShowError(true);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+
+      // Auto-hide after 4 seconds
+      timer = setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowError(false);
+          clearError(); // Clear in store
+        });
+      }, 4000);
+    } else {
+      setShowError(false);
+      fadeAnim.setValue(0);
+    }
+
+    return () => clearTimeout(timer);
+  }, [error, fadeAnim, clearError]);
+
   // ------------ GOOGLE LOGIN (SUPABASE OAUTH) ------------
 
   // ------------ GOOGLE LOGIN (SUPABASE OAUTH) ------------
