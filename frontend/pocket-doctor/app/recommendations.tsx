@@ -96,7 +96,7 @@ export default function RecommendationsScreen() {
           {/* Recommendation Cards */}
           <View style={styles.recommendationsList}>
             {recommendations.length > 0 ? (
-              recommendations.map((rec: string, index: number) => (
+              recommendations.map((rec: { title: string, description: string }, index: number) => (
                 <View key={index} style={styles.recommendationCard}>
                   <View style={styles.cardIcon}>
                     <IconSymbol
@@ -107,10 +107,10 @@ export default function RecommendationsScreen() {
                   </View>
                   <View style={styles.cardContent}>
                     <ThemedText style={styles.cardTitle}>
-                      Recomendación #{index + 1}
+                      {rec.title}
                     </ThemedText>
                     <ThemedText style={styles.cardDescription}>
-                      {rec}
+                      {rec.description}
                     </ThemedText>
                   </View>
                 </View>
@@ -133,14 +133,14 @@ export default function RecommendationsScreen() {
             {warnings.length > 0 && (
               <View style={styles.sectionContainer}>
                 <ThemedText style={[styles.sectionTitle, { marginTop: 16, marginBottom: 8 }]}>Atención Requerida</ThemedText>
-                {warnings.map((warn: string, index: number) => (
+                {warnings.map((warn: { title: string, description: string }, index: number) => (
                   <View key={`warn-${index}`} style={styles.warningCard}>
                     <View style={[styles.cardIcon, { backgroundColor: Colors.light.warning }]}>
                       <Ionicons name="warning" size={24} color={Colors.light.white} />
                     </View>
                     <View style={styles.cardContent}>
-                      <ThemedText style={styles.cardTitle}>Alerta</ThemedText>
-                      <ThemedText style={styles.cardDescription}>{warn}</ThemedText>
+                      <ThemedText style={styles.cardTitle}>{warn.title}</ThemedText>
+                      <ThemedText style={styles.cardDescription}>{warn.description}</ThemedText>
                     </View>
                   </View>
                 ))}

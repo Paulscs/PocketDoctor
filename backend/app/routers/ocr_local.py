@@ -133,8 +133,18 @@ Debes devolver SIEMPRE un JSON válido que cumpla estrictamente con la siguiente
     ]
   },
   "summary": "Resumen conciso de los hallazgos principales en lenguaje natural (español).",
-  "warnings": ["Lista de posibles riesgos o valores fuera de rango que requieren atención."],
-  "recommendations": ["Lista de 3 a 5 recomendaciones de salud accionables y específicas (nutrición, estilo de vida, chequeos)."],
+  "warnings": [
+    {
+      "title": "Título corto del riesgo",
+      "description": "Explicación detallada del riesgo o valor fuera de rango."
+    }
+  ],
+  "recommendations": [
+    {
+      "title": "Título de la recomendación",
+      "description": "Descripción accionable y específica."
+    }
+  ],
   "disclaimer": "Este análisis es generado por IA y no sustituye el diagnóstico médico profesional."
 }
 
@@ -145,7 +155,8 @@ Instrucciones adicionales:
 4. Si el valor NO es numérico (ej: "NEGATIVO", "POSITIVO", "NO REACTIVO", texto largo), usa "value_as_string" y deja "value" en null.
 5. Genera un resumen útil para el paciente.
 6. Genera recomendaciones prácticas basadas en los resultados anómalos o para mantener la buena salud.
-7. NO incluyas texto fuera del JSON (como ```json ... ```). Devuelve SOLO el JSON crudo.
+7. ASEGÚRATE de que cada warning y recomendación tenga un TÍTULO único y descriptivo.
+8. NO incluyas texto fuera del JSON (como ```json ... ```). Devuelve SOLO el JSON crudo.
 """
 
 class PatientProfile(BaseModel):
@@ -188,11 +199,15 @@ class LLMParseRequest(BaseModel):
     draft_analysis_input: Optional[AnalysisInput] = None  # opcional: lo que ya tienes del parser actual
 
 
+class SuggestionItem(BaseModel):
+    title: str
+    description: str
+
 class LLMInterpretation(BaseModel):
     analysis_input: AnalysisInput  # reutilizamos tu schema
     summary: str                   # resumen en lenguaje natural
-    warnings: List[str] = []       # cosas a vigilar / posibles riesgos
-    recommendations: List[str] = [] # recomendaciones de salud
+    warnings: List[SuggestionItem] = []       # cosas a vigilar / posibles riesgos
+    recommendations: List[SuggestionItem] = [] # recomendaciones de salud
     disclaimer: str                # recordatorio de que no es diagnóstico
 
 

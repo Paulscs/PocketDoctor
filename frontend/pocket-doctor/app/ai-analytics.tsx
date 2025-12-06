@@ -231,8 +231,15 @@ export default function IAAnalyticsScreen() {
                 </ThemedText>
               </View>
 
-              {analysisData.warnings.map((warning: string, index: number) => (
-                <ThemedText key={index} style={styles.risksText}>• {warning}</ThemedText>
+              {analysisData.warnings.map((warning: { title: string, description: string }, index: number) => (
+                <View key={index} style={{ marginBottom: 12 }}>
+                  <ThemedText style={[styles.risksText, { fontWeight: '700', marginBottom: 4 }]}>
+                    • {warning.title}
+                  </ThemedText>
+                  <ThemedText style={[styles.risksText, { paddingLeft: 16 }]}>
+                    {warning.description}
+                  </ThemedText>
+                </View>
               ))}
             </View>
           )}
