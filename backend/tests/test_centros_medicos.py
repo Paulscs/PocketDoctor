@@ -56,6 +56,8 @@ def client_with_auth(mock_supabase_client, mock_auth_user):
     app.dependency_overrides.clear()
 
 
+# --- Pruebas de Centros Médicos (TC-037, TC-038, TC-040) ---
+
 def test_list_centros_success(client_with_auth):
     """Test GET /centros - Lista centros exitosamente"""
     client, mock_query = client_with_auth

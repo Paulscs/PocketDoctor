@@ -37,6 +37,8 @@ def client_with_auth(mock_supabase_client, mock_auth_user):
     app.dependency_overrides.clear()
 
 
+# --- Pruebas de Historial (TC-017, TC-019, TC-042 - TC-050) ---
+
 def test_get_my_historial_success(client_with_auth):
     """Test GET /historial/me - Obtener historial del usuario actual"""
     client, mock_query, mock_table = client_with_auth
