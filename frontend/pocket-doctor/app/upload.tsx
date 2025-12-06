@@ -12,6 +12,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { uploadAsync, FileSystemUploadType } from "expo-file-system/legacy";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
+import { TermsModal } from "@/components/TermsModal";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -31,6 +32,8 @@ const API_BASE_URL =
 export default function UploadScreen() {
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isAccepted, setIsAccepted] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   const session = useAuthStore((state) => state.session);
   const accessToken = session?.access_token;
@@ -63,6 +66,11 @@ export default function UploadScreen() {
   const handleProcessDocuments = async () => {
     if (!selectedFile) {
       Alert.alert("Error", "Por favor selecciona un archivo primero");
+      return;
+    }
+
+    if (!isAccepted) {
+      Alert.alert("Error", "Debe aceptar el aviso legal para continuar.");
       return;
     }
 
@@ -263,12 +271,33 @@ export default function UploadScreen() {
 
         <View style={styles.actionButtons}>
           <TouchableOpacity
+            style={styles.termsContainer}
+            onPress={() => setShowTerms(true)}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[
+                styles.checkboxLike,
+                isAccepted && styles.checkboxLikeChecked,
+              ]}
+            >
+              {isAccepted && (
+                <Ionicons name="checkmark" size={14} color={Colors.light.white} />
+              )}
+            </View>
+            <ThemedText style={styles.termsText}>
+              He leído y acepto los <ThemedText style={styles.termsLink}>Aviso Legal</ThemedText>
+            </ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={[
               styles.processButton,
-              (!selectedFile || isProcessing) && styles.processButtonDisabled,
+              (!selectedFile || isProcessing || !isAccepted) &&
+              styles.processButtonDisabled,
             ]}
             onPress={handleProcessDocuments}
-            disabled={!selectedFile || isProcessing}
+            disabled={!selectedFile || isProcessing || !isAccepted}
           >
             {isProcessing ? (
               <ActivityIndicator color={Colors.light.white} />
@@ -288,6 +317,15 @@ export default function UploadScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <TermsModal
+        visible={showTerms}
+        onClose={() => setShowTerms(false)}
+        onAccept={() => {
+          setIsAccepted(true);
+          setShowTerms(false);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -494,5 +532,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.light.brandBlue,
+  },
+  termsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    gap: 12,
+  },
+  checkboxLike: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: Colors.light.gray,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxLikeChecked: {
+    backgroundColor: Colors.light.brandBlue,
+    borderColor: Colors.light.brandBlue,
+  },
+  termsText: {
+    fontSize: 14,
+    color: Colors.light.textGray,
+    flex: 1,
+  },
+  termsLink: {
+    color: Colors.light.brandBlue,
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
 });
