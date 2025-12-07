@@ -32,4 +32,4 @@ def health():
 
 @app.get("/")
 def root():
-    return {"message": "Hello Pocket Doctor!"}
+    return {"message": ""}
