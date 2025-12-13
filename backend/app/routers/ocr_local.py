@@ -145,6 +145,13 @@ Debes devolver SIEMPRE un JSON válido que cumpla estrictamente con la siguiente
       "description": "Descripción accionable y específica."
     }
   ],
+  "qa": {
+    "simple_explanation": "Respuesta a: Explícame qué significan estos resultados en palabras simples.",
+    "lifestyle_changes": "Respuesta a: ¿Qué cambios de estilo de vida (dieta/hábitos) me recomiendas?",
+    "causes": "Respuesta a: ¿Cuáles podrían ser las causas de estos valores?",
+    "warning_signs": "Respuesta a: ¿Hay señales de alerta urgentes a las que deba estar atento?",
+    "doctor_questions": "Respuesta a: ¿Qué preguntas específicas debería hacerle a mi médico?"
+  },
   "disclaimer": "Este análisis es generado por IA y no sustituye el diagnóstico médico profesional."
 }
 
@@ -156,7 +163,8 @@ Instrucciones adicionales:
 5. Genera un resumen útil para el paciente.
 6. Genera recomendaciones prácticas basadas en los resultados anómalos o para mantener la buena salud.
 7. ASEGÚRATE de que cada warning y recomendación tenga un TÍTULO único y descriptivo.
-8. NO incluyas texto fuera del JSON (como ```json ... ```). Devuelve SOLO el JSON crudo.
+8. Genera las respuestas para la sección "qa" basándote EXCLUSIVAMENTE en los resultados analizados.
+9. NO incluyas texto fuera del JSON (como ```json ... ```). Devuelve SOLO el JSON crudo.
 """
 
 class PatientProfile(BaseModel):
@@ -203,11 +211,19 @@ class SuggestionItem(BaseModel):
     title: str
     description: str
 
+class QAResponse(BaseModel):
+    simple_explanation: Optional[str] = None
+    lifestyle_changes: Optional[str] = None
+    causes: Optional[str] = None
+    warning_signs: Optional[str] = None
+    doctor_questions: Optional[str] = None
+
 class LLMInterpretation(BaseModel):
     analysis_input: AnalysisInput  # reutilizamos tu schema
     summary: str                   # resumen en lenguaje natural
     warnings: List[SuggestionItem] = []       # cosas a vigilar / posibles riesgos
     recommendations: List[SuggestionItem] = [] # recomendaciones de salud
+    qa: Optional[QAResponse] = None            # Preguntas pre-generadas (Opcional para evitar 500)
     disclaimer: str                # recordatorio de que no es diagnóstico
 
 

@@ -73,6 +73,11 @@ export const useAuthStore = create<AuthStore>(set => ({
     console.log("[auth] login:start", { email });
     set({ isLoading: true, error: null });
     try {
+      // Ensure we clear any stale session/tokens before attempting a new login
+      await supabase.auth.signOut().catch(err =>
+        console.warn("[auth] login:signOut_cleanup_error", err)
+      );
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -275,6 +280,11 @@ export const useAuthStore = create<AuthStore>(set => ({
 
       if (error) {
         console.warn("[auth] initialize:error", error);
+        // If we have an invalid refresh token or session error,
+        // force a signOut to clear the local storage.
+        await supabase.auth.signOut().catch(err =>
+          console.warn("[auth] initialize:signOut_cleanup_error", err)
+        );
       }
 
       const session = data.session;

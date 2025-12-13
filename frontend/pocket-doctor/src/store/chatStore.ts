@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+// Basic types
 export interface FollowUpOption {
   readonly id: string;
   readonly text: string;
@@ -16,12 +17,26 @@ export interface Message {
   readonly followUpOptions?: readonly FollowUpOption[];
 }
 
+export interface QAContext {
+  simple_explanation: string;
+  lifestyle_changes: string;
+  causes: string;
+  warning_signs: string;
+  doctor_questions: string;
+}
+
 export interface ChatSession {
   readonly id: string;
   readonly title: string;
   readonly messages: readonly Message[];
   readonly createdAt: Date;
   readonly updatedAt: Date;
+  readonly analysisId?: string; // Link to specific analysis ID
+  // Optional context from an analysis
+  readonly context?: {
+    qa: QAContext;
+    summary?: string;
+  };
 }
 
 export interface ChatState {
@@ -33,6 +48,7 @@ export interface ChatState {
 
 export interface ChatActions {
   createNewSession: (title?: string) => string;
+  createSessionFromAnalysis: (data: any, analysisId: string) => string; // Updated Action
   setActiveSession: (sessionId: string) => void;
   deleteSession: (sessionId: string) => void;
   addMessage: (
@@ -57,44 +73,34 @@ export type ChatStore = ChatState & ChatActions;
 const initialMessages: Message[] = [
   {
     id: "1",
-    text: "Hola Ethan! 👋 Soy tu asistente médico con IA. He revisado tu historial médico y veo que tienes algunos valores que requieren atención, especialmente tu colesterol elevado (245 mg/dL). ¿Te gustaría que analicemos estos resultados juntos?",
+    text: "¡Hola! 👋 Soy tu asistente médico con IA. He revisado tus resultados. ¿Qué te gustaría saber primero?",
     isUser: false,
     timestamp: new Date(),
     followUpOptions: [
       {
-        id: "analyze-cholesterol",
-        text: "Analizar mi colesterol elevado",
-        icon: "heart-outline",
+        id: "simple_explanation",
+        text: "Explícame qué significan estos resultados",
+        icon: "chatbubble-ellipses-outline",
       },
       {
-        id: "review-all-results",
-        text: "Revisar todos mis resultados",
-        icon: "document-text-outline",
+        id: "lifestyle_changes",
+        text: "¿Qué cambios de estilo de vida recomiendas?",
+        icon: "nutrition-outline",
       },
       {
-        id: "get-recommendations",
-        text: "Obtener recomendaciones",
-        icon: "bulb-outline",
+        id: "causes",
+        text: "¿Cuáles podrían ser las causas?",
+        icon: "search-outline",
       },
       {
-        id: "cholesterol",
-        text: "Manejo del Colesterol",
-        icon: "heart-outline",
+        id: "warning_signs",
+        text: "¿Hay señales de alerta urgentes?",
+        icon: "warning-outline",
       },
       {
-        id: "hypertension",
-        text: "Control de Hipertensión",
-        icon: "pulse-outline",
-      },
-      {
-        id: "allergies",
-        text: "Gestión de Alergias",
+        id: "doctor_questions",
+        text: "¿Qué preguntas hacerle a mi médico?",
         icon: "medical-outline",
-      },
-      {
-        id: "general-health",
-        text: "Salud General",
-        icon: "fitness-outline",
       },
     ],
   },
@@ -126,6 +132,43 @@ export const useChatStore = create<ChatStore>()(
           messages: [],
           createdAt: new Date(),
           updatedAt: new Date(),
+        };
+
+        set(state => ({
+          sessions: [newSession, ...state.sessions],
+          activeSessionId: sessionId,
+        }));
+
+        return sessionId;
+      },
+
+      createSessionFromAnalysis: (data: any, analysisId: string) => {
+        // 1. Check if session already exists for this analysisId
+        const existingSession = get().sessions.find(
+          s => s.analysisId === analysisId
+        );
+
+        if (existingSession) {
+          // Resume existing session
+          set({ activeSessionId: existingSession.id });
+          return existingSession.id;
+        }
+
+        // 2. Create new session if not found
+        const sessionId = Date.now().toString();
+        // Parse context if available (assuming data matches backend LLMInterpretation)
+        const qa = data?.qa;
+        const summary = data?.summary;
+
+        // Start with the standard initial message, but we will use the QA context for answers
+        const newSession: ChatSession = {
+          id: sessionId,
+          title: `Análisis ${new Date().toLocaleDateString()}`,
+          messages: initialMessages, // Use standard prompt options
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          analysisId: analysisId,    // Store the link
+          context: qa ? { qa, summary } : undefined,
         };
 
         set(state => ({
@@ -168,10 +211,10 @@ export const useChatStore = create<ChatStore>()(
           sessions: state.sessions.map(session =>
             session.id === sessionId
               ? {
-                  ...session,
-                  messages: [...session.messages, newMessage],
-                  updatedAt: new Date(),
-                }
+                ...session,
+                messages: [...session.messages, newMessage],
+                updatedAt: new Date(),
+              }
               : session
           ),
         }));
@@ -189,10 +232,10 @@ export const useChatStore = create<ChatStore>()(
           sessions: state.sessions.map(session =>
             session.id === sessionId
               ? {
-                  ...session,
-                  messages: [...session.messages, newMessage],
-                  updatedAt: new Date(),
-                }
+                ...session,
+                messages: [...session.messages, newMessage],
+                updatedAt: new Date(),
+              }
               : session
           ),
         }));
@@ -215,10 +258,10 @@ export const useChatStore = create<ChatStore>()(
           sessions: state.sessions.map(session =>
             session.id === sessionId
               ? {
-                  ...session,
-                  messages: [...session.messages, newMessage],
-                  updatedAt: new Date(),
-                }
+                ...session,
+                messages: [...session.messages, newMessage],
+                updatedAt: new Date(),
+              }
               : session
           ),
         }));
@@ -256,7 +299,7 @@ export const useChatStore = create<ChatStore>()(
       },
     }),
     {
-      name: "chat-storage",
+      name: "chat-storage-v2",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: state => ({
         sessions: state.sessions.map(session => ({
@@ -288,6 +331,8 @@ export const useChatStore = create<ChatStore>()(
 );
 
 // Selectors for better performance
+const EMPTY_MESSAGES: readonly Message[] = [];
+
 export const useActiveSession = () => {
   return useChatStore(state => {
     return state.sessions.find(session => session.id === state.activeSessionId);
@@ -303,6 +348,6 @@ export const useActiveSessionMessages = () => {
     const activeSession = state.sessions.find(
       session => session.id === state.activeSessionId
     );
-    return activeSession?.messages || [];
+    return activeSession?.messages || EMPTY_MESSAGES;
   });
 };

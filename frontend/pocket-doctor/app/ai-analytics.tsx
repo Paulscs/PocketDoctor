@@ -15,6 +15,7 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { router, useLocalSearchParams } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
+import { useChatStore } from "@/src/store/chatStore";
 
 export default function IAAnalyticsScreen() {
   const params = useLocalSearchParams();
@@ -278,19 +279,30 @@ export default function IAAnalyticsScreen() {
         </View>
       </ScrollView>
 
-      {/* Download PDF Button */}
+
+
+      {/* Chat Action Button Section (Replaces Download PDF) */}
       <View style={styles.downloadSection}>
         <TouchableOpacity
-          style={styles.downloadButton}
-          onPress={handleDownloadPDF}
+          style={[styles.downloadButton, { flexDirection: 'row', gap: 8 }]}
+          onPress={() => {
+            if (analysisData) {
+              const uniqueAnalysisId = typeof params.historyData === 'string'
+                ? JSON.parse(params.historyData).id || `analysis-${Date.now()}`
+                : `analysis-${Date.now()}`;
+              useChatStore.getState().createSessionFromAnalysis(analysisData, uniqueAnalysisId);
+              router.push("/(tabs)/chat");
+            }
+          }}
           activeOpacity={0.7}
         >
+          <Ionicons name="chatbubbles-outline" size={24} color={Colors.light.brandBlue} />
           <ThemedText style={styles.downloadButtonText}>
-            Descargar PDF
+            Chat con Asistente
           </ThemedText>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
 
@@ -573,6 +585,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.borderGray,
     alignItems: "center",
     justifyContent: "center",
+  },
+  downloadButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.light.brandBlue,
   },
   downloadButtonText: {
     fontSize: 16,

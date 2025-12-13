@@ -78,9 +78,8 @@ async def parse_with_llm(
     }
 
     try:
-        # Modelo Gemini recomendado
         model = genai.GenerativeModel(
-            model_name="gemini-2.5-pro",
+            model_name="gemini-2.5-flash",
             system_instruction=LLM_PARSER_SYSTEM_PROMPT,
         )
 
@@ -164,6 +163,7 @@ async def parse_with_llm(
     except Exception as e:
         print(f"Error Gemini General: {e}")
         raise HTTPException(
+            status_code=500,
             detail=f"Error interno al procesar con Gemini: {str(e)}",
         )
 
