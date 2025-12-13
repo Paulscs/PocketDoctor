@@ -4,6 +4,7 @@ from fastapi import APIRouter, Body, HTTPException
 import json
 import re
 import google.generativeai as genai
+from datetime import date
 
 from .ocr_local import (
     LLMParseRequest,
@@ -11,8 +12,28 @@ from .ocr_local import (
     gemini_configured,
     LLM_PARSER_SYSTEM_PROMPT,
 )
+from app.core.security import get_current_user, AuthUser
+from app.core.config import settings
+from supabase import create_client
+from fastapi import Depends
 
-router = APIRouter()
+# Helper to get user ID
+def get_mi_usuario_id(c, user: AuthUser) -> int:
+    resp = (
+        c.table("usuarios")
+         .select("id")
+         .eq("user_auth_id", user.sub)
+         .limit(1)
+         .execute()
+    )
+    rows = resp.data or []
+    if not rows:
+        # Fallback or error
+        return None
+    return rows[0]["id"]
+
+
+router = APIRouter(prefix="/ocr-local", tags=["OCR Analysis"])
 
 
 def extract_json_from_text(text: str) -> str:
@@ -35,7 +56,10 @@ def extract_json_from_text(text: str) -> str:
 
 
 @router.post("/parse-llm", response_model=LLMInterpretation)
-async def parse_with_llm(payload: LLMParseRequest = Body(...)):
+async def parse_with_llm(
+    payload: LLMParseRequest = Body(...),
+    user: AuthUser = Depends(get_current_user)
+):
     """
     Usa Google Gemini para interpretar los resultados médicos.
     """
@@ -54,9 +78,8 @@ async def parse_with_llm(payload: LLMParseRequest = Body(...)):
     }
 
     try:
-        # Modelo Gemini recomendado
         model = genai.GenerativeModel(
-            model_name="gemini-2.5-pro",
+            model_name="gemini-2.5-flash",
             system_instruction=LLM_PARSER_SYSTEM_PROMPT,
         )
 
@@ -87,7 +110,52 @@ async def parse_with_llm(payload: LLMParseRequest = Body(...)):
                 detail="La IA devolvió un formato inválido o incompleto (JSON cortado).",
             )
 
-        return LLMInterpretation(**data)
+        llm_result = LLMInterpretation(**data)
+
+        # ------------------------------------------------------------------
+        # GUARDAR EN HISTORIAL (Supabase)
+        # ------------------------------------------------------------------
+        try:
+            # 1. Init Client con token de usuario
+            sb = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+            sb.postgrest.auth(user.token)
+            
+            # 2. Obtener ID del usuario (tabla usuarios)
+            user_db_id = get_mi_usuario_id(sb, user)
+            
+            if user_db_id:
+                # 3. Determinar estado y título
+                # Estado simple: si hay warnings -> "alert", sino "normal"
+                status = "alert" if llm_result.warnings else "normal"
+                
+                # Título: usamos fecha o tipo
+                # Título: usamos fecha actual de análisis
+                date_str = date.today().strftime("%Y-%m-%d")
+                title = f"Análisis - {date_str}"
+
+                # 4. Insertar en tabla 'analisis_ia'
+                # Schema esperado en DB:
+                # id, usuario_id, titulo, tipo, estado, resumen, datos_completos, created_at
+                record = {
+                    "usuario_id": user_db_id,
+                    "titulo": title,
+                    "tipo": "blood", # Default hardcoded por ahora, podriamos inferirlo
+                    "estado": status,
+                    "resumen": llm_result.summary,
+                    "datos_completos": data # Guardamos todo el JSON raw
+                }
+                
+                sb.table("analisis_ia").insert(record).execute()
+                print(f"[History] Análisis guardado para user_id {user_db_id}")
+            else:
+                print(f"[History] No se encontró usuario_id para {user.sub}, no se guardó historial")
+
+        except Exception as e:
+            print(f"[History] Error guardando historial: {e}")
+            # No fallamos el request principal si falla el guardado
+            # pass 
+
+        return llm_result
 
     except HTTPException:
         raise
@@ -98,3 +166,29 @@ async def parse_with_llm(payload: LLMParseRequest = Body(...)):
             status_code=500,
             detail=f"Error interno al procesar con Gemini: {str(e)}",
         )
+
+@router.get("/history", response_model=list)
+def get_analysis_history(user: AuthUser = Depends(get_current_user)):
+    """
+    Obtiene el historial de análisis del usuario.
+    """
+    try:
+        sb = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+        sb.postgrest.auth(user.token)
+        
+        user_db_id = get_mi_usuario_id(sb, user)
+        if not user_db_id:
+            return []
+
+        # Query a analisis_ia
+        resp = (
+            sb.table("analisis_ia")
+              .select("*")
+              .eq("usuario_id", user_db_id)
+              .order("created_at", desc=True)
+              .execute()
+        )
+        return resp.data or []
+    except Exception as e:
+        print(f"[History] Error fetching history: {e}")
+        raise HTTPException(status_code=500, detail="Error obteniendo historial")

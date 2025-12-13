@@ -242,7 +242,7 @@ function SelectField({
   const [ddItems, setDdItems] = useState(items);
 
   return (
-    <View style={{ zIndex, position: 'relative' }}> {/* <-- position agregado */}
+    <View style={{ zIndex, position: 'relative' }}>
       <Label required={required} styles={styles}>
         {label}
       </Label>
@@ -363,119 +363,119 @@ function RegisterScreenInner() {
       white,
     ]
   );
- const handleGoogleSignUp = useCallback(async () => {
-  try {
-    const redirectTo = makeRedirectUri({
-      scheme,
-      path: "auth/callback",
-    });
+  const handleGoogleSignUp = useCallback(async () => {
+    try {
+      const redirectTo = makeRedirectUri({
+        scheme,
+        path: "auth/callback",
+      });
 
-    // 1) Pedimos URL de login a Supabase
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo,
-        skipBrowserRedirect: true,
-      },
-    });
+      // 1) Pedimos URL de login a Supabase
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+        },
+      });
 
-    if (error || !data?.url) {
-      console.error(error);
-      Alert.alert(
-        "Error",
-        error?.message ?? "No se pudo iniciar sesión con Google"
-      );
-      return;
-    }
-
-    // 2) Abrimos el navegador / pestaña del sistema
-    const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-
-    if (res.type === "success") {
-      // 3) Obtener sesión y usuario de Supabase
-      const { data: sessionData, error: sessionError } =
-        await supabase.auth.getSession();
-
-      if (sessionError) {
-        console.error(sessionError);
-        Alert.alert("Error", "No se pudo obtener la sesión de Supabase");
-        return;
-      }
-
-      const session = sessionData.session;
-      if (!session) {
+      if (error || !data?.url) {
+        console.error(error);
         Alert.alert(
           "Error",
-          "No se encontró una sesión activa después del login con Google."
+          error?.message ?? "No se pudo iniciar sesión con Google"
         );
         return;
       }
 
-      const user = session.user;
+      // 2) Abrimos el navegador / pestaña del sistema
+      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
 
-      console.log("USER:", JSON.stringify(user, null, 2));
-      console.log("USER METADATA:", JSON.stringify(user.user_metadata, null, 2));
+      if (res.type === "success") {
+        // 3) Obtener sesión y usuario de Supabase
+        const { data: sessionData, error: sessionError } =
+          await supabase.auth.getSession();
 
-      // --- Fetch backend profile and populate store ---
-      if (session.access_token) {
-        try {
-          const { getUserProfile } = await import("@/src/services/user");
-          const profile = await getUserProfile(session.access_token);
-          // set store directly so the app has the profile available
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          const { useAuthStore } = require("@/src/store");
-          useAuthStore.setState({ user: session.user, session, userProfile: profile });
-        } catch (err) {
-          console.warn("Error fetching profile after Google OAuth:", err);
+        if (sessionError) {
+          console.error(sessionError);
+          Alert.alert("Error", "No se pudo obtener la sesión de Supabase");
+          return;
         }
-      }
-      // ---- AQUÍ SOLO EXTRAEMOS DATOS BÁSICOS ----
-      const email = user.email ?? "";
-      const fullName =
-        (user.user_metadata.full_name as string) ||
-        (user.user_metadata.name as string) ||
-        "";
-      const givenName = user.user_metadata.given_name as string | undefined;
-      const familyName = user.user_metadata.family_name as string | undefined;
-      const avatarUrl = user.user_metadata.avatar_url as string | undefined;
 
-      // 4) Upsert mínimo en tu tabla usuarios
-      const { error: upsertError } = await supabase
-        .from("usuarios") // 👈 ajusta si tu tabla se llama distinto
-        .upsert(
-          {
-            auth_id: user.id,              // FK a auth.users.id
-            email,
-            nombre: givenName || fullName, // nombre de pila o completo
-            apellido: familyName || null,
-            avatar_url: avatarUrl ?? null, // solo si existe la columna
-            // completed_profile: false,   // si creas este campo
-          },
-          {
-            onConflict: "auth_id", // que no duplique si ya existe
+        const session = sessionData.session;
+        if (!session) {
+          Alert.alert(
+            "Error",
+            "No se encontró una sesión activa después del login con Google."
+          );
+          return;
+        }
+
+        const user = session.user;
+
+        console.log("USER:", JSON.stringify(user, null, 2));
+        console.log("USER METADATA:", JSON.stringify(user.user_metadata, null, 2));
+
+        // --- Fetch backend profile and populate store ---
+        if (session.access_token) {
+          try {
+            const { getUserProfile } = await import("@/src/services/user");
+            const profile = await getUserProfile(session.access_token);
+            // set store directly so the app has the profile available
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            const { useAuthStore } = require("@/src/store");
+            useAuthStore.setState({ user: session.user, session, userProfile: profile });
+          } catch (err) {
+            console.warn("Error fetching profile after Google OAuth:", err);
           }
-        );
+        }
+        // ---- AQUÍ SOLO EXTRAEMOS DATOS BÁSICOS ----
+        const email = user.email ?? "";
+        const fullName =
+          (user.user_metadata.full_name as string) ||
+          (user.user_metadata.name as string) ||
+          "";
+        const givenName = user.user_metadata.given_name as string | undefined;
+        const familyName = user.user_metadata.family_name as string | undefined;
+        const avatarUrl = user.user_metadata.avatar_url as string | undefined;
 
-      if (upsertError) {
-        console.warn("Error al sincronizar perfil básico:", upsertError);
-        // No bloqueamos la sesión; puedes mostrar solo un aviso si quieres.
+        // 4) Upsert mínimo en tu tabla usuarios
+        const { error: upsertError } = await supabase
+          .from("usuarios") // 👈 ajusta si tu tabla se llama distinto
+          .upsert(
+            {
+              auth_id: user.id,              // FK a auth.users.id
+              email,
+              nombre: givenName || fullName, // nombre de pila o completo
+              apellido: familyName || null,
+              avatar_url: avatarUrl ?? null, // solo si existe la columna
+              // completed_profile: false,   // si creas este campo
+            },
+            {
+              onConflict: "auth_id", // que no duplique si ya existe
+            }
+          );
+
+        if (upsertError) {
+          console.warn("Error al sincronizar perfil básico:", upsertError);
+          // No bloqueamos la sesión; puedes mostrar solo un aviso si quieres.
+        }
+
+        // 5) Navegar dentro de la app
+        router.push("/(tabs)/home");
+      } else if (res.type === "cancel") {
+        console.log("Login con Google cancelado por el usuario");
+      } else {
+        console.log("Resultado OAuth inesperado:", res);
       }
-
-      // 5) Navegar dentro de la app
-      router.push("/(tabs)/home");
-    } else if (res.type === "cancel") {
-      console.log("Login con Google cancelado por el usuario");
-    } else {
-      console.log("Resultado OAuth inesperado:", res);
+    } catch (err) {
+      console.error(err);
+      Alert.alert(
+        "Error",
+        "Ocurrió un problema al iniciar sesión con Google. Inténtalo de nuevo."
+      );
     }
-  } catch (err) {
-    console.error(err);
-    Alert.alert(
-      "Error",
-      "Ocurrió un problema al iniciar sesión con Google. Inténtalo de nuevo."
-    );
-  }
-}, [router]);
+  }, [router]);
 
 
   const requiredStr = (s: string) => s.trim().length > 0;
@@ -661,7 +661,7 @@ function RegisterScreenInner() {
         apellido: lastName,
         fecha_nacimiento: dateOfBirth ? dateOfBirth.toISOString() : undefined,
         sexo: gender,
-     estatura: height ? parseInt(height) : undefined,
+        estatura: height ? parseInt(height) : undefined,
         peso: weight ? parseInt(weight) : undefined,
         tipo_sangre: bloodType,
         alergias: selectedAllergies,
@@ -850,9 +850,9 @@ function RegisterScreenInner() {
                 style={[
                   styles.inputContainer,
                   submitted &&
-                    (!requiredStr(confirmPassword) ||
-                      password !== confirmPassword) &&
-                    styles.fieldError,
+                  (!requiredStr(confirmPassword) ||
+                    password !== confirmPassword) &&
+                  styles.fieldError,
                 ]}
               >
                 <TextInput
@@ -1017,7 +1017,7 @@ function RegisterScreenInner() {
                       style={[
                         styles.checkbox,
                         selectedAllergies.includes(allergy) &&
-                          styles.checkboxSelected,
+                        styles.checkboxSelected,
                       ]}
                     >
                       {selectedAllergies.includes(allergy) && (
@@ -1059,7 +1059,7 @@ function RegisterScreenInner() {
                       style={[
                         styles.checkbox,
                         selectedConditions.includes(condition) &&
-                          styles.checkboxSelected,
+                        styles.checkboxSelected,
                       ]}
                     >
                       {selectedConditions.includes(condition) && (
@@ -1127,9 +1127,9 @@ function RegisterScreenInner() {
               </View>
 
               <View style={styles.socialButtonsContainer}>
-                <TouchableOpacity 
-                style={styles.socialButton} 
-                onPress={handleGoogleSignUp}
+                <TouchableOpacity
+                  style={styles.socialButton}
+                  onPress={handleGoogleSignUp}
                 >
                   <Image
                     source={require("@/assets/images/google.png")}

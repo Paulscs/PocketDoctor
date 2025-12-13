@@ -41,6 +41,9 @@ else:
     gemini_configured = True
 
 
+
+print("[OCR] Module LOADED successfully. Gemini configured:", gemini_configured)
+
 router = APIRouter(prefix="/ocr-local", tags=["OCR local"])
 
 # ---------------------------
@@ -89,13 +92,80 @@ def upload_pdf_to_supabase(content: bytes, filename: str) -> tuple[Optional[str]
 # ---------------------------
 # Modelos de respuesta
 # ---------------------------
+# ---------------------------
+# Modelos de respuesta
+# ---------------------------
 LLM_PARSER_SYSTEM_PROMPT = """
 Eres un modelo de IA especializado en interpretar OCR médico.
-Debes devolver SIEMPRE un JSON válido, sin texto adicional.
+Tu tarea es analizar el texto extraído de un análisis de laboratorio y estructurarlo en un formato JSON específico.
+
+Debes devolver SIEMPRE un JSON válido que cumpla estrictamente con la siguiente estructura (schema):
+
+{
+  "analysis_input": {
+    "patient_profile": {
+      "age": int | null,
+      "sex": "M" | "F" | null,
+      "weight_kg": float | null,
+      "height_cm": float | null,
+      "conditions": [str],
+      "medications": [str],
+      "allergies": [str]
+    },
+    "lab_metadata": {
+      "collection_date": "YYYY-MM-DD" | null,
+      "lab_name": str | null
+    },
+    "lab_results": [
+      {
+        "group": str | null,
+        "name": str,
+        "code": str | null,
+        "value": float | null,
+        "value_as_string": str | null,
+        "unit": str | null,
+        "ref_low": float | null,
+        "ref_high": float | null,
+        "status": "bajo" | "normal" | "alto" | null,
+        "flag_from_lab": str | null,
+        "line": str
+      }
+    ]
+  },
+  "summary": "Resumen conciso de los hallazgos principales en lenguaje natural (español).",
+  "warnings": [
+    {
+      "title": "Título corto del riesgo",
+      "description": "Explicación detallada del riesgo o valor fuera de rango."
+    }
+  ],
+  "recommendations": [
+    {
+      "title": "Título de la recomendación",
+      "description": "Descripción accionable y específica."
+    }
+  ],
+  "qa": {
+    "simple_explanation": "Respuesta a: Explícame qué significan estos resultados en palabras simples.",
+    "lifestyle_changes": "Respuesta a: ¿Qué cambios de estilo de vida (dieta/hábitos) me recomiendas?",
+    "causes": "Respuesta a: ¿Cuáles podrían ser las causas de estos valores?",
+    "warning_signs": "Respuesta a: ¿Hay señales de alerta urgentes a las que deba estar atento?",
+    "doctor_questions": "Respuesta a: ¿Qué preguntas específicas debería hacerle a mi médico?"
+  },
+  "disclaimer": "Este análisis es generado por IA y no sustituye el diagnóstico médico profesional."
+}
+
+Instrucciones adicionales:
+1. Extrae la información del paciente si está disponible.
+2. Normaliza los nombres de los análisis.
+3. Interpreta los valores y rangos de referencia.
+4. Si el valor NO es numérico (ej: "NEGATIVO", "POSITIVO", "NO REACTIVO", texto largo), usa "value_as_string" y deja "value" en null.
+5. Genera un resumen útil para el paciente.
+6. Genera recomendaciones prácticas basadas en los resultados anómalos o para mantener la buena salud.
+7. ASEGÚRATE de que cada warning y recomendación tenga un TÍTULO único y descriptivo.
+8. Genera las respuestas para la sección "qa" basándote EXCLUSIVAMENTE en los resultados analizados.
+9. NO incluyas texto fuera del JSON (como ```json ... ```). Devuelve SOLO el JSON crudo.
 """
-class RefRange(BaseModel):
-    min: Optional[float] = None
-    max: Optional[float] = None
 
 class PatientProfile(BaseModel):
     age: Optional[int] = None
@@ -117,6 +187,7 @@ class LabResult(BaseModel):
     name: str
     code: Optional[str] = None
     value: Optional[float] = None
+    value_as_string: Optional[str] = None
     unit: Optional[str] = None
     ref_low: Optional[float] = None
     ref_high: Optional[float] = None
@@ -136,17 +207,37 @@ class LLMParseRequest(BaseModel):
     draft_analysis_input: Optional[AnalysisInput] = None  # opcional: lo que ya tienes del parser actual
 
 
+class SuggestionItem(BaseModel):
+    title: str
+    description: str
+
+class QAResponse(BaseModel):
+    simple_explanation: Optional[str] = None
+    lifestyle_changes: Optional[str] = None
+    causes: Optional[str] = None
+    warning_signs: Optional[str] = None
+    doctor_questions: Optional[str] = None
+
 class LLMInterpretation(BaseModel):
     analysis_input: AnalysisInput  # reutilizamos tu schema
     summary: str                   # resumen en lenguaje natural
-    warnings: List[str] = []       # cosas a vigilar / posibles riesgos
+    warnings: List[SuggestionItem] = []       # cosas a vigilar / posibles riesgos
+    recommendations: List[SuggestionItem] = [] # recomendaciones de salud
+    qa: Optional[QAResponse] = None            # Preguntas pre-generadas (Opcional para evitar 500)
     disclaimer: str                # recordatorio de que no es diagnóstico
+
+
+
+class RefRange(BaseModel):
+    min: Optional[float] = None
+    max: Optional[float] = None
 
 
 class LabItem(BaseModel):
     name_raw: str
     name: str
     value: Optional[float] = None
+    value_as_string: Optional[str] = None
     unit: Optional[str] = None
     ref_range: Optional[RefRange] = None
     flag: Optional[str] = None  # "H", "L", etc.
@@ -487,6 +578,7 @@ def lab_item_to_lab_result(item: LabItem) -> LabResult:
         name=item.name,          # ya normalizado por normalize_name
         code=code,
         value=item.value,
+        value_as_string=item.value_as_string,
         unit=item.unit,
         ref_low=ref_low,
         ref_high=ref_high,
@@ -810,7 +902,9 @@ async def ocr_pdf(
             raise HTTPException(status_code=400, detail="Archivo vacío")
 
         # Subir el PDF a Supabase (si está configurado)
+        print(f"[OCR] Starting processing for {file.filename}")
         storage_path, public_url = upload_pdf_to_supabase(content, file.filename)
+        print(f"[OCR] Upload to Supabase done: {storage_path}")
 
         # ---------------------------------------------------------
         # Obtener datos del usuario logueado
@@ -826,6 +920,8 @@ async def ocr_pdf(
                 user_profile_data = resp.data
         except Exception as e:
             print(f"[OCR] Error obteniendo perfil de usuario: {e}")
+
+        print(f"[OCR] User profile fetched: {user_profile_data is not None}")
 
         # Mapear a PatientProfile
         patient_profile = None
@@ -862,7 +958,11 @@ async def ocr_pdf(
 
         pages_to_process = min(len(doc), MAX_PAGES)
 
+        pages_to_process = min(len(doc), MAX_PAGES)
+        print(f"[OCR] Model ready. Pages to process: {pages_to_process}")
+
         result = OCR_PREDICTOR(doc)
+        print("[OCR] Model inference complete")
         export = result.export()
 
         all_text_lines: List[str] = []

@@ -15,20 +15,17 @@ import { router } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import {
   useChatStore,
+  useActiveSession,
   useActiveSessionMessages,
-  useChatSessions,
   FollowUpOption,
-} from "@/src/store";
+} from "@/src/store/chatStore";
 import { SideMenu } from "@/components/layout/SideMenu";
 
 export default function ChatScreen() {
-  const backgroundColor = useThemeColor(
-    { light: Colors.light.white, dark: Colors.dark.background },
-    "background"
-  );
+  const containerBg = useThemeColor({ light: Colors.light.background, dark: Colors.dark.background }, "background");
+  const headerBg = useThemeColor({ light: Colors.light.white, dark: Colors.dark.surface }, "surface");
 
-  const [isSideMenuVisible, setIsSideMenuVisible] = useState(false);
-
+  // Store hooks
   const {
     activeSessionId,
     addUserMessage,
@@ -36,58 +33,44 @@ export default function ChatScreen() {
     createNewSession,
     setActiveSession,
     deleteSession,
+    clearAllSessions,
+    setError,
+    sessions,
   } = useChatStore();
 
-  const sessions = useChatSessions();
   const messages = useActiveSessionMessages();
+  const activeSession = useActiveSession();
 
-  const containerStyle = useMemo(
-    () => [styles.container, { backgroundColor }],
-    [backgroundColor]
-  );
+  const [isSideMenuVisible, setIsSideMenuVisible] = useState(false);
 
-  const headerStyle = useMemo(
-    () => [styles.header, { borderBottomColor: Colors.light.borderGray }],
-    []
-  );
+  // Menu handlers
+  const handleMenuPress = () => setIsSideMenuVisible(true);
+  const handleCloseSideMenu = () => setIsSideMenuVisible(false);
+  const handleProfilePress = () => router.push("/(tabs)/profile");
 
-  const handleProfilePress = useCallback(() => {
-    router.push("/(tabs)/profile");
-  }, []);
-
-  const handleMenuPress = useCallback(() => {
-    setIsSideMenuVisible(true);
-  }, []);
-
-  const handleCloseSideMenu = useCallback(() => {
+  const handleSelectSession = (id: string) => {
+    setActiveSession(id);
     setIsSideMenuVisible(false);
-  }, []);
+  };
 
-  const handleSelectSession = useCallback(
-    (sessionId: string) => {
-      setActiveSession(sessionId);
-      setIsSideMenuVisible(false);
-    },
-    [setActiveSession]
-  );
-
-  const handleCreateNewChat = useCallback(() => {
+  const handleCreateNewChat = () => {
     createNewSession();
     setIsSideMenuVisible(false);
-  }, [createNewSession]);
+  };
 
-  const handleDeleteSession = useCallback(
-    (sessionId: string) => {
-      deleteSession(sessionId);
-    },
-    [deleteSession]
-  );
+  const handleDeleteSession = (id: string) => {
+    deleteSession(id);
+    // If we became empty? deleteSession logic in store handles re-selecting or null.
+    // However, if we delete the LAST session, store sets activeSessionId to null?
+    // Let's check store logic.
+  };
 
   const handleFollowUpOption = useCallback(
     (option: FollowUpOption, messageId: string) => {
       if (!activeSessionId) return;
 
       addUserMessage(activeSessionId, option.text);
+
 
       setTimeout(() => {
         const followUpResponse = generateFollowUpResponse(option.id);
@@ -96,279 +79,77 @@ export default function ChatScreen() {
           followUpResponse.text,
           followUpResponse.followUpOptions
         );
-      }, 1000);
+      }, 600);
     },
-    [activeSessionId, addUserMessage, addAIMessage]
+    [activeSessionId, addUserMessage, addAIMessage, activeSession] // Add activeSession dependency
   );
 
   const generateFollowUpResponse = (
     optionId: string
   ): { text: string; followUpOptions: FollowUpOption[] } => {
+
+    // 1. Try to get answer from the real AI context (Pre-generated Q&A)
+    const qaContext = activeSession?.context?.qa;
+
+    if (qaContext) {
+      // Map option IDs to QA keys
+      type QAKey = keyof typeof qaContext;
+      const keyMap: Record<string, QAKey> = {
+        simple_explanation: "simple_explanation",
+        lifestyle_changes: "lifestyle_changes",
+        causes: "causes",
+        warning_signs: "warning_signs",
+        doctor_questions: "doctor_questions",
+      };
+
+      const qaKey = keyMap[optionId];
+      if (qaKey && qaContext[qaKey]) {
+        return {
+          text: qaContext[qaKey],
+          followUpOptions: [], // Terminal answer for now, or add "Ask another"
+        };
+      }
+    }
+
+    // 2. Fallback to generic responses (if no analysis context exists)
     switch (optionId) {
-      case "analyze-cholesterol":
+      case "simple_explanation":
         return {
-          text: "Analicemos tu colesterol de 245 mg/dL. Este valor está significativamente por encima del rango normal (<200 mg/dL). Esto aumenta tu riesgo cardiovascular.",
-          followUpOptions: [
-            {
-              id: "cholesterol-diet",
-              text: "Plan de dieta para reducir colesterol",
-              icon: "restaurant-outline",
-            },
-            {
-              id: "cholesterol-exercise",
-              text: "Ejercicios específicos",
-              icon: "fitness-outline",
-            },
-            {
-              id: "cholesterol-medication",
-              text: "Información sobre medicamentos",
-              icon: "medical-outline",
-            },
-            {
-              id: "cholesterol-monitoring",
-              text: "Programa de seguimiento",
-              icon: "analytics-outline",
-            },
-            {
-              id: "cholesterol-risks",
-              text: "Factores de riesgo cardiovascular",
-              icon: "warning-outline",
-            },
-            {
-              id: "cholesterol-timeline",
-              text: "Cronograma de mejora",
-              icon: "calendar-outline",
-            },
-          ],
+          text: "No tengo el contexto específico de un análisis para explicarte. Por favor, sube un documento primero para analizarlo.",
+          followUpOptions: [],
         };
-
-      case "hypertension-plan":
+      case "lifestyle_changes":
         return {
-          text: "Perfecto! Te ayudo a crear un plan específico para tu hipertensión leve. Empezaremos con cambios graduales y medibles.",
-          followUpOptions: [
-            {
-              id: "weekly-plan",
-              text: "Plan semanal detallado",
-              icon: "calendar-outline",
-            },
-            {
-              id: "tracking-tools",
-              text: "Herramientas de seguimiento",
-              icon: "analytics-outline",
-            },
-            {
-              id: "blood-pressure-monitoring",
-              text: "Monitoreo de presión arterial",
-              icon: "pulse-outline",
-            },
-            {
-              id: "stress-management",
-              text: "Técnicas de manejo del estrés",
-              icon: "leaf-outline",
-            },
-            {
-              id: "medication-schedule",
-              text: "Horario de medicamentos",
-              icon: "time-outline",
-            },
-            {
-              id: "lifestyle-changes",
-              text: "Cambios en estilo de vida",
-              icon: "fitness-outline",
-            },
-          ],
+          text: "Para recomendaciones precisas, necesito que analicemos tus resultados de laboratorio primero.",
+          followUpOptions: [],
         };
-
-      case "diet-plan":
+      case "causes":
         return {
-          text: "Excelente elección! Un plan de dieta específico puede reducir tu colesterol significativamente. Te crearé un plan personalizado.",
-          followUpOptions: [
-            {
-              id: "meal-plan",
-              text: "Plan de comidas semanal",
-              icon: "restaurant-outline",
-            },
-            {
-              id: "shopping-list",
-              text: "Lista de compras saludables",
-              icon: "list-outline",
-            },
-            {
-              id: "nutrition-tracking",
-              text: "Seguimiento nutricional",
-              icon: "analytics-outline",
-            },
-            {
-              id: "healthy-recipes",
-              text: "Recetas saludables",
-              icon: "book-outline",
-            },
-            {
-              id: "portion-control",
-              text: "Control de porciones",
-              icon: "scale-outline",
-            },
-            {
-              id: "supplement-guide",
-              text: "Guía de suplementos",
-              icon: "medical-outline",
-            },
-          ],
+          text: "Necesito ver tus resultados para identificar posibles causas. ¿Te gustaría subir un análisis?",
+          followUpOptions: [],
         };
-
-      case "allergy-calendar":
+      case "warning_signs":
         return {
-          text: "Te ayudo con el calendario de alergias. Para Penicilina: evitar siempre. Para Polen: temporada alta en primavera (marzo-mayo).",
-          followUpOptions: [
-            {
-              id: "seasonal-tips",
-              text: "Consejos por temporada",
-              icon: "calendar-outline",
-            },
-            {
-              id: "medication-schedule",
-              text: "Horario de medicamentos",
-              icon: "time-outline",
-            },
-            {
-              id: "allergy-tracking",
-              text: "Registro de síntomas",
-              icon: "document-outline",
-            },
-            {
-              id: "environmental-controls",
-              text: "Control ambiental",
-              icon: "home-outline",
-            },
-            {
-              id: "emergency-preparation",
-              text: "Preparación para emergencias",
-              icon: "warning-outline",
-            },
-            {
-              id: "specialist-referral",
-              text: "Referencia a especialista",
-              icon: "person-outline",
-            },
-          ],
+          text: "Sin datos recientes es difícil alertarte. En general, dolor torácico o dificultad respiratoria son urgencias.",
+          followUpOptions: [],
         };
-
-      case "emergency-plan":
+      case "doctor_questions":
         return {
-          text: "Plan de emergencia para tus alergias:\n\n• Siempre llevar antihistamínicos\n• Identificar síntomas graves\n• Tener contacto de emergencia\n• Conocer ubicación del hospital más cercano",
-          followUpOptions: [
-            {
-              id: "emergency-contacts",
-              text: "Configurar contactos de emergencia",
-              icon: "call-outline",
-            },
-            {
-              id: "symptom-tracker",
-              text: "Registrar síntomas",
-              icon: "document-outline",
-            },
-            {
-              id: "medication-kit",
-              text: "Kit de medicamentos de emergencia",
-              icon: "medical-outline",
-            },
-            {
-              id: "hospital-locations",
-              text: "Ubicaciones de hospitales cercanos",
-              icon: "location-outline",
-            },
-            {
-              id: "emergency-procedures",
-              text: "Procedimientos de emergencia",
-              icon: "warning-outline",
-            },
-            {
-              id: "family-training",
-              text: "Capacitación familiar",
-              icon: "people-outline",
-            },
-          ],
-        };
-
-      case "home-tips":
-        return {
-          text: "Consejos para tu hogar:\n\n• Purificador de aire HEPA\n• Aspirar regularmente\n• Evitar alfombras\n• Ventilar en horarios de bajo polen",
-          followUpOptions: [
-            {
-              id: "cleaning-schedule",
-              text: "Cronograma de limpieza",
-              icon: "calendar-outline",
-            },
-            {
-              id: "air-quality",
-              text: "Monitorear calidad del aire",
-              icon: "leaf-outline",
-            },
-            {
-              id: "home-improvements",
-              text: "Mejoras en el hogar",
-              icon: "construct-outline",
-            },
-            {
-              id: "product-recommendations",
-              text: "Recomendaciones de productos",
-              icon: "list-outline",
-            },
-            {
-              id: "maintenance-checklist",
-              text: "Lista de mantenimiento",
-              icon: "checkmark-outline",
-            },
-            {
-              id: "cost-estimates",
-              text: "Estimaciones de costos",
-              icon: "calculator-outline",
-            },
-          ],
+          text: "Lo ideal es preguntar basado en tus números. Sube un PDF para generarte las preguntas exactas.",
+          followUpOptions: [],
         };
 
       default:
         return {
-          text: "Gracias por tu interés. Estoy preparando información específica para ti.",
-          followUpOptions: [
-            {
-              id: "more-details",
-              text: "Más detalles",
-              icon: "information-circle-outline",
-            },
-            {
-              id: "schedule-appointment",
-              text: "Programar cita médica",
-              icon: "calendar-outline",
-            },
-            {
-              id: "emergency-help",
-              text: "Ayuda de emergencia",
-              icon: "call-outline",
-            },
-            {
-              id: "second-opinion",
-              text: "Segunda opinión",
-              icon: "person-outline",
-            },
-            {
-              id: "research-resources",
-              text: "Recursos de investigación",
-              icon: "book-outline",
-            },
-            {
-              id: "support-groups",
-              text: "Grupos de apoyo",
-              icon: "people-outline",
-            },
-          ],
+          text: "Entiendo. Estoy procesando esa solicitud.",
+          followUpOptions: [],
         };
     }
   };
 
   return (
-    <SafeAreaView style={containerStyle}>
-      <View style={headerStyle}>
+    <SafeAreaView style={[styles.container, { backgroundColor: containerBg }]}>
+      <View style={[styles.header, { backgroundColor: headerBg }]}>
         <View style={styles.headerLeft}>
           <TouchableOpacity
             style={styles.menuButton}
@@ -412,66 +193,85 @@ export default function ChatScreen() {
         contentContainerStyle={styles.chatContent}
         showsVerticalScrollIndicator={false}
       >
-        {messages.map(message => (
-          <View key={message.id}>
-            <View
-              style={[
-                styles.messageContainer,
-                message.isUser ? styles.userMessage : styles.aiMessage,
-              ]}
-            >
-              {!message.isUser && (
-                <View style={styles.aiIcon}>
-                  <Image
-                    source={require("@/assets/images/logoBlue.png")}
-                    style={styles.aiLogo}
-                    resizeMode="contain"
-                  />
-                </View>
-              )}
+        {messages.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons
+                name="chatbubble-ellipses-outline"
+                size={48}
+                color={Colors.light.brandBlue}
+              />
+            </View>
+            <ThemedText style={styles.emptyTitle}>
+              ¡Hola! Soy tu asistente médico
+            </ThemedText>
+            <ThemedText style={styles.emptyDescription}>
+              Sube un análisis médico para discutir los resultados o inicia una
+              nueva conversación.
+            </ThemedText>
+          </View>
+        ) : (
+          messages.map(message => (
+            <View key={message.id}>
               <View
                 style={[
-                  styles.messageBubble,
-                  message.isUser ? styles.userBubble : styles.aiBubble,
+                  styles.messageContainer,
+                  message.isUser ? styles.userMessage : styles.aiMessage,
                 ]}
               >
-                <ThemedText
+                {!message.isUser && (
+                  <View style={styles.aiIcon}>
+                    <Image
+                      source={require("@/assets/images/logoBlue.png")}
+                      style={styles.aiLogo}
+                      resizeMode="contain"
+                    />
+                  </View>
+                )}
+                <View
                   style={[
-                    styles.messageText,
-                    message.isUser ? styles.userText : styles.aiText,
+                    styles.messageBubble,
+                    message.isUser ? styles.userBubble : styles.aiBubble,
                   ]}
                 >
-                  {message.text}
-                </ThemedText>
-              </View>
-            </View>
-
-            {message.followUpOptions && message.followUpOptions.length > 0 && (
-              <View style={styles.followUpContainer}>
-                {message.followUpOptions.map(option => (
-                  <TouchableOpacity
-                    key={option.id}
-                    style={styles.followUpOption}
-                    onPress={() => handleFollowUpOption(option, message.id)}
-                    activeOpacity={0.7}
-                    accessibilityLabel={option.text}
-                    accessibilityRole="button"
-                    accessibilityHint="Selecciona esta opción para continuar la conversación"
+                  <ThemedText
+                    style={[
+                      styles.messageText,
+                      message.isUser ? styles.userText : styles.aiText,
+                    ]}
                   >
-                    <Ionicons
-                      name={option.icon as keyof typeof Ionicons.glyphMap}
-                      size={16}
-                      color={Colors.light.brandBlue}
-                    />
-                    <ThemedText style={styles.followUpText}>
-                      {option.text}
-                    </ThemedText>
-                  </TouchableOpacity>
-                ))}
+                    {message.text}
+                  </ThemedText>
+                </View>
               </View>
-            )}
-          </View>
-        ))}
+
+              {message.followUpOptions && message.followUpOptions.length > 0 && (
+                <View style={styles.followUpContainer}>
+                  {message.followUpOptions.map(option => (
+                    <TouchableOpacity
+                      key={option.id}
+                      style={styles.followUpOption}
+                      onPress={() => handleFollowUpOption(option, message.id)}
+                      activeOpacity={0.7}
+                      accessibilityLabel={option.text}
+                      accessibilityRole="button"
+                      accessibilityHint="Selecciona esta opción para continuar la conversación"
+                    >
+                      <Ionicons
+                        name={option.icon as keyof typeof Ionicons.glyphMap}
+                        size={16}
+                        color={Colors.light.brandBlue}
+                      />
+                      <ThemedText style={styles.followUpText}>
+                        {option.text}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))
+        )}
 
         {/* Medical Disclaimer Inside Chat */}
         <View style={styles.warningSection}>
@@ -585,6 +385,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     paddingBottom: Spacing.sm,
+    flexGrow: 1,
   },
 
   messageContainer: {
@@ -707,5 +508,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.light.warningText,
     lineHeight: 16,
+  },
+
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: Spacing.xl * 2,
+    paddingHorizontal: Spacing.xl,
+  },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.light.white,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.light.borderGray,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.light.brandBlue,
+    marginBottom: Spacing.sm,
+    textAlign: "center",
+  },
+  emptyDescription: {
+    fontSize: 14,
+    color: Colors.light.textGray,
+    textAlign: "center",
+    lineHeight: 20,
+    maxWidth: "80%",
   },
 });

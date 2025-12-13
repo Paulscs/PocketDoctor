@@ -1,47 +1,88 @@
 # 🩺 Pocket Doctor
 
-Pocket Doctor es una aplicación móvil multiplataforma desarrollada con **React Native (Expo)** y un backend en **FastAPI (Python)**.  
-Su propósito es ayudar a los usuarios a **interpretar de forma clara y accesible resultados de laboratorio clínico**, utilizando tecnologías de **OCR (Tesseract, OpenCV)** e **inteligencia artificial**.  
+**Pocket Doctor** es un asistente médico personal impulsado por Inteligencia Artificial, diseñado para ayudar a los usuarios a entender sus análisis de laboratorio de manera clara, accesible y sin tecnicismos.
 
-⚠️ **Nota importante:** Pocket Doctor **no reemplaza diagnósticos médicos**. Su función es **informativa y educativa**, orientando al usuario para que consulte con profesionales de la salud.
-
----
-
-## 🚀 Propósito del Proyecto
-- Democratizar el acceso a la interpretación básica de resultados clínicos.
-- Reducir la ansiedad del usuario mientras espera la opinión de un profesional.
-- Promover la educación en salud y la toma de decisiones informada.
-- Reforzar la privacidad y seguridad en el manejo de datos clínicos.
+> 🎓 **Proyecto Académico:** Esta aplicación es un prototipo funcional desarrollado con fines educativos. **No reemplaza el consejo médico profesional.**
 
 ---
 
-## 📌 Funcionalidades principales (MVP)
-- 📄 Carga de documentos clínicos en formato **PDF o imagen**.  
-- 🔍 Extracción automática de valores clínicos mediante **OCR**.  
-- 🧮 Normalización y comparación de resultados con tablas de referencia.  
-- 🗣️ Interpretación en **lenguaje natural** y sin tecnicismos médicos.  
-- 🏥 Recomendación de especialidades médicas según los valores detectados.  
-- 📍 Consulta de una base de datos de **clínicas y especialistas en RD**.  
-- 📑 Exportación de resultados en formato **PDF**.  
-- 👤 Registro e inicio de sesión con datos básicos del usuario.  
+## ✨ Características Principales
+
+### 🔍 Análisis IA de Resultados y OCR
+Sube una foto o PDF de tus análisis de laboratorio. Pocket Doctor utiliza **Google Gemini 2.5 Flash** para:
+*   Extraer automáticamente los datos (OCR avanzado).
+*   Interpretar cada valor (Alto/Bajo/Normal).
+*   Generar un resumen comprensible de tu estado de salud.
+*   Detectar posibles alertas o riesgos que requieren atención.
+
+### 💬 Asistente Médico Interactivo (Simulación)
+¿Tienes dudas sobre tus resultados? Chatea con nuestro asistente virtual:
+*   Pregunta "¿Qué significa este valor?".
+*   Recibe recomendaciones de estilo de vida.
+*   Obtén una lista de preguntas sugeridas para tu próxima cita médica.
+*   *Nota: El chat utiliza una base de conocimientos generada por la IA para garantizar respuestas precisas y seguras.*
+
+### 📂 Historial Médico
+Guarda todos tus análisis en un solo lugar. Accede a tus reportes pasados en cualquier momento, incluso sin conexión.
+
+### 📍 Mapa de Clínicas
+Encuentra rápidamente laboratorios y centros médicos cercanos a tu ubicación (Integración con mapas locales).
 
 ---
 
 ## 🛠️ Stack Tecnológico
-### Frontend
-- [React Native](https://reactnative.dev/) (Expo)  
-- Interfaz accesible y amigable (cumple con **WCAG 2.1 AA**).  
 
-### Backend
-- [FastAPI](https://fastapi.tiangolo.com/) (Python).  
-- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) + [OpenCV](https://opencv.org/) para análisis de imágenes.  
-- [Supabase PostgreSQL](https://supabase.com/) para almacenamiento de datos clínicos.  
+La arquitectura de Pocket Doctor es moderna, escalable y eficiente:
 
-### Infraestructura
-- Contenerización con **Docker**.  
-- Despliegue en **Heroku/Azure**.  
-- Autenticación con **JWT** y Supabase Auth.  
+### 📱 Frontend (Móvil)
+*   **Framework:** [React Native](https://reactnative.dev/) con **Expo**.
+*   **Lenguaje:** TypeScript.
+*   **Estado:** Zustand (Gestión ligera y rápida).
+*   **UI/UX:** Diseño personalizado, animaciones fluidas, y soporte para Modo Oscuro/Claro.
+
+### ⚡ Backend (API)
+*   **Framework:** [FastAPI](https://fastapi.tiangolo.com/) (Python).
+*   **IA & NLP:** Google Gemini 2.5 Flash (vía Google GenAI SDK).
+*   **Procesamiento:** `pdf2image`, `Pillow` para manejo de archivos.
+
+### ☁️ Infraestructura & Servicios
+*   **Base de Datos & Auth:** [Supabase](https://supabase.com/) (PostgreSQL).
+*   **Almacenamiento:** Supabase Storage (para archivos médicos).
 
 ---
 
-## 📂 Estructura del Proyecto
+## 🚀 Instalación y Ejecución
+
+### Requisitos Previos
+*   Node.js & npm/yarn
+*   Python 3.10+
+*   Cuenta de Expo (opcional para desarrollo móvil)
+
+### 1. Configurar Backend
+```bash
+cd backend
+python -m venv venv
+# Windows
+.\venv\Scripts\activate
+# Mac/Linux
+source venv/bin/activate
+
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+### 2. Configurar Frontend
+```bash
+cd frontend/pocket-doctor
+npm install
+npx expo start
+```
+
+---
+
+## ⚠️ Descargo de Responsabilidad
+Pocket Doctor es una herramienta **informativa**. La interpretación de la IA puede contener errores. Siempre validez tus resultados con un médico certificado antes de tomar decisiones de salud.
+
+---
+
+*Última actualización: Diciembre 2025*

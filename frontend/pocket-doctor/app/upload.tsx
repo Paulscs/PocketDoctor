@@ -12,6 +12,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { uploadAsync, FileSystemUploadType } from "expo-file-system/legacy";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
+import { TermsModal } from "@/components/TermsModal";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -31,6 +32,8 @@ const API_BASE_URL =
 export default function UploadScreen() {
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isAccepted, setIsAccepted] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   const session = useAuthStore((state) => state.session);
   const accessToken = session?.access_token;
@@ -60,9 +63,33 @@ export default function UploadScreen() {
     Alert.alert("Info", "Funcionalidad de cámara en desarrollo.");
   };
 
+  const fetchWithTimeout = async (resource: string, options: RequestInit & { timeout?: number } = {}) => {
+    const { timeout = 120000 } = options; // Default 120 seconds
+    
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+  
+    try {
+      const response = await fetch(resource, {
+        ...options,
+        signal: controller.signal as AbortSignal, // Cast for RN compatibility
+      });
+      clearTimeout(id);
+      return response;
+    } catch (error) {
+      clearTimeout(id);
+      throw error;
+    }
+  };
+
   const handleProcessDocuments = async () => {
     if (!selectedFile) {
       Alert.alert("Error", "Por favor selecciona un archivo primero");
+      return;
+    }
+
+    if (!isAccepted) {
+      Alert.alert("Error", "Debe aceptar el aviso legal para continuar.");
       return;
     }
 
@@ -71,20 +98,28 @@ export default function UploadScreen() {
     try {
       console.log("Sending to:", `${API_BASE_URL}/ocr-local/pdf`);
 
-      const response = await uploadAsync(`${API_BASE_URL}/ocr-local/pdf`, selectedFile.uri, {
-        fieldName: 'file',
-        httpMethod: 'POST',
-        uploadType: FileSystemUploadType.MULTIPART,
+      const formData = new FormData();
+      formData.append('file', {
+        uri: selectedFile.uri,
+        name: selectedFile.name,
+        type: selectedFile.type,
+      } as any);
+
+      const response = await fetchWithTimeout(`${API_BASE_URL}/ocr-local/pdf`, {
+        method: 'POST',
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${accessToken}`,
         },
+        body: formData,
+        timeout: 120000, // 2 minutes
       });
 
-      if (response.status !== 200) {
-        throw new Error(response.body || "Error en el servidor");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server Error: ${response.status} ${errorText}`);
       }
 
-      const ocrResult = JSON.parse(response.body);
+      const ocrResult = await response.json();
       console.log("OCR Success:", ocrResult.items?.length, "items found");
 
       // Direct navigation to AI Analytics as requested
@@ -95,9 +130,16 @@ export default function UploadScreen() {
 
     } catch (error: any) {
       console.error("Upload Error:", error);
+      
+      let errorMessage = error.message || "No se pudo procesar el documento.";
+      
+      if (error.name === 'AbortError' || error.message === 'Aborted' || error.message.includes('Network request failed')) {
+        errorMessage = "El servidor tardó demasiado en responder. Es normal si es la primera vez. Por favor intenta de nuevo.";
+      }
+
       Alert.alert(
         "Error",
-        error.message || "No se pudo procesar el documento."
+        errorMessage
       );
     } finally {
       setIsProcessing(false);
@@ -255,12 +297,33 @@ export default function UploadScreen() {
 
         <View style={styles.actionButtons}>
           <TouchableOpacity
+            style={styles.termsContainer}
+            onPress={() => setShowTerms(true)}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[
+                styles.checkboxLike,
+                isAccepted && styles.checkboxLikeChecked,
+              ]}
+            >
+              {isAccepted && (
+                <Ionicons name="checkmark" size={14} color={Colors.light.white} />
+              )}
+            </View>
+            <ThemedText style={styles.termsText}>
+              He leído y acepto los <ThemedText style={styles.termsLink}>Aviso Legal</ThemedText>
+            </ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={[
               styles.processButton,
-              (!selectedFile || isProcessing) && styles.processButtonDisabled,
+              (!selectedFile || isProcessing || !isAccepted) &&
+              styles.processButtonDisabled,
             ]}
             onPress={handleProcessDocuments}
-            disabled={!selectedFile || isProcessing}
+            disabled={!selectedFile || isProcessing || !isAccepted}
           >
             {isProcessing ? (
               <ActivityIndicator color={Colors.light.white} />
@@ -280,6 +343,15 @@ export default function UploadScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <TermsModal
+        visible={showTerms}
+        onClose={() => setShowTerms(false)}
+        onAccept={() => {
+          setIsAccepted(true);
+          setShowTerms(false);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -486,5 +558,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.light.brandBlue,
+  },
+  termsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    gap: 12,
+  },
+  checkboxLike: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: Colors.light.gray,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxLikeChecked: {
+    backgroundColor: Colors.light.brandBlue,
+    borderColor: Colors.light.brandBlue,
+  },
+  termsText: {
+    fontSize: 14,
+    color: Colors.light.textGray,
+    flex: 1,
+  },
+  termsLink: {
+    color: Colors.light.brandBlue,
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
 });

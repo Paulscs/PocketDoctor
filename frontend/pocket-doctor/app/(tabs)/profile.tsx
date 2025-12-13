@@ -59,7 +59,7 @@ export default function ProfileScreen() {
     "background"
   );
 
-  const { session, userProfile } = useAuthStore();
+  const { session, userProfile, logout } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile>(INITIAL_PROFILE);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -163,10 +163,15 @@ export default function ProfileScreen() {
     console.log("Already on profile tab");
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     console.log("Logging out...");
-    // TODO: Implement actual logout functionality
-    router.push("/login");
+    try {
+      await logout();
+      router.replace("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+      Alert.alert("Error", "No se pudo cerrar sesión");
+    }
   };
 
   if (isLoading) {
@@ -283,7 +288,7 @@ export default function ProfileScreen() {
             />
           </View>
         </View>
- {/* Birth Date Section */}
+        {/* Birth Date Section */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Fecha de Nacimiento</ThemedText>
           <View style={styles.inputContainer}>
@@ -297,7 +302,7 @@ export default function ProfileScreen() {
             />
           </View>
         </View>
-        
+
         {/* Medical Information Section */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Información Médica</ThemedText>
@@ -439,7 +444,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-       
+
 
         {/* Save Changes Button */}
         {isSaving ? (

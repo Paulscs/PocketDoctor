@@ -373,11 +373,41 @@ export default function LoginScreen() {
     clearError();
     try {
       await login(email, password); // tu store debe llamar a supabase.auth.signInWithPassword
-      router.push("/(tabs)/home");
+      // Navigation is handled by useEffect when session updates
     } catch (err) {
       // el store ya maneja error
     }
   }, [validate, login, email, password, clearError]);
+
+  // Sync store error with local state and animation
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (error) {
+      setShowError(true);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+
+      // Auto-hide after 4 seconds
+      timer = setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowError(false);
+          clearError(); // Clear in store
+        });
+      }, 4000);
+    } else {
+      setShowError(false);
+      fadeAnim.setValue(0);
+    }
+
+    return () => clearTimeout(timer);
+  }, [error, fadeAnim, clearError]);
 
   // ------------ GOOGLE LOGIN (SUPABASE OAUTH) ------------
 
@@ -517,7 +547,7 @@ export default function LoginScreen() {
 
       console.log("[GOOGLE] login OK, navegando al home");
       Alert.alert("Bienvenido", "Inicio de sesión correcto con Google ✅");
-      router.replace("/(tabs)/home"); // uso replace para sacar /login del stack
+      // Navigation is handled by useEffect when session updates
     } catch (err) {
       console.error("[GOOGLE] error inesperado:", err);
       Alert.alert(

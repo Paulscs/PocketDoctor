@@ -15,6 +15,7 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { router, useLocalSearchParams } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
+import { useChatStore } from "@/src/store/chatStore";
 
 export default function IAAnalyticsScreen() {
   const params = useLocalSearchParams();
@@ -35,54 +36,79 @@ export default function IAAnalyticsScreen() {
     process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:8000";
 
   React.useEffect(() => {
-    const fetchAnalysis = async () => {
-      try {
-        if (!params.ocrData) {
-          throw new Error("No se recibieron datos del documento.");
+    const loadAnalysis = async () => {
+      // 1. History mode (Offline/Cached data)
+      if (params.historyData) {
+        try {
+          const data = typeof params.historyData === 'string'
+            ? JSON.parse(params.historyData)
+            : params.historyData;
+          setAnalysisData(data);
+        } catch (err: any) {
+          setError("Error cargando datos del historial.");
+        } finally {
+          setLoading(false);
         }
-
-        const ocrResult = typeof params.ocrData === 'string'
-          ? JSON.parse(params.ocrData)
-          : params.ocrData;
-
-        // Prepare payload for LLM analysis
-        const payload = {
-          ocr_text: ocrResult.text || "",
-          patient_profile: ocrResult.analysis_input?.patient_profile || null,
-          draft_analysis_input: ocrResult.analysis_input || null,
-        };
-
-        console.log("Requesting AI Analysis...");
-
-        const response = await fetch(`${API_BASE_URL}/ocr-local/parse-llm`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(errText || "Error al analizar con IA");
-        }
-
-        const data = await response.json();
-        setAnalysisData(data);
-      } catch (err: any) {
-        console.error("Analysis Error:", err);
-        setError(err.message || "Error desconocido");
-      } finally {
-        setLoading(false);
+        return;
       }
+
+      // 2. New Analysis mode (OCR Data -> LLM)
+      const fetchNewAnalysis = async () => {
+        try {
+          if (!params.ocrData) {
+            throw new Error("No se recibieron datos del documento.");
+          }
+
+          const ocrResult = typeof params.ocrData === 'string'
+            ? JSON.parse(params.ocrData)
+            : params.ocrData;
+
+          // Prepare payload for LLM analysis
+          const payload = {
+            ocr_text: ocrResult.text || "",
+            patient_profile: ocrResult.analysis_input?.patient_profile || null,
+            draft_analysis_input: ocrResult.analysis_input || null,
+          };
+
+          console.log("Requesting AI Analysis...");
+
+          const response = await fetch(`${API_BASE_URL}/ocr-local/parse-llm`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(errText || "Error al analizar con IA");
+          }
+
+          const data = await response.json();
+          setAnalysisData(data);
+        } catch (err: any) {
+          console.error("Analysis Error:", err);
+          setError(err.message || "Error desconocido");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchNewAnalysis();
     };
 
-    fetchAnalysis();
-  }, [params.ocrData]);
+    loadAnalysis();
+  }, [params.ocrData, params.historyData]);
 
   const handleViewDetailedRecommendations = () => {
-    router.push("/recommendations");
+    router.push({
+      pathname: "/recommendations",
+      params: {
+        data: JSON.stringify(analysisData)
+      }
+    });
   };
 
   const handleDownloadPDF = () => {
@@ -177,7 +203,7 @@ export default function IAAnalyticsScreen() {
             {analysisData?.analysis_input?.lab_results?.map((item: any, index: number) => (
               <View key={index} style={styles.medicalCard}>
                 <View style={styles.medicalCardHeader}>
-                  <ThemedText style={styles.medicalCardTitle}>
+                  <ThemedText style={styles.medicalCardTitle} numberOfLines={2}>
                     {item.name}
                   </ThemedText>
                   <View style={[
@@ -201,7 +227,9 @@ export default function IAAnalyticsScreen() {
                 <View style={styles.analysisSection}>
                   <ThemedText style={styles.analysisTitle}>Resultado</ThemedText>
                   <ThemedText style={styles.analysisText}>
-                    {item.value} {item.unit} (Ref: {item.ref_low} - {item.ref_high})
+                    {item.value !== null && item.value !== undefined
+                      ? `${item.value} ${item.unit || ""} ${(item.ref_low !== null && item.ref_high !== null) ? `(Ref: ${item.ref_low} - ${item.ref_high})` : ""}`
+                      : (item.value_as_string || "Sin resultado numérico")}
                   </ThemedText>
                 </View>
               </View>
@@ -224,8 +252,15 @@ export default function IAAnalyticsScreen() {
                 </ThemedText>
               </View>
 
-              {analysisData.warnings.map((warning: string, index: number) => (
-                <ThemedText key={index} style={styles.risksText}>• {warning}</ThemedText>
+              {analysisData.warnings.map((warning: { title: string, description: string }, index: number) => (
+                <View key={index} style={{ marginBottom: 12 }}>
+                  <ThemedText style={[styles.risksText, { fontWeight: '700', marginBottom: 4 }]}>
+                    • {warning.title}
+                  </ThemedText>
+                  <ThemedText style={[styles.risksText, { paddingLeft: 16 }]}>
+                    {warning.description}
+                  </ThemedText>
+                </View>
               ))}
             </View>
           )}
@@ -244,19 +279,30 @@ export default function IAAnalyticsScreen() {
         </View>
       </ScrollView>
 
-      {/* Download PDF Button */}
+
+
+      {/* Chat Action Button Section (Replaces Download PDF) */}
       <View style={styles.downloadSection}>
         <TouchableOpacity
-          style={styles.downloadButton}
-          onPress={handleDownloadPDF}
+          style={[styles.downloadButton, { flexDirection: 'row', gap: 8 }]}
+          onPress={() => {
+            if (analysisData) {
+              const uniqueAnalysisId = typeof params.historyData === 'string'
+                ? JSON.parse(params.historyData).id || `analysis-${Date.now()}`
+                : `analysis-${Date.now()}`;
+              useChatStore.getState().createSessionFromAnalysis(analysisData, uniqueAnalysisId);
+              router.push("/(tabs)/chat");
+            }
+          }}
           activeOpacity={0.7}
         >
+          <Ionicons name="chatbubbles-outline" size={24} color={Colors.light.brandBlue} />
           <ThemedText style={styles.downloadButtonText}>
-            Descargar PDF
+            Chat con Asistente
           </ThemedText>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
 
@@ -378,34 +424,43 @@ const styles = StyleSheet.create({
   },
   medicalCard: {
     backgroundColor: Colors.light.white,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 16, // Back to 16 for softer look
+    padding: 16,
+    marginBottom: 20, // Increased to 20 to be very visible
     shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
     borderWidth: 1,
     borderColor: Colors.light.lightGray,
   },
   medicalCardHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 12,
+    width: '100%', // Ensure full width
   },
   medicalCardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
     color: Colors.light.textGray,
+    flex: 1, // Take available space
+    flexShrink: 1, // FORCE shrink
+    marginRight: 8,
   },
   priorityPill: {
     backgroundColor: Colors.light.warningBg,
     borderColor: Colors.light.warningBorder,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    minWidth: 60, // Ensure it doesn't collapse
+    alignItems: 'center',
+    flexShrink: 0, // DO NOT SHRINK
   },
   priorityText: {
     fontSize: 12,
@@ -530,6 +585,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.borderGray,
     alignItems: "center",
     justifyContent: "center",
+  },
+  downloadButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.light.brandBlue,
   },
   downloadButtonText: {
     fontSize: 16,
