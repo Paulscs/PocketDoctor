@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
-import { uploadAsync, FileSystemUploadType } from "expo-file-system/legacy";
+// 1. IMPORTANTE: Importar ImagePicker
+import * as ImagePicker from "expo-image-picker"; 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { TermsModal } from "@/components/TermsModal";
@@ -25,7 +26,6 @@ type SelectedFile = {
   uri: string;
 };
 
-// Ensure this points to your FastAPI server
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:8000";
 
@@ -41,7 +41,7 @@ export default function UploadScreen() {
   const handleFilePress = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: "application/pdf",
+        type: ["application/pdf", "image/*"], // Permitir imágenes también si se seleccionan como archivo
         copyToCacheDirectory: true,
       });
 
@@ -59,12 +59,45 @@ export default function UploadScreen() {
     }
   };
 
-  const handleCameraPress = () => {
-    Alert.alert("Info", "Funcionalidad de cámara en desarrollo.");
+  // 2. LÓGICA DE CÁMARA IMPLEMENTADA
+  const handleCameraPress = async () => {
+    try {
+      // Pedir permisos
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (permissionResult.granted === false) {
+        Alert.alert("Permiso requerido", "Es necesario acceder a la cámara para tomar fotos de los documentos.");
+        return;
+      }
+
+      // Abrir cámara
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8, // Calidad alta pero optimizada para subida
+        allowsEditing: true, // Permitir recortar la imagen (útil para documentos)
+      });
+
+      if (!result.canceled) {
+        const asset = result.assets[0];
+        
+        // Determinar nombre y tipo
+        const fileName = asset.fileName || `foto_${Date.now()}.jpg`;
+        const fileType = asset.mimeType || "image/jpeg";
+
+        setSelectedFile({
+          name: fileName,
+          type: fileType,
+          uri: asset.uri,
+        });
+      }
+    } catch (error) {
+      console.error("Error opening camera:", error);
+      Alert.alert("Error", "No se pudo abrir la cámara");
+    }
   };
 
   const fetchWithTimeout = async (resource: string, options: RequestInit & { timeout?: number } = {}) => {
-    const { timeout = 120000 } = options; // Default 120 seconds
+    const { timeout = 120000 } = options; 
     
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
@@ -72,7 +105,7 @@ export default function UploadScreen() {
     try {
       const response = await fetch(resource, {
         ...options,
-        signal: controller.signal as AbortSignal, // Cast for RN compatibility
+        signal: controller.signal as AbortSignal, 
       });
       clearTimeout(id);
       return response;
@@ -99,6 +132,7 @@ export default function UploadScreen() {
       console.log("Sending to:", `${API_BASE_URL}/ocr-local/pdf`);
 
       const formData = new FormData();
+      // TypeScript hack para React Native FormData
       formData.append('file', {
         uri: selectedFile.uri,
         name: selectedFile.name,
@@ -109,9 +143,10 @@ export default function UploadScreen() {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
+          // Nota: No agregar 'Content-Type': 'multipart/form-data', fetch lo hace automáticamente
         },
         body: formData,
-        timeout: 120000, // 2 minutes
+        timeout: 120000, 
       });
 
       if (!response.ok) {
@@ -122,7 +157,6 @@ export default function UploadScreen() {
       const ocrResult = await response.json();
       console.log("OCR Success:", ocrResult.items?.length, "items found");
 
-      // Direct navigation to AI Analytics as requested
       router.push({
         pathname: "/ai-analytics",
         params: { ocrData: JSON.stringify(ocrResult) },
@@ -242,7 +276,7 @@ export default function UploadScreen() {
             <View style={styles.uploadOptions}>
               <TouchableOpacity
                 style={styles.optionButton}
-                onPress={handleCameraPress}
+                onPress={handleCameraPress} // Ahora llama a la función real
                 activeOpacity={0.7}
               >
                 <Ionicons
@@ -272,7 +306,7 @@ export default function UploadScreen() {
           <View style={styles.selectedFileContainer}>
             <View style={styles.selectedFile}>
               <IconSymbol
-                name="doc.fill"
+                name={selectedFile.type.includes('pdf') ? "doc.fill" : "photo.fill"}
                 size={24}
                 color={Colors.light.brandBlue}
               />
