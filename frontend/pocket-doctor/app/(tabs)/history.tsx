@@ -27,7 +27,7 @@ interface MedicalResult {
   raw_data: any;
 }
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:8000";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://192.168.0.65:8000";
 
 // Mock removed
 

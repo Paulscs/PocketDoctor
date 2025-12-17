@@ -27,7 +27,7 @@ type SelectedFile = {
 };
 
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:8000";
+  process.env.EXPO_PUBLIC_API_BASE_URL || "http://192.168.0.65:8000";
 
 export default function UploadScreen() {
   const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
