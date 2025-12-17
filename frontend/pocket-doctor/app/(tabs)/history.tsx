@@ -16,6 +16,7 @@ import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
 import { useState, useCallback } from "react";
 import { useFocusEffect } from "expo-router";
+import { apiClient } from "@/src/utils/apiClient";
 
 interface MedicalResult {
   id: string;
@@ -27,7 +28,7 @@ interface MedicalResult {
   raw_data: any;
 }
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://192.168.0.65:8000";
+// API_BASE_URL removed
 
 // Mock removed
 
@@ -96,10 +97,8 @@ export default function HistoryScreen() {
 
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/ocr-local/history`, {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+      const response = await apiClient("ocr-local/history", {
+        token: session.access_token,
       });
 
       if (!response.ok) throw new Error("Error fetching history");

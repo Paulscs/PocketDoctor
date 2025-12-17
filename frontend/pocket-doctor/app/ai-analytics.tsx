@@ -16,6 +16,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
 import { useChatStore } from "@/src/store/chatStore";
+import { apiClient } from "@/src/utils/apiClient";
 
 export default function IAAnalyticsScreen() {
   const params = useLocalSearchParams();
@@ -31,9 +32,7 @@ export default function IAAnalyticsScreen() {
     "background"
   );
 
-  // Ensure this points to your FastAPI server
-  const API_BASE_URL =
-    process.env.EXPO_PUBLIC_API_BASE_URL || "http://192.168.0.65:8000";
+  // API_BASE_URL removed
 
   React.useEffect(() => {
     const loadAnalysis = async () => {
@@ -72,12 +71,12 @@ export default function IAAnalyticsScreen() {
 
           console.log("Requesting AI Analysis...");
 
-          const response = await fetch(`${API_BASE_URL}/ocr-local/parse-llm`, {
+          const response = await apiClient("ocr-local/parse-llm", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken}`,
             },
+            token: accessToken,
             body: JSON.stringify(payload),
           });
 

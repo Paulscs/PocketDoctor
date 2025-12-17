@@ -7,10 +7,12 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  FlatList,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 // 1. IMPORTANTE: Importar ImagePicker
-import * as ImagePicker from "expo-image-picker"; 
+import * as ImagePicker from "expo-image-picker";
+import { apiClient } from "@/src/utils/apiClient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { TermsModal } from "@/components/TermsModal";
@@ -21,16 +23,16 @@ import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
 
 type SelectedFile = {
+  id: string;
   name: string;
   type: string;
   uri: string;
 };
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL || "http://192.168.0.65:8000";
+// API_BASE_URL removed (using centralized apiClient)
 
 export default function UploadScreen() {
-  const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
@@ -43,16 +45,24 @@ export default function UploadScreen() {
       const result = await DocumentPicker.getDocumentAsync({
         type: ["application/pdf", "image/*"], // Permitir imágenes también si se seleccionan como archivo
         copyToCacheDirectory: true,
+        multiple: false,
       });
 
       if (result.canceled) return;
 
       const asset = result.assets[0];
-      setSelectedFile({
+      const newFile = {
+        id: Date.now().toString(),
         name: asset.name || "documento.pdf",
         type: asset.mimeType || "application/pdf",
         uri: asset.uri,
-      });
+      };
+
+      if (newFile.type?.includes("pdf")) {
+        setSelectedFiles([newFile]);
+      } else {
+        setSelectedFiles([newFile]);
+      }
     } catch (error) {
       console.error("Error selecting file:", error);
       Alert.alert("Error", "No se pudo seleccionar el archivo");
@@ -70,6 +80,12 @@ export default function UploadScreen() {
         return;
       }
 
+      // Si ya hay un PDF, limpiar porque no mezclamos
+      const hasPdf = selectedFiles.some(f => f.type.includes("pdf"));
+      if (hasPdf) {
+        setSelectedFiles([]);
+      }
+
       // Abrir cámara
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -79,15 +95,21 @@ export default function UploadScreen() {
 
       if (!result.canceled) {
         const asset = result.assets[0];
-        
+
         // Determinar nombre y tipo
         const fileName = asset.fileName || `foto_${Date.now()}.jpg`;
         const fileType = asset.mimeType || "image/jpeg";
 
-        setSelectedFile({
+        const newFile: SelectedFile = {
+          id: Date.now().toString(),
           name: fileName,
           type: fileType,
           uri: asset.uri,
+        };
+
+        setSelectedFiles((prev) => {
+          if (prev.some(f => f.type.includes('pdf'))) return [newFile];
+          return [...prev, newFile];
         });
       }
     } catch (error) {
@@ -96,28 +118,19 @@ export default function UploadScreen() {
     }
   };
 
-  const fetchWithTimeout = async (resource: string, options: RequestInit & { timeout?: number } = {}) => {
-    const { timeout = 120000 } = options; 
-    
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
-  
-    try {
-      const response = await fetch(resource, {
-        ...options,
-        signal: controller.signal as AbortSignal, 
-      });
-      clearTimeout(id);
-      return response;
-    } catch (error) {
-      clearTimeout(id);
-      throw error;
-    }
+  const removeFile = (id: string) => {
+    setSelectedFiles(prev => prev.filter(f => f.id !== id));
   };
 
+
+  // Helper functions removed
+
   const handleProcessDocuments = async () => {
-    if (!selectedFile) {
-      Alert.alert("Error", "Por favor selecciona un archivo primero");
+    // console.log("handleProcessDocuments started...");
+    Alert.alert("Debug", `Iniciando subida de ${selectedFiles.length} archivos`);
+
+    if (selectedFiles.length === 0) {
+      Alert.alert("Error", "Por favor selecciona al menos un archivo");
       return;
     }
 
@@ -129,28 +142,31 @@ export default function UploadScreen() {
     setIsProcessing(true);
 
     try {
-      console.log("Sending to:", `${API_BASE_URL}/ocr-local/pdf`);
-
       const formData = new FormData();
-      // TypeScript hack para React Native FormData
-      formData.append('file', {
-        uri: selectedFile.uri,
-        name: selectedFile.name,
-        type: selectedFile.type,
-      } as any);
-
-      const response = await fetchWithTimeout(`${API_BASE_URL}/ocr-local/pdf`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          // Nota: No agregar 'Content-Type': 'multipart/form-data', fetch lo hace automáticamente
-        },
-        body: formData,
-        timeout: 120000, 
+      selectedFiles.forEach((file, index) => {
+        console.log(`Appending file ${index}:`, file.name, file.type, file.uri);
+        // @ts-ignore
+        formData.append('files', {
+          uri: file.uri,
+          name: file.name,
+          type: file.type,
+        } as any);
       });
+
+      console.log("Sending files via apiClient...");
+
+      const response = await apiClient("ocr-local/pdf", {
+        method: "POST",
+        token: accessToken || "",
+        body: formData,
+        timeout: 120000,
+      });
+
+      console.log("Fetch returned with status:", response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.log("Error response text:", errorText);
         throw new Error(`Server Error: ${response.status} ${errorText}`);
       }
 
@@ -163,18 +179,10 @@ export default function UploadScreen() {
       });
 
     } catch (error: any) {
-      console.error("Upload Error:", error);
-      
+      console.error("Upload Error caught:", error);
       let errorMessage = error.message || "No se pudo procesar el documento.";
-      
-      if (error.name === 'AbortError' || error.message === 'Aborted' || error.message.includes('Network request failed')) {
-        errorMessage = "El servidor tardó demasiado en responder. Es normal si es la primera vez. Por favor intenta de nuevo.";
-      }
-
-      Alert.alert(
-        "Error",
-        errorMessage
-      );
+      // Specific error handling if needed
+      Alert.alert("Error", errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -183,6 +191,30 @@ export default function UploadScreen() {
   const handleCancel = () => {
     router.back();
   };
+
+  const renderFileItem = ({ item }: { item: SelectedFile }) => (
+    <View style={styles.fileItem}>
+      <View style={styles.fileIcon}>
+        <IconSymbol
+          name={item.type.includes('pdf') ? "doc.fill" : "photo.fill"}
+          size={24}
+          color={Colors.light.brandBlue}
+        />
+      </View>
+
+      {item.type.includes("image") ? (
+        <Image source={{ uri: item.uri }} style={styles.thumbnail} resizeMode="cover" />
+      ) : (
+        <View style={styles.pdfThumbnailPlaceholder}>
+          <ThemedText style={{ fontSize: 10, color: '#666' }}>PDF</ThemedText>
+        </View>
+      )}
+
+      <TouchableOpacity style={styles.removeButton} onPress={() => removeFile(item.id)}>
+        <Ionicons name="close-circle" size={20} color={Colors.light.error} />
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -230,48 +262,12 @@ export default function UploadScreen() {
         <ThemedText style={styles.title}>Subir resultados médicos</ThemedText>
 
         <View style={styles.uploadArea}>
-          <TouchableOpacity
-            style={styles.uploadButton}
-            onPress={handleFilePress}
-            activeOpacity={0.7}
-          >
+          <View style={styles.uploadControls}>
             <ThemedText style={styles.uploadText}>
-              {selectedFile
-                ? "Archivo seleccionado ✓"
+              {selectedFiles.length > 0
+                ? `${selectedFiles.length} archivo(s) seleccionado(s)`
                 : "Selecciona un archivo"}
             </ThemedText>
-
-            <View style={styles.formatSection}>
-              <ThemedText style={styles.formatTitle}>
-                Formatos aceptados
-              </ThemedText>
-              <View style={styles.formatList}>
-                <View style={styles.formatItem}>
-                  <IconSymbol
-                    name="doc.fill"
-                    size={20}
-                    color={Colors.light.error}
-                  />
-                  <ThemedText style={styles.formatText}>PDF</ThemedText>
-                </View>
-                <View style={styles.formatItem}>
-                  <IconSymbol
-                    name="photo.fill"
-                    size={20}
-                    color={Colors.light.lightBlue}
-                  />
-                  <ThemedText style={styles.formatText}>JPG</ThemedText>
-                </View>
-                <View style={styles.formatItem}>
-                  <IconSymbol
-                    name="photo.fill"
-                    size={20}
-                    color={Colors.light.success}
-                  />
-                  <ThemedText style={styles.formatText}>PNG</ThemedText>
-                </View>
-              </View>
-            </View>
 
             <View style={styles.uploadOptions}>
               <TouchableOpacity
@@ -299,33 +295,20 @@ export default function UploadScreen() {
                 <ThemedText style={styles.optionText}>Archivo</ThemedText>
               </TouchableOpacity>
             </View>
-          </TouchableOpacity>
+          </View>
         </View>
 
-        {selectedFile && (
-          <View style={styles.selectedFileContainer}>
-            <View style={styles.selectedFile}>
-              <IconSymbol
-                name={selectedFile.type.includes('pdf') ? "doc.fill" : "photo.fill"}
-                size={24}
-                color={Colors.light.brandBlue}
-              />
-              <View style={styles.fileInfo}>
-                <ThemedText style={styles.fileName}>
-                  {selectedFile.name}
-                </ThemedText>
-                <ThemedText style={styles.fileType}>
-                  {selectedFile.type}
-                </ThemedText>
-              </View>
-              <TouchableOpacity onPress={() => setSelectedFile(null)}>
-                <Ionicons
-                  name="close-circle"
-                  size={24}
-                  color={Colors.light.gray}
-                />
-              </TouchableOpacity>
-            </View>
+        {selectedFiles.length > 0 && (
+          <View style={styles.filesListContainer}>
+            <ThemedText style={styles.filesListTitle}>Archivos listos para enviar:</ThemedText>
+            <FlatList
+              data={selectedFiles}
+              renderItem={renderFileItem}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filesListContent}
+            />
           </View>
         )}
 
@@ -353,11 +336,11 @@ export default function UploadScreen() {
           <TouchableOpacity
             style={[
               styles.processButton,
-              (!selectedFile || isProcessing || !isAccepted) &&
+              (selectedFiles.length === 0 || isProcessing || !isAccepted) &&
               styles.processButtonDisabled,
             ]}
             onPress={handleProcessDocuments}
-            disabled={!selectedFile || isProcessing || !isAccepted}
+            disabled={selectedFiles.length === 0 || isProcessing || !isAccepted}
           >
             {isProcessing ? (
               <ActivityIndicator color={Colors.light.white} />
@@ -470,13 +453,14 @@ const styles = StyleSheet.create({
   uploadArea: {
     marginBottom: 32,
   },
-  uploadButton: {
+  // Modified styles for new layout
+  uploadControls: {
+    alignItems: 'center',
     borderWidth: 2,
     borderStyle: "dashed",
     borderColor: Colors.light.brandBlue,
     borderRadius: 16,
-    padding: 32,
-    alignItems: "center",
+    padding: 24,
     backgroundColor: Colors.light.lightGray,
   },
   uploadText: {
@@ -535,32 +519,63 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: Colors.light.brandBlue,
   },
-  selectedFileContainer: {
+
+  // File List Styles
+  filesListContainer: {
     marginBottom: 24,
+    height: 140,
   },
-  selectedFile: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.light.white,
-    borderWidth: 1,
-    borderColor: Colors.light.success,
-    borderRadius: 12,
-    padding: 16,
-    gap: 12,
-  },
-  fileInfo: {
-    flex: 1,
-  },
-  fileName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.black,
-    marginBottom: 2,
-  },
-  fileType: {
+  filesListTitle: {
     fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 10,
     color: Colors.light.gray,
   },
+  filesListContent: {
+    gap: 12,
+    paddingRight: 20,
+  },
+  fileItem: {
+    width: 100,
+    height: 120,
+    backgroundColor: Colors.light.white,
+    borderWidth: 1,
+    borderColor: Colors.light.borderGray,
+    borderRadius: 8,
+    padding: 8,
+    alignItems: 'center',
+    position: 'relative',
+    justifyContent: 'center'
+  },
+  fileIcon: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    zIndex: 1,
+  },
+  thumbnail: {
+    width: '100%',
+    height: 80,
+    borderRadius: 4,
+    marginTop: 14
+  },
+  pdfThumbnailPlaceholder: {
+    width: '100%',
+    height: 80,
+    backgroundColor: '#eee',
+    marginTop: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 4
+  },
+  removeButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: 'white',
+    borderRadius: 12,
+  },
+
   actionButtons: {
     marginTop: "auto",
     gap: 12,
