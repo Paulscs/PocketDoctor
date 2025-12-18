@@ -17,6 +17,7 @@ import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useAuthStore } from "@/src/store";
 import { getUserProfile, getRootMessage, UserProfile } from "@/src/services/user";
+import { apiClient } from "@/src/utils/apiClient";
 import { useState } from "react";
 
 export default function HomeScreen() {
@@ -102,6 +103,85 @@ export default function HomeScreen() {
 
     return () => { mounted = false; };
   }, [session?.access_token]);
+
+  // State for Recent Activities
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(false);
+  const [hasLoadedActivities, setHasLoadedActivities] = useState(false);
+
+  // Use useFocusEffect to refresh analytics when navigating back to Home
+  // (Import useFocusEffect from expo-router if not already imported)
+  // But wait, useFocusEffect in react-navigation/expo-router is standard.
+  // I need to add it to imports first. For now I will add the logic.
+
+  useEffect(() => {
+    if (session?.access_token) {
+      fetchRecentActivities();
+    }
+  }, [session?.access_token]);
+
+  const fetchRecentActivities = async () => {
+    try {
+      setLoadingActivities(true);
+      const response = await apiClient("ocr-local/history", {
+        token: session?.access_token || "",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Sort by date desc (if not already) and take top 3
+        // DB usually returns desc, but let's be safe if needed.
+        // Assuming API returns generic list.
+        const topActivities = data.slice(0, 3).map((item: any) => ({
+          id: item.id.toString(),
+          title: item.titulo || "Análisis",
+          date: item.created_at,
+          type: item.tipo || "other",
+          status: item.estado === "alert" ? "elevated" : "normal",
+          description: item.resumen
+        }));
+        setRecentActivities(topActivities);
+      }
+    } catch (e) {
+      console.error("Error fetching home activities:", e);
+    } finally {
+      setLoadingActivities(false);
+      setHasLoadedActivities(true);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "normal": return Colors.light.success;
+      case "elevated": return Colors.light.warning;
+      case "critical": return Colors.light.error;
+      default: return Colors.light.gray;
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "normal": return "Normal";
+      case "elevated": return "Elevado";
+      case "critical": return "Crítico";
+      default: return "Info";
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return "Hace un momento";
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `Hace ${diffInMinutes} min`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `Hace ${diffInHours} horas`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `Hace ${diffInDays} días`;
+  };
 
   return (
     <SafeAreaView style={containerStyle}>
@@ -286,124 +366,66 @@ export default function HomeScreen() {
             <ThemedText style={styles.sectionTitle}>
               Actividades recientes
             </ThemedText>
-            <TouchableOpacity
-              onPress={handleViewAllActivities}
-              accessibilityLabel="Ver todas las actividades"
-              accessibilityRole="button"
-              accessibilityHint="Navega a la pantalla de historial completo"
-            >
-              <ThemedText style={styles.seeAllLink}>Ver todas</ThemedText>
-            </TouchableOpacity>
+            {recentActivities.length > 0 && (
+              <TouchableOpacity
+                onPress={handleViewAllActivities}
+                accessibilityLabel="Ver todas las actividades"
+                accessibilityRole="button"
+                accessibilityHint="Navega a la pantalla de historial completo"
+              >
+                <ThemedText style={styles.seeAllLink}>Ver todas</ThemedText>
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={styles.activitiesList}>
-            {/* Blood Test Result */}
-            <View style={styles.activityItem}>
-              <View style={styles.activityIcon}>
-                <Ionicons
-                  name="water"
-                  size={20}
-                  color={Colors.light.brandBlue}
-                />
+            {loadingActivities && !hasLoadedActivities ? (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <ThemedText>Cargando actividad...</ThemedText>
               </View>
-              <View style={styles.activityContent}>
-                <ThemedText style={styles.activityTitle}>
-                  Resultado sanguíneo
+            ) : recentActivities.length > 0 ? (
+              recentActivities.map((activity) => (
+                <View key={activity.id} style={styles.activityItem}>
+                  <View style={styles.activityIcon}>
+                    <Ionicons
+                      name="document-text"
+                      size={20}
+                      color={Colors.light.brandBlue}
+                    />
+                  </View>
+                  <View style={styles.activityContent}>
+                    <ThemedText style={styles.activityTitle}>
+                      {activity.title}
+                    </ThemedText>
+                    <ThemedText style={styles.activityTime}>
+                      {formatTimeAgo(activity.date)}
+                    </ThemedText>
+                  </View>
+                  <View
+                    style={[
+                      styles.statusPill,
+                      { backgroundColor: getStatusColor(activity.status) },
+                    ]}
+                  >
+                    <ThemedText style={styles.statusText}>{getStatusText(activity.status)}</ThemedText>
+                  </View>
+                </View>
+              ))
+            ) : (
+              // Empty State
+              <View style={styles.emptyActivityContainer}>
+                <View style={styles.emptyIconContainer}>
+                  <Ionicons name="clipboard-outline" size={40} color={Colors.light.placeholderGray} />
+                </View>
+                <ThemedText style={styles.emptyTitle}>Sin actividades recientes</ThemedText>
+                <ThemedText style={styles.emptyDescription}>
+                  Sube tús análisis médicos para llevar un control detallado de tu salud con IA.
                 </ThemedText>
-                <ThemedText style={styles.activityTime}>
-                  Hace 2 horas
-                </ThemedText>
+                <TouchableOpacity style={styles.emptyButton} onPress={handleUploadResults}>
+                  <ThemedText style={styles.emptyButtonText}>Analizar mi primer documento</ThemedText>
+                </TouchableOpacity>
               </View>
-              <View
-                style={[
-                  styles.statusPill,
-                  { backgroundColor: Colors.light.success },
-                ]}
-              >
-                <ThemedText style={styles.statusText}>Normal</ThemedText>
-              </View>
-            </View>
-
-            {/* Cardiac Analysis */}
-            <View style={styles.activityItem}>
-              <View style={styles.activityIcon}>
-                <Ionicons
-                  name="heart"
-                  size={20}
-                  color={Colors.light.brandBlue}
-                />
-              </View>
-              <View style={styles.activityContent}>
-                <ThemedText style={styles.activityTitle}>
-                  Análisis cardíaco
-                </ThemedText>
-                <ThemedText style={styles.activityTime}>
-                  Hace 2 horas
-                </ThemedText>
-              </View>
-              <View
-                style={[
-                  styles.statusPill,
-                  { backgroundColor: Colors.light.warning },
-                ]}
-              >
-                <ThemedText style={styles.statusText}>Elevado</ThemedText>
-              </View>
-            </View>
-
-            {/* Temperature Reading */}
-            <View style={styles.activityItem}>
-              <View style={styles.activityIcon}>
-                <Ionicons
-                  name="thermometer"
-                  size={20}
-                  color={Colors.light.brandBlue}
-                />
-              </View>
-              <View style={styles.activityContent}>
-                <ThemedText style={styles.activityTitle}>
-                  Lectura de temperatura
-                </ThemedText>
-                <ThemedText style={styles.activityTime}>
-                  Hace 2 horas
-                </ThemedText>
-              </View>
-              <View
-                style={[
-                  styles.statusPill,
-                  { backgroundColor: Colors.light.success },
-                ]}
-              >
-                <ThemedText style={styles.statusText}>Normal</ThemedText>
-              </View>
-            </View>
-
-            {/* Cholesterol Exam */}
-            <View style={styles.activityItem}>
-              <View style={styles.activityIcon}>
-                <Ionicons
-                  name="add-circle"
-                  size={20}
-                  color={Colors.light.brandBlue}
-                />
-              </View>
-              <View style={styles.activityContent}>
-                <ThemedText style={styles.activityTitle}>
-                  Examen de colesterol
-                </ThemedText>
-                <ThemedText style={styles.activityTime}>
-                  Hace 2 horas
-                </ThemedText>
-              </View>
-              <View
-                style={[
-                  styles.statusPill,
-                  { backgroundColor: Colors.light.warning },
-                ]}
-              >
-                <ThemedText style={styles.statusText}>Elevado</ThemedText>
-              </View>
-            </View>
+            )}
           </View>
         </View>
 
@@ -733,5 +755,47 @@ const styles = StyleSheet.create({
     color: Colors.light.muted,
     marginTop: 8,
     textAlign: 'center',
+  },
+
+  // Empty State Styles
+  emptyActivityContainer: {
+    padding: Spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.light.lightGray,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.light.textGray,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyDescription: {
+    fontSize: 14,
+    color: Colors.light.gray,
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    lineHeight: 20,
+  },
+  emptyButton: {
+    backgroundColor: Colors.light.brandBlue,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+  },
+  emptyButtonText: {
+    color: Colors.light.white,
+    fontWeight: '600',
+    fontSize: 14,
   },
 });

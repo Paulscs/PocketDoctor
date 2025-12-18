@@ -101,6 +101,28 @@ export default function IAAnalyticsScreen() {
     loadAnalysis();
   }, [params.ocrData, params.historyData]);
 
+  // Stabilize the ID for this analysis session
+  const uniqueAnalysisId = React.useMemo(() => {
+    if (params.historyData) {
+      try {
+        const parsed = typeof params.historyData === 'string'
+          ? JSON.parse(params.historyData)
+          : params.historyData;
+        return parsed.id ? parsed.id.toString() : `analysis-${Date.now()}`;
+      } catch {
+        return `analysis-${Date.now()}`;
+      }
+    }
+    return `analysis-${Date.now()}`;
+  }, [params.historyData]); // Depend only on params.historyData
+
+  React.useEffect(() => {
+    // Auto-create/Resume chat session once data is available
+    if (analysisData && !loading) {
+      useChatStore.getState().createSessionFromAnalysis(analysisData, uniqueAnalysisId);
+    }
+  }, [analysisData, loading, uniqueAnalysisId]);
+
   const handleViewDetailedRecommendations = () => {
     router.push({
       pathname: "/recommendations",
@@ -285,12 +307,13 @@ export default function IAAnalyticsScreen() {
         <TouchableOpacity
           style={[styles.downloadButton, { flexDirection: 'row', gap: 8 }]}
           onPress={() => {
+            // Ensure the session is active before navigating
+            // The useEffect should have handled it, but let's be safe
             if (analysisData) {
-              const uniqueAnalysisId = typeof params.historyData === 'string'
-                ? JSON.parse(params.historyData).id || `analysis-${Date.now()}`
-                : `analysis-${Date.now()}`;
               useChatStore.getState().createSessionFromAnalysis(analysisData, uniqueAnalysisId);
               router.push("/(tabs)/chat");
+            } else {
+              console.warn("Analysis data not ready for chat");
             }
           }}
           activeOpacity={0.7}
@@ -584,11 +607,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.borderGray,
     alignItems: "center",
     justifyContent: "center",
-  },
-  downloadButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.brandBlue,
   },
   downloadButtonText: {
     fontSize: 16,
