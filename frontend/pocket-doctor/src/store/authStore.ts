@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { supabase } from "@/src/lib/supabase";
 import type { Session, User as SupabaseUser } from "@supabase/supabase-js";
 import { getUserProfile, UserProfile } from "../services/user";
+import { useChatStore } from "./chatStore";
 
 export type User = SupabaseUser;
 
@@ -264,6 +265,8 @@ export const useAuthStore = create<AuthStore>(set => ({
       await supabase.auth.signOut();
       console.log("[auth] logout:success");
       set({ user: null, session: null, userProfile: null, isLoading: false });
+      // Clear all chat sessions from local storage
+      useChatStore.getState().clearAllSessions();
     } catch (e: any) {
       console.error("[auth] logout:exception", e?.message ?? String(e));
       set({ error: e?.message ?? "Error al cerrar sesión", isLoading: false });
@@ -341,5 +344,6 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     }
   } else if (event === "SIGNED_OUT") {
     useAuthStore.setState({ user: null, session: null, userProfile: null, isInitialized: true });
+    useChatStore.getState().clearAllSessions();
   }
 });

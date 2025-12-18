@@ -27,7 +27,7 @@ interface SideMenuProps {
   readonly onClose: () => void;
   readonly chatSessions: readonly ChatSession[];
   readonly onSelectSession: (sessionId: string) => void;
-  readonly onCreateNewChat: () => void;
+  // readonly onCreateNewChat: () => void; // Removed per requirements
   readonly onDeleteSession: (sessionId: string) => void;
 }
 
@@ -39,7 +39,7 @@ export function SideMenu({
   onClose,
   chatSessions,
   onSelectSession,
-  onCreateNewChat,
+  // onCreateNewChat,
   onDeleteSession,
 }: SideMenuProps) {
   const backgroundColor = useThemeColor(
@@ -85,10 +85,10 @@ export function SideMenu({
     [onSelectSession, onClose]
   );
 
-  const handleNewChat = useCallback(() => {
-    onCreateNewChat();
-    onClose();
-  }, [onCreateNewChat, onClose]);
+  // const handleNewChat = useCallback(() => {
+  //   onCreateNewChat();
+  //   onClose();
+  // }, [onCreateNewChat, onClose]);
 
   React.useEffect(() => {
     if (isVisible) {
@@ -145,7 +145,8 @@ export function SideMenu({
           </View>
 
           {/* New Chat Button */}
-          <TouchableOpacity
+          {/* New Chat Button Removed */}
+          {/* <TouchableOpacity
             style={styles.newChatButton}
             onPress={handleNewChat}
             activeOpacity={0.7}
@@ -154,7 +155,7 @@ export function SideMenu({
             <ThemedText style={styles.newChatText}>
               Nueva conversación
             </ThemedText>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           {/* Chat Sessions */}
           <ScrollView
@@ -214,10 +215,10 @@ export function SideMenu({
                   color={Colors.light.muted}
                 />
                 <ThemedText style={styles.emptyStateText}>
-                  No hay conversaciones
+                  No hay chats disponibles
                 </ThemedText>
                 <ThemedText style={styles.emptyStateSubtext}>
-                  Inicia una nueva conversación para comenzar
+                  Sube un análisis médico para iniciar una conversación con el asistente IA.
                 </ThemedText>
               </View>
             )}

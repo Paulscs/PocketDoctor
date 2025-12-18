@@ -18,6 +18,7 @@ import { Colors } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAuthStore } from "@/src/store";
 import { getUserProfile } from "@/src/services/user";
+import * as AuthSession from "expo-auth-session";
 
 import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri } from "expo-auth-session";
@@ -412,148 +413,134 @@ export default function LoginScreen() {
   // ------------ GOOGLE LOGIN (SUPABASE OAUTH) ------------
 
   // ------------ GOOGLE LOGIN (SUPABASE OAUTH) ------------
+  // ------------ GOOGLE LOGIN (SUPABASE OAUTH) ------------
+
+  // ------------ GOOGLE LOGIN (SUPABASE OAUTH) ------------
 
   const handleGoogleLogin = useCallback(async () => {
     try {
-      const redirectTo = makeRedirectUri({
-        scheme,
+      // 1. Crear redirectUri explícito "pocketdoctor://auth/callback"
+      const redirectUri = makeRedirectUri({
+        scheme: "pocketdoctor",
         path: "auth/callback",
       });
 
-      console.log("[GOOGLE] redirectTo:", redirectTo);
+      console.log("[GOOGLE] redirectUri:", redirectUri);
 
-      // 1) Pedimos a Supabase la URL de login con Google
+      // 2. Iniciar el flujo de OAuth con Supabase
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo,
-          skipBrowserRedirect: true, // usamos nuestro propio navegador
+          redirectTo: redirectUri,
+          skipBrowserRedirect: true,
         },
       });
 
       if (error || !data?.url) {
         console.error("[GOOGLE] signInWithOAuth error:", error);
-        Alert.alert(
-          "Error",
-          error?.message ?? "No se pudo iniciar sesión con Google"
-        );
+        Alert.alert("Error", error?.message ?? "No se pudo iniciar con Google");
         return;
       }
 
-      console.log("[GOOGLE] auth URL:", data.url);
+      console.log("[GOOGLE] Auth URL:", data.url);
 
-      // 2) Abrimos el navegador para hacer el login con Google
-      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-      console.log("[GOOGLE] WebBrowser result:", res);
+      // 3. Abrir el navegador del sistema
+      const result = await WebBrowser.openAuthSessionAsync(
+        data.url,
+        redirectUri
+      );
 
-      // 3) Polling a getSession() hasta que Supabase cree la sesión
+      console.log("[GOOGLE] WebBrowser result:", result);
+
+      if (result.type !== "success") {
+        if (result.type === 'dismiss') {
+          Alert.alert("Cancelado", "Inicio de sesión cancelado.");
+        }
+        return;
+      }
+
+      // 4. Extraer token/code de la URL de retorno
+      const { url } = result;
+      if (!url) {
+        Alert.alert("Error", "No se recibió respuesta del navegador");
+        return;
+      }
+
+      const params = new URLSearchParams(url.split("#")[1] || url.split("?")[1]);
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      const code = params.get("code");
+
       let session: any = null;
-      let lastError: any = null;
+      let user: any = null;
 
-      for (let i = 0; i < 8; i++) {
-        const { data: sessionData, error: sessionError } =
-          await supabase.auth.getSession();
+      if (code) {
+        const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+        if (sessionError) throw sessionError;
+        session = sessionData.session;
+        user = session?.user;
+      } else if (accessToken && refreshToken) {
+        const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (sessionError) throw sessionError;
+        session = sessionData.session;
+        user = session?.user;
+      } else {
+        console.warn("[GOOGLE] No se encontraron tokens en URL:", url);
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        if (existingSession) {
+          session = existingSession;
+          user = session.user;
+        } else {
+          Alert.alert("Error", "No se pudo verificar la sesión.");
+          return; // Stop here
+        }
+      }
 
-        console.log(
-          `[GOOGLE] poll ${i}: hasSession =`,
-          !!sessionData?.session,
-          sessionError ? "con error" : "sin error"
-        );
+      if (user) {
+        // --- tu upsert (igual que antes) ---
+        const meta: any = user.user_metadata ?? {};
+        const fullName: string =
+          meta.full_name ||
+          meta.name ||
+          `${meta.given_name ?? ""} ${meta.family_name ?? ""}`.trim();
 
-        if (sessionError) {
-          lastError = sessionError;
+        let nombre = "";
+        let apellido: string | null = null;
+
+        if (meta.given_name) {
+          nombre = meta.given_name;
+          apellido = meta.family_name ?? null;
+        } else if (fullName) {
+          const parts = fullName.split(" ");
+          nombre = parts.shift() ?? "";
+          apellido = parts.length ? parts.join(" ") : null;
         }
 
-        if (sessionData?.session) {
-          session = sessionData.session;
-          break;
+        const { error: upsertError } = await supabase
+          .from("usuarios")
+          .upsert(
+            {
+              user_auth_id: user.id,
+              email: user.email ?? "",
+              nombre: nombre || null,
+              apellido,
+            },
+            { onConflict: "user_auth_id" }
+          );
+
+        if (upsertError) {
+          console.error("[GOOGLE] upsert usuarios error:", upsertError);
         }
 
-        // pequeño delay antes del siguiente intento
-        await new Promise(resolve => setTimeout(resolve, 300));
+        useAuthStore.setState({ user, session });
+        Alert.alert("Bienvenido", "Inicio de sesión correcto con Google ✅");
       }
-
-      if (!session) {
-        console.warn("[GOOGLE] No se obtuvo sesión tras el login.");
-        if (lastError) console.error("[GOOGLE] getSession lastError:", lastError);
-        Alert.alert(
-          "Error",
-          "No se encontró una sesión activa después del login con Google."
-        );
-        return;
-      }
-
-      const user = session.user;
-      console.log("[GOOGLE] usuario autenticado:", user);
-
-      // --- nombre / apellido desde metadata de Google ---
-      const meta: any = user.user_metadata ?? {};
-      const fullName: string =
-        meta.full_name ||
-        meta.name ||
-        `${meta.given_name ?? ""} ${meta.family_name ?? ""}`.trim();
-
-      let nombre = "";
-      let apellido: string | null = null;
-
-      if (meta.given_name) {
-        nombre = meta.given_name;
-        apellido = meta.family_name ?? null;
-      } else if (fullName) {
-        const parts = fullName.split(" ");
-        nombre = parts.shift() ?? "";
-        apellido = parts.length ? parts.join(" ") : null;
-      }
-
-      console.log("[GOOGLE] nombre/apellido para guardar:", { nombre, apellido });
-
-      // --- upsert en tu tabla usuarios ---
-      const { error: upsertError } = await supabase
-        .from("usuarios")
-        .upsert(
-          {
-            user_auth_id: user.id,
-            email: user.email ?? "",
-            nombre: nombre || null,
-            apellido,
-          },
-          { onConflict: "user_auth_id" }
-        );
-
-      if (upsertError) {
-        console.error("[GOOGLE] upsert usuarios error:", upsertError);
-        // no bloqueamos el acceso, solo lo logueamos
-      }
-
-      // Intentar poblar el store con el perfil antes de navegar
-      try {
-        let profile: any = null;
-        if ((session as any)?.access_token) {
-          try {
-            profile = await getUserProfile((session as any).access_token);
-          } catch (pfErr) {
-            console.warn('[GOOGLE] getUserProfile error:', pfErr);
-            profile = null;
-          }
-        }
-
-        // Actualizamos el store explícitamente para evitar race conditions
-        // al montar la pantalla principal
-        // useAuthStore es un hook de zustand, pero tiene setState disponible
-        useAuthStore.setState({ user: user ?? null, session: session ?? null, userProfile: profile });
-      } catch (errSet) {
-        console.warn('[GOOGLE] failed to set auth store:', errSet);
-      }
-
-      console.log("[GOOGLE] login OK, navegando al home");
-      Alert.alert("Bienvenido", "Inicio de sesión correcto con Google ✅");
-      // Navigation is handled by useEffect when session updates
     } catch (err) {
       console.error("[GOOGLE] error inesperado:", err);
-      Alert.alert(
-        "Error",
-        "Ocurrió un problema al iniciar sesión con Google. Inténtalo de nuevo."
-      );
+      Alert.alert("Error", "Problema iniciando sesión con Google.");
     }
   }, []);
 

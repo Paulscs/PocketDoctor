@@ -7,9 +7,12 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  FlatList,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
-import { uploadAsync, FileSystemUploadType } from "expo-file-system/legacy";
+// 1. IMPORTANTE: Importar ImagePicker
+import * as ImagePicker from "expo-image-picker";
+import { apiClient } from "@/src/utils/apiClient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { TermsModal } from "@/components/TermsModal";
@@ -18,19 +21,19 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 type SelectedFile = {
+  id: string;
   name: string;
   type: string;
   uri: string;
 };
 
-// Ensure this points to your FastAPI server
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL || "http://10.0.2.2:8000";
+// API_BASE_URL removed (using centralized apiClient)
 
 export default function UploadScreen() {
-  const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
@@ -38,53 +41,129 @@ export default function UploadScreen() {
   const session = useAuthStore((state) => state.session);
   const accessToken = session?.access_token;
 
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
   const handleFilePress = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: "application/pdf",
+        type: ["application/pdf", "image/*"],
         copyToCacheDirectory: true,
+        multiple: false,
       });
 
       if (result.canceled) return;
 
       const asset = result.assets[0];
-      setSelectedFile({
+      const newFile = {
+        id: Date.now().toString(),
         name: asset.name || "documento.pdf",
         type: asset.mimeType || "application/pdf",
         uri: asset.uri,
-      });
+      };
+
+      const isPdf = newFile.type.includes("pdf");
+      const currentIsPdf = selectedFiles.some(f => f.type.includes("pdf"));
+
+      // Logic: 
+      // 1. If incoming is PDF -> Replace all (Single PDF rule)
+      // 2. If current is PDF -> Replace all (Single PDF rule)
+      // 3. If incoming is Image AND current is Image(s) -> Append
+
+      if (isPdf || currentIsPdf) {
+        if (selectedFiles.length > 0) {
+          showToast("Archivo reemplazado. Solo se permite 1 PDF o múltiples imágenes.");
+        }
+        setSelectedFiles([newFile]);
+      } else {
+        // Appending image
+        setSelectedFiles(prev => [...prev, newFile]);
+      }
+
     } catch (error) {
       console.error("Error selecting file:", error);
       Alert.alert("Error", "No se pudo seleccionar el archivo");
     }
   };
 
-  const handleCameraPress = () => {
-    Alert.alert("Info", "Funcionalidad de cámara en desarrollo.");
-  };
-
-  const fetchWithTimeout = async (resource: string, options: RequestInit & { timeout?: number } = {}) => {
-    const { timeout = 120000 } = options; // Default 120 seconds
-    
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
-  
+  // 2. LÓGICA DE CÁMARA IMPLEMENTADA
+  const handleCameraPress = async () => {
     try {
-      const response = await fetch(resource, {
-        ...options,
-        signal: controller.signal as AbortSignal, // Cast for RN compatibility
+      // Pedir permisos
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (permissionResult.granted === false) {
+        Alert.alert("Permiso requerido", "Es necesario acceder a la cámara para tomar fotos de los documentos.");
+        return;
+      }
+
+      // Abrir cámara
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+        allowsEditing: true,
       });
-      clearTimeout(id);
-      return response;
+
+      if (!result.canceled) {
+        const asset = result.assets[0];
+
+        // Determinar nombre y tipo
+        const fileName = asset.fileName || `foto_${Date.now()}.jpg`;
+        const fileType = asset.mimeType || "image/jpeg";
+
+        const newFile: SelectedFile = {
+          id: Date.now().toString(),
+          name: fileName,
+          type: fileType,
+          uri: asset.uri,
+        };
+
+        const currentIsPdf = selectedFiles.some(f => f.type.includes("pdf"));
+
+        if (currentIsPdf) {
+          showToast("PDF reemplazado por imagen. Puedes agregar más imágenes.");
+          setSelectedFiles([newFile]);
+        } else {
+          // Append image
+          setSelectedFiles(prev => [...prev, newFile]);
+        }
+      }
     } catch (error) {
-      clearTimeout(id);
-      throw error;
+      console.error("Error opening camera:", error);
+      Alert.alert("Error", "No se pudo abrir la cámara");
     }
   };
 
+  // Helper to trigger ActionSheet for the "+" button
+  const handleAddMore = () => {
+    Alert.alert(
+      "Agregar otro documento",
+      "¿Quieres tomar una foto o seleccionar de la galería?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Galería", onPress: handleFilePress },
+        { text: "Cámara", onPress: handleCameraPress },
+      ]
+    );
+  };
+
+  const removeFile = (id: string) => {
+    setSelectedFiles(prev => prev.filter(f => f.id !== id));
+  };
+
+
+  // Helper functions removed
+
   const handleProcessDocuments = async () => {
-    if (!selectedFile) {
-      Alert.alert("Error", "Por favor selecciona un archivo primero");
+    // console.log("handleProcessDocuments started...");
+    // Alert.alert("Debug", `Iniciando subida de ${selectedFiles.length} archivos`); // Removed debug alert
+
+    if (selectedFiles.length === 0) {
+      Alert.alert("Error", "Por favor selecciona al menos un archivo");
       return;
     }
 
@@ -96,51 +175,47 @@ export default function UploadScreen() {
     setIsProcessing(true);
 
     try {
-      console.log("Sending to:", `${API_BASE_URL}/ocr-local/pdf`);
-
       const formData = new FormData();
-      formData.append('file', {
-        uri: selectedFile.uri,
-        name: selectedFile.name,
-        type: selectedFile.type,
-      } as any);
-
-      const response = await fetchWithTimeout(`${API_BASE_URL}/ocr-local/pdf`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: formData,
-        timeout: 120000, // 2 minutes
+      selectedFiles.forEach((file, index) => {
+        console.log(`Appending file ${index}:`, file.name, file.type, file.uri);
+        // @ts-ignore
+        formData.append('files', {
+          uri: file.uri,
+          name: file.name,
+          type: file.type,
+        } as any);
       });
+
+      console.log("Sending files via apiClient...");
+
+      const response = await apiClient("ocr-local/pdf", {
+        method: "POST",
+        token: accessToken || "",
+        body: formData,
+        timeout: 120000,
+      });
+
+      console.log("Fetch returned with status:", response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.log("Error response text:", errorText);
         throw new Error(`Server Error: ${response.status} ${errorText}`);
       }
 
       const ocrResult = await response.json();
       console.log("OCR Success:", ocrResult.items?.length, "items found");
 
-      // Direct navigation to AI Analytics as requested
       router.push({
         pathname: "/ai-analytics",
         params: { ocrData: JSON.stringify(ocrResult) },
       });
 
     } catch (error: any) {
-      console.error("Upload Error:", error);
-      
+      console.error("Upload Error caught:", error);
       let errorMessage = error.message || "No se pudo procesar el documento.";
-      
-      if (error.name === 'AbortError' || error.message === 'Aborted' || error.message.includes('Network request failed')) {
-        errorMessage = "El servidor tardó demasiado en responder. Es normal si es la primera vez. Por favor intenta de nuevo.";
-      }
-
-      Alert.alert(
-        "Error",
-        errorMessage
-      );
+      // Specific error handling if needed
+      Alert.alert("Error", errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -149,6 +224,37 @@ export default function UploadScreen() {
   const handleCancel = () => {
     router.back();
   };
+
+  const renderFileItem = ({ item }: { item: SelectedFile }) => (
+    <View style={styles.fileItemContainer}>
+      <View style={styles.fileCard}>
+        {item.type.includes("image") ? (
+          <Image source={{ uri: item.uri }} style={styles.fileImage} resizeMode="cover" />
+        ) : (
+          <View style={styles.pdfCardPlaceholder}>
+            <View style={styles.pdfIconCircle}>
+              <IconSymbol name="doc.fill" size={20} color={Colors.light.brandBlue} />
+            </View>
+            <ThemedText style={styles.fileTypeLabel}>PDF</ThemedText>
+          </View>
+        )}
+      </View>
+
+      {/* Accessorized Remove Button */}
+      <TouchableOpacity
+        style={styles.removeButton}
+        onPress={() => removeFile(item.id)}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="close" size={16} color={Colors.light.white} />
+      </TouchableOpacity>
+
+      {/* Filename below card */}
+      <ThemedText style={styles.fileName} numberOfLines={1}>
+        {item.name}
+      </ThemedText>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -173,9 +279,7 @@ export default function UploadScreen() {
             <ThemedText style={styles.logoText}>POCKET DOCTOR</ThemedText>
           </View>
         </View>
-        <View style={styles.profileIcon}>
-          <ThemedText style={styles.profileIconText}>A</ThemedText>
-        </View>
+        <UserAvatar />
       </View>
 
       <ScrollView
@@ -196,53 +300,17 @@ export default function UploadScreen() {
         <ThemedText style={styles.title}>Subir resultados médicos</ThemedText>
 
         <View style={styles.uploadArea}>
-          <TouchableOpacity
-            style={styles.uploadButton}
-            onPress={handleFilePress}
-            activeOpacity={0.7}
-          >
+          <View style={styles.uploadControls}>
             <ThemedText style={styles.uploadText}>
-              {selectedFile
-                ? "Archivo seleccionado ✓"
+              {selectedFiles.length > 0
+                ? `${selectedFiles.length} archivo(s) seleccionado(s)`
                 : "Selecciona un archivo"}
             </ThemedText>
-
-            <View style={styles.formatSection}>
-              <ThemedText style={styles.formatTitle}>
-                Formatos aceptados
-              </ThemedText>
-              <View style={styles.formatList}>
-                <View style={styles.formatItem}>
-                  <IconSymbol
-                    name="doc.fill"
-                    size={20}
-                    color={Colors.light.error}
-                  />
-                  <ThemedText style={styles.formatText}>PDF</ThemedText>
-                </View>
-                <View style={styles.formatItem}>
-                  <IconSymbol
-                    name="photo.fill"
-                    size={20}
-                    color={Colors.light.lightBlue}
-                  />
-                  <ThemedText style={styles.formatText}>JPG</ThemedText>
-                </View>
-                <View style={styles.formatItem}>
-                  <IconSymbol
-                    name="photo.fill"
-                    size={20}
-                    color={Colors.light.success}
-                  />
-                  <ThemedText style={styles.formatText}>PNG</ThemedText>
-                </View>
-              </View>
-            </View>
 
             <View style={styles.uploadOptions}>
               <TouchableOpacity
                 style={styles.optionButton}
-                onPress={handleCameraPress}
+                onPress={handleCameraPress} // Ahora llama a la función real
                 activeOpacity={0.7}
               >
                 <Ionicons
@@ -265,33 +333,32 @@ export default function UploadScreen() {
                 <ThemedText style={styles.optionText}>Archivo</ThemedText>
               </TouchableOpacity>
             </View>
-          </TouchableOpacity>
+          </View>
         </View>
 
-        {selectedFile && (
-          <View style={styles.selectedFileContainer}>
-            <View style={styles.selectedFile}>
-              <IconSymbol
-                name="doc.fill"
-                size={24}
-                color={Colors.light.brandBlue}
-              />
-              <View style={styles.fileInfo}>
-                <ThemedText style={styles.fileName}>
-                  {selectedFile.name}
-                </ThemedText>
-                <ThemedText style={styles.fileType}>
-                  {selectedFile.type}
-                </ThemedText>
-              </View>
-              <TouchableOpacity onPress={() => setSelectedFile(null)}>
-                <Ionicons
-                  name="close-circle"
-                  size={24}
-                  color={Colors.light.gray}
-                />
-              </TouchableOpacity>
-            </View>
+        {selectedFiles.length > 0 && (
+          <View style={styles.filesListContainer}>
+            <ThemedText style={styles.filesListTitle}>Archivos listos para enviar:</ThemedText>
+            <FlatList
+              data={selectedFiles}
+              renderItem={renderFileItem}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filesListContent}
+              ListFooterComponent={
+                !selectedFiles.some(f => f.type.includes("pdf")) ? (
+                  <TouchableOpacity
+                    style={[styles.fileCard, styles.addMoreButton]}
+                    onPress={handleAddMore}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="add" size={32} color={Colors.light.brandBlue} />
+                    <ThemedText style={styles.addMoreText}>Agregar</ThemedText>
+                  </TouchableOpacity>
+                ) : null
+              }
+            />
           </View>
         )}
 
@@ -319,11 +386,11 @@ export default function UploadScreen() {
           <TouchableOpacity
             style={[
               styles.processButton,
-              (!selectedFile || isProcessing || !isAccepted) &&
+              (selectedFiles.length === 0 || isProcessing || !isAccepted) &&
               styles.processButtonDisabled,
             ]}
             onPress={handleProcessDocuments}
-            disabled={!selectedFile || isProcessing || !isAccepted}
+            disabled={selectedFiles.length === 0 || isProcessing || !isAccepted}
           >
             {isProcessing ? (
               <ActivityIndicator color={Colors.light.white} />
@@ -343,6 +410,16 @@ export default function UploadScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Custom Toast Notification */}
+      {toastMessage && (
+        <View style={styles.toastContainer}>
+          <View style={styles.toastContent}>
+            <Ionicons name="information-circle" size={20} color={Colors.light.white} />
+            <ThemedText style={styles.toastText}>{toastMessage}</ThemedText>
+          </View>
+        </View>
+      )}
 
       <TermsModal
         visible={showTerms}
@@ -436,13 +513,14 @@ const styles = StyleSheet.create({
   uploadArea: {
     marginBottom: 32,
   },
-  uploadButton: {
+  // Modified styles for new layout
+  uploadControls: {
+    alignItems: 'center',
     borderWidth: 2,
     borderStyle: "dashed",
     borderColor: Colors.light.brandBlue,
     borderRadius: 16,
-    padding: 32,
-    alignItems: "center",
+    padding: 24,
     backgroundColor: Colors.light.lightGray,
   },
   uploadText: {
@@ -501,32 +579,117 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: Colors.light.brandBlue,
   },
-  selectedFileContainer: {
+
+  // Premium File List Styles
+  filesListContainer: {
     marginBottom: 24,
+    height: 160, // Safe height
   },
-  selectedFile: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.light.white,
-    borderWidth: 1,
-    borderColor: Colors.light.success,
+  filesListTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 16,
+    color: Colors.light.textGray,
+    marginLeft: 4,
+  },
+  filesListContent: {
+    paddingLeft: 4,
+    paddingRight: 20,
+    paddingTop: 10,
+    paddingBottom: 30, // Huge padding to prevent shadow clip
+    gap: 16,
+  },
+  fileItemContainer: {
+    width: 80, // Micro size
+    alignItems: 'center',
+  },
+  fileCard: {
+    width: 80,
+    height: 100, // Micro size
     borderRadius: 12,
-    padding: 16,
-    gap: 12,
+    backgroundColor: Colors.light.white,
+    // Premium Shadow
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
   },
-  fileInfo: {
-    flex: 1,
+  fileImage: {
+    width: '100%',
+    height: '100%',
+  },
+  pdfCardPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: Colors.light.friendlyBlueBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  pdfIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.light.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.light.brandBlue,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  addMoreButton: {
+    backgroundColor: Colors.light.lightGray,
+    borderWidth: 2,
+    borderColor: Colors.light.brandBlue,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  addMoreText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.light.brandBlue,
+  },
+  fileTypeLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: Colors.light.brandBlue,
+    letterSpacing: 0.5,
+  },
+  removeButton: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Colors.light.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.light.white,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+    zIndex: 10,
   },
   fileName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.black,
-    marginBottom: 2,
+    marginTop: 6,
+    fontSize: 10,
+    color: Colors.light.textGray,
+    textAlign: 'center',
+    width: '100%',
   },
-  fileType: {
-    fontSize: 14,
-    color: Colors.light.gray,
-  },
+
   actionButtons: {
     marginTop: "auto",
     gap: 12,
@@ -587,5 +750,33 @@ const styles = StyleSheet.create({
     color: Colors.light.brandBlue,
     fontWeight: "600",
     textDecorationLine: "underline",
+  },
+  // Toast Styles
+  toastContainer: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  toastContent: {
+    backgroundColor: 'rgba(30, 30, 30, 0.9)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 24,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  toastText: {
+    color: Colors.light.white,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

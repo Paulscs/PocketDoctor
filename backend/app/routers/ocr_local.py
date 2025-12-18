@@ -224,7 +224,7 @@ class LLMInterpretation(BaseModel):
     warnings: List[SuggestionItem] = []       # cosas a vigilar / posibles riesgos
     recommendations: List[SuggestionItem] = [] # recomendaciones de salud
     qa: Optional[QAResponse] = None            # Preguntas pre-generadas (Opcional para evitar 500)
-    disclaimer: str                # recordatorio de que no es diagnóstico
+    disclaimer: Optional[str] = "Este análisis es generado por IA y no sustituye el consejo médico profesional."                # recordatorio de que no es diagnóstico
 
 
 
@@ -890,76 +890,74 @@ def parse_row_to_item(row: str) -> Optional[LabItem]:
 
 @router.post("/pdf", response_model=OCRResponse)
 async def ocr_pdf(
-    file: UploadFile = File(...),
+    files: List[UploadFile] = File(...),
     user: AuthUser = Depends(get_current_user)
 ):
-    if not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Solo se permiten archivos PDF")
+    if not files:
+        raise HTTPException(status_code=400, detail="No se enviaron archivos")
+
+    # Validar tipos
+    first_ext = files[0].filename.split(".")[-1].lower()
+    is_pdf = first_ext == "pdf"
+    
+    if is_pdf:
+        if len(files) > 1:
+            raise HTTPException(status_code=400, detail="Por ahora solo se permite subir 1 archivo PDF a la vez. Si son imágenes, puedes subir varias.")
+        if not files[0].filename.lower().endswith(".pdf"):
+             raise HTTPException(status_code=400, detail="Archivo inválido. Se esperaba PDF.")
+    else:
+        # Deben ser todos imágenes
+        valid_img_exts = ["jpg", "jpeg", "png", "heic"]
+        for f in files:
+            ext = f.filename.split(".")[-1].lower()
+            if ext not in valid_img_exts:
+                raise HTTPException(status_code=400, detail=f"Tipo de archivo no soportado: {f.filename}. Use PDF, JPG o PNG.")
 
     try:
-        content = await file.read()
-        if not content:
-            raise HTTPException(status_code=400, detail="Archivo vacío")
+        # Leer contenido de los archivos
+        files_content = []
+        for f in files:
+            content = await f.read()
+            # Asegurarse que leemos bytes
+            if isinstance(content, str):
+                content = content.encode("utf-8")
+            files_content.append((f.filename, content))
+            await f.seek(0)
 
-        # Subir el PDF a Supabase (si está configurado)
-        print(f"[OCR] Starting processing for {file.filename}")
-        storage_path, public_url = upload_pdf_to_supabase(content, file.filename)
-        print(f"[OCR] Upload to Supabase done: {storage_path}")
+        # Subir a Supabase
+        base_upload_id = str(uuid.uuid4())
+        public_urls = []
+        storage_paths = []
 
-        # ---------------------------------------------------------
-        # Obtener datos del usuario logueado
-        # ---------------------------------------------------------
-        user_profile_data = None
-        try:
-            # Creamos cliente con el token del usuario para respetar RLS
-            client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-            client.postgrest.auth(user.token)
-            
-            resp = client.table("usuarios").select("*").eq("user_auth_id", user.sub).single().execute()
-            if resp.data:
-                user_profile_data = resp.data
-        except Exception as e:
-            print(f"[OCR] Error obteniendo perfil de usuario: {e}")
-
-        print(f"[OCR] User profile fetched: {user_profile_data is not None}")
-
-        # Mapear a PatientProfile
-        patient_profile = None
-        if user_profile_data:
-            # Calcular edad
-            age = None
-            if user_profile_data.get("fecha_nacimiento"):
+        print(f"[OCR] Starting upload for {len(files)} files. Group ID: {base_upload_id}")
+        
+        for fname, content in files_content:
+            unique_name = f"{base_upload_id}/{fname}"
+            if supabase_client:
+                s_path = f"labs/{unique_name}"
                 try:
-                    dob = date.fromisoformat(user_profile_data["fecha_nacimiento"])
-                    today = date.today()
-                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-                except Exception:
-                    pass
-            
-            # Mapear sexo
-            sex_map = {"Masculino": "M", "Femenino": "F", "M": "M", "F": "F"}
-            raw_sex = user_profile_data.get("sexo")
-            sex = sex_map.get(raw_sex, raw_sex)
+                    supabase_client.storage.from_(SUPABASE_BUCKET).upload(
+                        path=s_path,
+                        file=content,
+                    )
+                    url = supabase_client.storage.from_(SUPABASE_BUCKET).get_public_url(s_path)
+                    storage_paths.append(s_path)
+                    public_urls.append(url)
+                except Exception as e:
+                    print(f"[Supabase] Error subiendo {fname}: {e}")
 
-            patient_profile = PatientProfile(
-                age=age,
-                sex=sex,
-                weight_kg=user_profile_data.get("peso_kg"),
-                height_cm=user_profile_data.get("altura_cm"),
-                conditions=user_profile_data.get("condiciones_medicas") or [],
-                medications=[],
-                allergies=user_profile_data.get("alergias") or []
-            )
-
-        doc = DocumentFile.from_pdf(io.BytesIO(content))
+        # Preparar docTR
+        if is_pdf:
+            doc = DocumentFile.from_pdf(io.BytesIO(files_content[0][1]))
+        else:
+            bytes_list = [c for _, c in files_content]
+            doc = DocumentFile.from_images(bytes_list)
 
         if len(doc) == 0:
-            raise HTTPException(status_code=400, detail="El PDF no contiene páginas")
+            raise HTTPException(status_code=400, detail="El documento no contiene páginas válidas")
 
         pages_to_process = min(len(doc), MAX_PAGES)
-
-        pages_to_process = min(len(doc), MAX_PAGES)
-        print(f"[OCR] Model ready. Pages to process: {pages_to_process}")
+        print(f"[OCR] Model ready. Pages/Images to process: {pages_to_process}")
 
         result = OCR_PREDICTOR(doc)
         print("[OCR] Model inference complete")
@@ -991,11 +989,49 @@ async def ocr_pdf(
                 continue
             items.append(item)
 
+        # User Profile Fetching
+        user_profile_data = None
+        try:
+            client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+            client.postgrest.auth(user.token)
+            resp = client.table("usuarios").select("*").eq("user_auth_id", user.sub).single().execute()
+            if resp.data:
+                user_profile_data = resp.data
+        except Exception as e:
+            print(f"[OCR] Error fetching profile: {e}")
+
+        patient_profile = None
+        if user_profile_data:
+            age = None
+            if user_profile_data.get("fecha_nacimiento"):
+                try:
+                    dob = date.fromisoformat(user_profile_data["fecha_nacimiento"])
+                    today = date.today()
+                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                except Exception:
+                    pass
+            sex_map = {"Masculino": "M", "Femenino": "F", "M": "M", "F": "F"}
+            raw_sex = user_profile_data.get("sexo")
+            sex = sex_map.get(raw_sex, raw_sex)
+
+            patient_profile = PatientProfile(
+                age=age,
+                sex=sex,
+                weight_kg=user_profile_data.get("peso_kg"),
+                height_cm=user_profile_data.get("altura_cm"),
+                conditions=user_profile_data.get("condiciones_medicas") or [],
+                medications=[],
+                allergies=user_profile_data.get("alergias") or []
+            )
+
+        main_path = storage_paths[0] if storage_paths else None
+        main_url = public_urls[0] if public_urls else None
+
         analysis_input = build_analysis_input(
             items=items,
             full_text=full_text,
-            storage_path=storage_path,
-            public_url=public_url,
+            storage_path=main_path,
+            public_url=main_url,
             patient_profile=patient_profile
         )
 
@@ -1004,13 +1040,14 @@ async def ocr_pdf(
             table_text=table_text,
             items=items,
             pages_processed=pages_to_process,
-            storage_path=storage_path,
-            public_url=public_url,
+            storage_path=main_path,
+            public_url=main_url,
             analysis_input=analysis_input,
         )
-
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"OCR/PDF error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"OCR/PDF error: {str(e)}")

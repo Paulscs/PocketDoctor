@@ -118,8 +118,8 @@ export const useChatStore = create<ChatStore>()(
   persist(
     (set, get) => ({
       // Initial state
-      sessions: [initialSession],
-      activeSessionId: "initial-session",
+      sessions: [],
+      activeSessionId: null,
       isLoading: false,
       error: null,
 

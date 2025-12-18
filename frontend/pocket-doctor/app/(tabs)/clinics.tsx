@@ -6,6 +6,7 @@ import {
   Image,
   TouchableOpacity,
   Linking,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
@@ -15,6 +16,7 @@ import { router } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store/authStore";
 import { getCentros, Centro, getEspecialistasCentro, EspecialistaCentro } from "@/src/services/clinics";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 interface Clinic {
   id: string;
@@ -142,7 +144,7 @@ export default function ClinicsScreen() {
 
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
   const [specialists, setSpecialists] = useState<EspecialistaCentro[]>([]);
 
@@ -372,37 +374,40 @@ export default function ClinicsScreen() {
             <ThemedText style={styles.pageTitle}>Especialistas</ThemedText>
           </View>
           <View style={styles.profileIcon}>
-            <TouchableOpacity
-              style={styles.profileIconButton}
-              onPress={handleProfilePress}
-              activeOpacity={0.7}
-            >
-              <ThemedText style={styles.profileIconText}>A</ThemedText>
-            </TouchableOpacity>
+            <UserAvatar size={32} />
           </View>
         </View>
       </View>
 
       {!selectedClinic ? (
-        <View style={styles.content}>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.searchContainer}>
-            <TouchableOpacity style={styles.searchBar} activeOpacity={0.7}>
+            <View style={styles.searchBar}>
               <Ionicons
-                name="business-outline"
+                name="search-outline"
                 size={20}
                 color={Colors.light.placeholderGray}
               />
-              <ThemedText style={styles.searchPlaceholder}>
-                Clínicas y Especialistas
-              </ThemedText>
-            </TouchableOpacity>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Buscar clínicas y especialistas..."
+                placeholderTextColor={Colors.light.placeholderGray}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={18} color={Colors.light.gray} />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
 
           <View style={styles.clinicsList}>
             {filteredClinics.map(renderClinicCard)}
           </View>
-        </View>
+        </ScrollView>
       ) : (
         renderClinicDetail(selectedClinic)
       )}
@@ -491,7 +496,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.white,
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 12, // Increased touch area
     gap: 12,
     shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 1 },
@@ -499,10 +504,11 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  searchPlaceholder: {
+  searchInput: {
     flex: 1,
     fontSize: 16,
-    color: Colors.light.placeholderGray,
+    color: Colors.light.textGray,
+    padding: 0, // Reset default padding
   },
 
   filtersContainer: {
