@@ -41,10 +41,17 @@ export default function UploadScreen() {
   const session = useAuthStore((state) => state.session);
   const accessToken = session?.access_token;
 
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
   const handleFilePress = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ["application/pdf", "image/*"], // Permitir imágenes también si se seleccionan como archivo
+        type: ["application/pdf", "image/*"],
         copyToCacheDirectory: true,
         multiple: false,
       });
@@ -59,11 +66,12 @@ export default function UploadScreen() {
         uri: asset.uri,
       };
 
-      if (newFile.type?.includes("pdf")) {
-        setSelectedFiles([newFile]);
-      } else {
-        setSelectedFiles([newFile]);
+      if (selectedFiles.length > 0) {
+        showToast("Archivo anterior reemplazado. Solo se permite un archivo a la vez.");
       }
+
+      setSelectedFiles([newFile]);
+
     } catch (error) {
       console.error("Error selecting file:", error);
       Alert.alert("Error", "No se pudo seleccionar el archivo");
@@ -81,17 +89,11 @@ export default function UploadScreen() {
         return;
       }
 
-      // Si ya hay un PDF, limpiar porque no mezclamos
-      const hasPdf = selectedFiles.some(f => f.type.includes("pdf"));
-      if (hasPdf) {
-        setSelectedFiles([]);
-      }
-
       // Abrir cámara
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.8, // Calidad alta pero optimizada para subida
-        allowsEditing: true, // Permitir recortar la imagen (útil para documentos)
+        quality: 0.8,
+        allowsEditing: true,
       });
 
       if (!result.canceled) {
@@ -108,10 +110,11 @@ export default function UploadScreen() {
           uri: asset.uri,
         };
 
-        setSelectedFiles((prev) => {
-          if (prev.some(f => f.type.includes('pdf'))) return [newFile];
-          return [...prev, newFile];
-        });
+        if (selectedFiles.length > 0) {
+          showToast("Archivo anterior reemplazado. Solo se permite un archivo a la vez.");
+        }
+
+        setSelectedFiles([newFile]);
       }
     } catch (error) {
       console.error("Error opening camera:", error);
@@ -128,7 +131,7 @@ export default function UploadScreen() {
 
   const handleProcessDocuments = async () => {
     // console.log("handleProcessDocuments started...");
-    Alert.alert("Debug", `Iniciando subida de ${selectedFiles.length} archivos`);
+    // Alert.alert("Debug", `Iniciando subida de ${selectedFiles.length} archivos`); // Removed debug alert
 
     if (selectedFiles.length === 0) {
       Alert.alert("Error", "Por favor selecciona al menos un archivo");
@@ -194,26 +197,33 @@ export default function UploadScreen() {
   };
 
   const renderFileItem = ({ item }: { item: SelectedFile }) => (
-    <View style={styles.fileItem}>
-      <View style={styles.fileIcon}>
-        <IconSymbol
-          name={item.type.includes('pdf') ? "doc.fill" : "photo.fill"}
-          size={24}
-          color={Colors.light.brandBlue}
-        />
+    <View style={styles.fileItemContainer}>
+      <View style={styles.fileCard}>
+        {item.type.includes("image") ? (
+          <Image source={{ uri: item.uri }} style={styles.fileImage} resizeMode="cover" />
+        ) : (
+          <View style={styles.pdfCardPlaceholder}>
+            <View style={styles.pdfIconCircle}>
+              <IconSymbol name="doc.fill" size={20} color={Colors.light.brandBlue} />
+            </View>
+            <ThemedText style={styles.fileTypeLabel}>PDF</ThemedText>
+          </View>
+        )}
       </View>
 
-      {item.type.includes("image") ? (
-        <Image source={{ uri: item.uri }} style={styles.thumbnail} resizeMode="cover" />
-      ) : (
-        <View style={styles.pdfThumbnailPlaceholder}>
-          <ThemedText style={{ fontSize: 10, color: '#666' }}>PDF</ThemedText>
-        </View>
-      )}
-
-      <TouchableOpacity style={styles.removeButton} onPress={() => removeFile(item.id)}>
-        <Ionicons name="close-circle" size={20} color={Colors.light.error} />
+      {/* Accessorized Remove Button */}
+      <TouchableOpacity
+        style={styles.removeButton}
+        onPress={() => removeFile(item.id)}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="close" size={16} color={Colors.light.white} />
       </TouchableOpacity>
+
+      {/* Filename below card */}
+      <ThemedText style={styles.fileName} numberOfLines={1}>
+        {item.name}
+      </ThemedText>
     </View>
   );
 
@@ -359,6 +369,16 @@ export default function UploadScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Custom Toast Notification */}
+      {toastMessage && (
+        <View style={styles.toastContainer}>
+          <View style={styles.toastContent}>
+            <Ionicons name="information-circle" size={20} color={Colors.light.white} />
+            <ThemedText style={styles.toastText}>{toastMessage}</ThemedText>
+          </View>
+        </View>
+      )}
 
       <TermsModal
         visible={showTerms}
@@ -519,60 +539,100 @@ const styles = StyleSheet.create({
     color: Colors.light.brandBlue,
   },
 
-  // File List Styles
+  // Premium File List Styles
   filesListContainer: {
     marginBottom: 24,
-    height: 140,
+    height: 160, // Safe height
   },
   filesListTitle: {
     fontSize: 14,
     fontWeight: "600",
-    marginBottom: 10,
-    color: Colors.light.gray,
+    marginBottom: 16,
+    color: Colors.light.textGray,
+    marginLeft: 4,
   },
   filesListContent: {
-    gap: 12,
+    paddingLeft: 4,
     paddingRight: 20,
+    paddingTop: 10,
+    paddingBottom: 30, // Huge padding to prevent shadow clip
+    gap: 16,
   },
-  fileItem: {
-    width: 100,
-    height: 120,
-    backgroundColor: Colors.light.white,
-    borderWidth: 1,
-    borderColor: Colors.light.borderGray,
-    borderRadius: 8,
-    padding: 8,
+  fileItemContainer: {
+    width: 80, // Micro size
     alignItems: 'center',
-    position: 'relative',
-    justifyContent: 'center'
   },
-  fileIcon: {
-    position: 'absolute',
-    top: 4,
-    left: 4,
-    zIndex: 1,
+  fileCard: {
+    width: 80,
+    height: 100, // Micro size
+    borderRadius: 12,
+    backgroundColor: Colors.light.white,
+    // Premium Shadow
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
   },
-  thumbnail: {
+  fileImage: {
     width: '100%',
-    height: 80,
-    borderRadius: 4,
-    marginTop: 14
+    height: '100%',
   },
-  pdfThumbnailPlaceholder: {
+  pdfCardPlaceholder: {
     width: '100%',
-    height: 80,
-    backgroundColor: '#eee',
-    marginTop: 14,
+    height: '100%',
+    backgroundColor: Colors.light.friendlyBlueBg,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 4
+    gap: 6,
+  },
+  pdfIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.light.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.light.brandBlue,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  fileTypeLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: Colors.light.brandBlue,
+    letterSpacing: 0.5,
   },
   removeButton: {
     position: 'absolute',
-    top: -8,
-    right: -8,
-    backgroundColor: 'white',
-    borderRadius: 12,
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Colors.light.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.light.white,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+    zIndex: 10,
+  },
+  fileName: {
+    marginTop: 6,
+    fontSize: 10,
+    color: Colors.light.textGray,
+    textAlign: 'center',
+    width: '100%',
   },
 
   actionButtons: {
@@ -635,5 +695,33 @@ const styles = StyleSheet.create({
     color: Colors.light.brandBlue,
     fontWeight: "600",
     textDecorationLine: "underline",
+  },
+  // Toast Styles
+  toastContainer: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  toastContent: {
+    backgroundColor: 'rgba(30, 30, 30, 0.9)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 24,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  toastText: {
+    color: Colors.light.white,
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
