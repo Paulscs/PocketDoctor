@@ -13,7 +13,7 @@ type FetchOptions = RequestInit & {
  * 4. Timeout handling
  */
 export async function apiClient(endpoint: string, options: FetchOptions = {}) {
-    const { timeout = 30000, token, headers, ...customConfig } = options;
+    const { timeout = 120000, token, headers, ...customConfig } = options;
 
     // Ensure endpoint starts with / if not present
     const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
@@ -35,6 +35,15 @@ export async function apiClient(endpoint: string, options: FetchOptions = {}) {
             ...headers,
         },
     };
+
+    // Fix for FormData: If body is FormData, let the browser set Content-Type with boundary
+    if (config.body instanceof FormData) {
+        // @ts-ignore
+        if (config.headers && config.headers["Content-Type"]) {
+            // @ts-ignore
+            delete config.headers["Content-Type"];
+        }
+    }
 
     // Timeout Logic
     const controller = new AbortController();
