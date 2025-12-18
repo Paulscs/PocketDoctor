@@ -66,11 +66,23 @@ export default function UploadScreen() {
         uri: asset.uri,
       };
 
-      if (selectedFiles.length > 0) {
-        showToast("Archivo anterior reemplazado. Solo se permite un archivo a la vez.");
-      }
+      const isPdf = newFile.type.includes("pdf");
+      const currentIsPdf = selectedFiles.some(f => f.type.includes("pdf"));
 
-      setSelectedFiles([newFile]);
+      // Logic: 
+      // 1. If incoming is PDF -> Replace all (Single PDF rule)
+      // 2. If current is PDF -> Replace all (Single PDF rule)
+      // 3. If incoming is Image AND current is Image(s) -> Append
+
+      if (isPdf || currentIsPdf) {
+        if (selectedFiles.length > 0) {
+          showToast("Archivo reemplazado. Solo se permite 1 PDF o múltiples imágenes.");
+        }
+        setSelectedFiles([newFile]);
+      } else {
+        // Appending image
+        setSelectedFiles(prev => [...prev, newFile]);
+      }
 
     } catch (error) {
       console.error("Error selecting file:", error);
@@ -110,16 +122,33 @@ export default function UploadScreen() {
           uri: asset.uri,
         };
 
-        if (selectedFiles.length > 0) {
-          showToast("Archivo anterior reemplazado. Solo se permite un archivo a la vez.");
-        }
+        const currentIsPdf = selectedFiles.some(f => f.type.includes("pdf"));
 
-        setSelectedFiles([newFile]);
+        if (currentIsPdf) {
+          showToast("PDF reemplazado por imagen. Puedes agregar más imágenes.");
+          setSelectedFiles([newFile]);
+        } else {
+          // Append image
+          setSelectedFiles(prev => [...prev, newFile]);
+        }
       }
     } catch (error) {
       console.error("Error opening camera:", error);
       Alert.alert("Error", "No se pudo abrir la cámara");
     }
+  };
+
+  // Helper to trigger ActionSheet for the "+" button
+  const handleAddMore = () => {
+    Alert.alert(
+      "Agregar otro documento",
+      "¿Quieres tomar una foto o seleccionar de la galería?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Galería", onPress: handleFilePress },
+        { text: "Cámara", onPress: handleCameraPress },
+      ]
+    );
   };
 
   const removeFile = (id: string) => {
@@ -317,6 +346,18 @@ export default function UploadScreen() {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.filesListContent}
+              ListFooterComponent={
+                !selectedFiles.some(f => f.type.includes("pdf")) ? (
+                  <TouchableOpacity
+                    style={[styles.fileCard, styles.addMoreButton]}
+                    onPress={handleAddMore}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="add" size={32} color={Colors.light.brandBlue} />
+                    <ThemedText style={styles.addMoreText}>Agregar</ThemedText>
+                  </TouchableOpacity>
+                ) : null
+              }
             />
           </View>
         )}
@@ -601,6 +642,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+  },
+  addMoreButton: {
+    backgroundColor: Colors.light.lightGray,
+    borderWidth: 2,
+    borderColor: Colors.light.brandBlue,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  addMoreText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.light.brandBlue,
   },
   fileTypeLabel: {
     fontSize: 10,
