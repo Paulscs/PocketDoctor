@@ -20,6 +20,7 @@ import {
   FollowUpOption,
 } from "@/src/store/chatStore";
 import { SideMenu } from "@/components/layout/SideMenu";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 export default function ChatScreen() {
   const containerBg = useThemeColor({ light: Colors.light.background, dark: Colors.dark.background }, "background");
@@ -175,16 +176,7 @@ export default function ChatScreen() {
         </View>
         <View style={styles.headerRight}>
           <ThemedText style={styles.pageTitle}>Chat</ThemedText>
-          <TouchableOpacity
-            style={styles.profileIcon}
-            onPress={handleProfilePress}
-            activeOpacity={0.7}
-            accessibilityLabel="Ir al perfil"
-            accessibilityRole="button"
-            accessibilityHint="Navega a la pantalla de perfil"
-          >
-            <ThemedText style={styles.profileIconText}>A</ThemedText>
-          </TouchableOpacity>
+          <UserAvatar />
         </View>
       </View>
 

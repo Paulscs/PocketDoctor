@@ -20,6 +20,7 @@ import { router } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { getUserProfile, updateUserProfile, UserProfile as ApiUserProfile } from "@/src/services/user";
 import { useAuthStore } from "@/src/store/authStore";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 interface UserProfile {
   id: number;
@@ -200,13 +201,7 @@ export default function ProfileScreen() {
         </View>
         <View style={styles.headerRight}>
           <ThemedText style={styles.pageTitle}>Perfil</ThemedText>
-          <TouchableOpacity
-            style={styles.profileIcon}
-            onPress={handleProfilePress}
-            activeOpacity={0.7}
-          >
-            <ThemedText style={styles.profileIconText}>A</ThemedText>
-          </TouchableOpacity>
+          <UserAvatar />
         </View>
       </View>
 

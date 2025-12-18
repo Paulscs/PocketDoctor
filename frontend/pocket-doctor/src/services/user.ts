@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../constants/api';
+import { API_BASE_URL } from '@/constants/api';
 
 export interface UserProfile {
   id: number;

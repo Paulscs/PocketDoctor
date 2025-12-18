@@ -17,6 +17,7 @@ import { useAuthStore } from "@/src/store";
 import { useState, useCallback } from "react";
 import { useFocusEffect } from "expo-router";
 import { apiClient } from "@/src/utils/apiClient";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 interface MedicalResult {
   id: string;
@@ -195,13 +196,7 @@ export default function HistoryScreen() {
         </View>
         <View style={styles.headerRight}>
           <ThemedText style={styles.pageTitle}>Historial</ThemedText>
-          <TouchableOpacity
-            style={styles.profileIcon}
-            onPress={handleProfilePress}
-            activeOpacity={0.7}
-          >
-            <ThemedText style={styles.profileIconText}>A</ThemedText>
-          </TouchableOpacity>
+          <UserAvatar />
         </View>
       </View>
 

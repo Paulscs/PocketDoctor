@@ -15,6 +15,7 @@ import { router } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store/authStore";
 import { getCentros, Centro, getEspecialistasCentro, EspecialistaCentro } from "@/src/services/clinics";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 interface Clinic {
   id: string;
@@ -372,13 +373,7 @@ export default function ClinicsScreen() {
             <ThemedText style={styles.pageTitle}>Especialistas</ThemedText>
           </View>
           <View style={styles.profileIcon}>
-            <TouchableOpacity
-              style={styles.profileIconButton}
-              onPress={handleProfilePress}
-              activeOpacity={0.7}
-            >
-              <ThemedText style={styles.profileIconText}>A</ThemedText>
-            </TouchableOpacity>
+            <UserAvatar size={32} />
           </View>
         </View>
       </View>

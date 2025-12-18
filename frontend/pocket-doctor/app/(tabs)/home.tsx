@@ -14,6 +14,7 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useAuthStore } from "@/src/store";
 import { getUserProfile, getRootMessage, UserProfile } from "@/src/services/user";
 import { useState } from "react";
@@ -71,7 +72,7 @@ export default function HomeScreen() {
     if (!token) return;
 
     let mounted = true;
-    
+
     // Fetch user profile (only if not already loaded in store)
     if (!userProfile) {
       (async () => {
@@ -118,18 +119,7 @@ export default function HomeScreen() {
         </View>
         <View style={styles.headerRight}>
           <ThemedText style={styles.pageTitle}>Inicio</ThemedText>
-          <TouchableOpacity
-            style={styles.profileIcon}
-            onPress={handleProfilePress}
-            activeOpacity={0.7}
-            accessibilityLabel="Ir al perfil"
-            accessibilityRole="button"
-            accessibilityHint="Navega a la pantalla de perfil"
-          >
-            <ThemedText style={styles.profileIconText}>
-              {userProfile?.nombre?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "A"}
-            </ThemedText>
-          </TouchableOpacity>
+          <UserAvatar />
         </View>
       </View>
 

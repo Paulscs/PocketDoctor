@@ -21,6 +21,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 type SelectedFile = {
   id: string;
@@ -239,9 +240,7 @@ export default function UploadScreen() {
             <ThemedText style={styles.logoText}>POCKET DOCTOR</ThemedText>
           </View>
         </View>
-        <View style={styles.profileIcon}>
-          <ThemedText style={styles.profileIconText}>A</ThemedText>
-        </View>
+        <UserAvatar />
       </View>
 
       <ScrollView
