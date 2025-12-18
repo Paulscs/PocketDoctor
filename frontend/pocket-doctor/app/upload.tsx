@@ -310,7 +310,7 @@ export default function UploadScreen() {
             <View style={styles.uploadOptions}>
               <TouchableOpacity
                 style={styles.optionButton}
-                onPress={handleCameraPress} // Ahora llama a la función real
+                onPress={handleAddMore} // Now opens the menu
                 activeOpacity={0.7}
               >
                 <Ionicons
@@ -344,7 +344,7 @@ export default function UploadScreen() {
               renderItem={renderFileItem}
               keyExtractor={(item) => item.id}
               horizontal
-              showsHorizontalScrollIndicator={false}
+              showsHorizontalScrollIndicator={true}
               contentContainerStyle={styles.filesListContent}
               ListFooterComponent={
                 !selectedFiles.some(f => f.type.includes("pdf")) ? (
