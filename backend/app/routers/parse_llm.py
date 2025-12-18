@@ -86,6 +86,7 @@ async def parse_with_llm(
         generation_config = genai.GenerationConfig(
             response_mime_type="application/json",
             temperature=0.1,
+            max_output_tokens=8192,
         )
 
         response = model.generate_content(

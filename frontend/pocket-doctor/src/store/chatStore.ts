@@ -157,8 +157,9 @@ export const useChatStore = create<ChatStore>()(
         // 2. Create new session if not found
         const sessionId = Date.now().toString();
         // Parse context if available (assuming data matches backend LLMInterpretation)
-        const qa = data?.qa;
-        const summary = data?.summary;
+        // Handle potential case sensitivity issues from LLM raw JSON
+        const qa = data?.qa || data?.QA || data?.Qa;
+        const summary = data?.summary || data?.Summary || data?.SUMMARY;
 
         // Start with the standard initial message, but we will use the QA context for answers
         const newSession: ChatSession = {
