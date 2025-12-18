@@ -55,7 +55,8 @@ export default function ChatScreen() {
   };
 
   const handleCreateNewChat = () => {
-    createNewSession();
+    // Disabled generic chat creation. Redirect to upload if needed.
+    router.push("/upload");
     setIsSideMenuVisible(false);
   };
 
@@ -188,19 +189,20 @@ export default function ChatScreen() {
         {messages.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconContainer}>
-              <Ionicons
-                name="chatbubble-ellipses-outline"
-                size={48}
-                color={Colors.light.brandBlue}
-              />
+              <IconSymbol name="doc.fill" size={64} color={Colors.light.brandBlue} />
             </View>
-            <ThemedText style={styles.emptyTitle}>
-              ¡Hola! Soy tu asistente médico
-            </ThemedText>
+            <ThemedText style={styles.emptyTitle}>No hay conversaciones</ThemedText>
             <ThemedText style={styles.emptyDescription}>
-              Sube un análisis médico para discutir los resultados o inicia una
-              nueva conversación.
+              Para chatear con el asistente médico, primero necesitas analizar un resultado de laboratorio.
             </ThemedText>
+            <TouchableOpacity
+              style={styles.uploadButton}
+              onPress={() => router.push("/upload")}
+              activeOpacity={0.8}
+            >
+              <ThemedText style={styles.uploadButtonText}>Subir Análisis</ThemedText>
+              <IconSymbol name="arrow.right" size={20} color={Colors.light.white} />
+            </TouchableOpacity>
           </View>
         ) : (
           messages.map(message => (
@@ -295,7 +297,6 @@ export default function ChatScreen() {
           isActive: session.id === activeSessionId,
         }))}
         onSelectSession={handleSelectSession}
-        onCreateNewChat={handleCreateNewChat}
         onDeleteSession={handleDeleteSession}
       />
     </SafeAreaView>
@@ -533,5 +534,25 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
     maxWidth: "80%",
+    marginBottom: Spacing.xl,
+  },
+  uploadButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.light.brandBlue,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.circle,
+    gap: Spacing.sm,
+    elevation: 4,
+    shadowColor: Colors.light.brandBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  uploadButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.light.white,
   },
 });
