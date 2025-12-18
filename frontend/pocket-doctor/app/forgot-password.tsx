@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Alert,
   ScrollView,
   Modal,
+  Pressable, // Importante para detectar el toque en los cuadros
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,7 +16,7 @@ import { router } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 
 // IMPORTANTE: Ajusta esta ruta a donde tengas tu cliente de supabase
-import { supabase } from "@/src/lib/supabase"; 
+import { supabase } from "@/src/lib/supabase";
 
 type Step = "email" | "code" | "password" | "success";
 
@@ -30,7 +31,13 @@ export default function ForgotPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Validaciones
+  // Nuevo estado para el foco visual
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  
+  // Referencia para el input oculto
+  const inputRef = useRef<TextInput>(null);
+
+  // --- VALIDACIONES ---
   const validateEmail = useCallback(() => {
     if (!email.trim()) {
       Alert.alert("Error", "Por favor, ingresa tu correo electrónico");
@@ -102,7 +109,6 @@ export default function ForgotPasswordScreen() {
       if (error) throw error;
 
       // Al verificar, Supabase inicia sesión automáticamente.
-      // Ahora podemos mostrar la pantalla de cambio de contraseña.
       setCurrentStep("password");
     } catch (error: any) {
       Alert.alert("Error", "El código es incorrecto o ha expirado.");
@@ -153,8 +159,6 @@ export default function ForgotPasswordScreen() {
 
   const handleSuccessConfirm = () => {
     setShowSuccessModal(false);
-    // Como el usuario ya tiene sesión iniciada tras el cambio, 
-    // podrías mandarlo al home directamente o al login si prefieres que se loguee de nuevo.
     router.replace("/login"); 
   };
 
@@ -228,17 +232,32 @@ export default function ForgotPasswordScreen() {
       </View>
 
       <View style={styles.form}>
-        {/* Visualización de los cuadritos del código */}
-        <View style={styles.codeContainer}>
-          {[0, 1, 2, 3, 4, 5].map((index) => (
-            <View key={index} style={styles.codeInput}>
-              <Text style={styles.codeText}>{code[index] || ""}</Text>
-            </View>
-          ))}
-        </View>
+        {/* Envoltura Pressable para recuperar el foco al tocar los cuadros */}
+        <Pressable 
+          style={styles.codeContainer} 
+          onPress={() => inputRef.current?.focus()}
+        >
+          {[0, 1, 2, 3, 4, 5].map((index) => {
+             // Es activo si el teclado está abierto y coincide con la posición del cursor
+             const isActive = isInputFocused && code.length === index;
+             
+             return (
+              <View 
+                key={index} 
+                style={[
+                  styles.codeInput, 
+                  isActive && styles.codeInputFocused // Aplica borde azul si es el activo
+                ]}
+              >
+                <Text style={styles.codeText}>{code[index] || ""}</Text>
+              </View>
+            );
+          })}
+        </Pressable>
 
-        {/* Input oculto que controla todo */}
+        {/* Input oculto conectado con ref */}
         <TextInput
+          ref={inputRef}
           style={styles.hiddenInput}
           value={code}
           onChangeText={setCode}
@@ -246,6 +265,9 @@ export default function ForgotPasswordScreen() {
           maxLength={6}
           autoFocus
           editable={!loading}
+          // Manejadores de foco para el estilo visual
+          onFocus={() => setIsInputFocused(true)}
+          onBlur={() => setIsInputFocused(false)}
         />
 
         <TouchableOpacity
@@ -446,7 +468,7 @@ const styles = StyleSheet.create({
   codeContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 12, // Reduje un poco el gap para evitar desbordes en pantallas pequeñas
+    gap: 12, 
     marginBottom: 32,
   },
   codeInput: {
@@ -458,6 +480,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: Colors.light.white,
+  },
+  // Estilo para el cuadrito activo
+  codeInputFocused: {
+    borderColor: Colors.light.brandBlue,
+    borderWidth: 2,
+    backgroundColor: "#F0F8FF", 
   },
   codeText: {
     fontSize: 22,
