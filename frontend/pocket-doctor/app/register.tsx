@@ -1235,15 +1235,15 @@ function RegisterScreenInner() {
               <TouchableOpacity
                 style={[
                   styles.registerButton,
-                  formValid && styles.registerButtonActive,
+                  styles.registerButtonActive,
                 ]}
                 onPress={onRegister}
-                disabled={!formValid || isLoading}
+                disabled={isLoading}
               >
                 <Text
                   style={[
                     styles.registerButtonText,
-                    formValid && styles.registerButtonTextActive,
+                    styles.registerButtonTextActive,
                   ]}
                 >
                   {isLoading ? "Registrando..." : "Registrarme"}
