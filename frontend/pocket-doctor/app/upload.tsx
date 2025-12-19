@@ -379,7 +379,7 @@ export default function UploadScreen() {
               )}
             </View>
             <ThemedText style={styles.termsText}>
-              He leído y acepto los <ThemedText style={styles.termsLink}>Aviso Legal</ThemedText>
+              He leído y acepto el <ThemedText style={styles.termsLink}>Aviso Legal</ThemedText>
             </ThemedText>
           </TouchableOpacity>
 
