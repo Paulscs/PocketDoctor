@@ -18,6 +18,8 @@ import { ThemedText } from "@/components/themed-text";
 import { Ionicons } from "@expo/vector-icons";
 import CheckRow from "../components/ui/CheckRow";
 import { router } from "expo-router";
+import { TermsConditionsModal } from "@/components/TermsConditionsModal";
+import { PrivacyPolicyModal } from "@/components/PrivacyPolicyModal";
 import DropDownPicker, {
   ItemType as DDItem,
 } from "react-native-dropdown-picker";
@@ -294,6 +296,8 @@ function RegisterScreenInner() {
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
   const [otherConditions, setOtherConditions] = useState("");
 
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [secure, setSecure] = useState(true);
   const [secureConfirm, setSecureConfirm] = useState(true);
@@ -1087,12 +1091,11 @@ function RegisterScreenInner() {
                 onToggle={() => setAccepted(!accepted)}
                 text="Al registrarme, confirmo que he leído y acepto nuestra "
                 linkText="Términos y Condiciones"
-                onPressLink={() => Linking.openURL("https://example.com/terms")}
+                onPressLink={() => setShowTermsModal(true)}
                 afterLinkText=" y nuestra "
                 privacyText="Política de Privacidad"
-                onPressPrivacy={() =>
-                  Linking.openURL("https://example.com/privacy")
-                }
+                onPressPrivacy={() => setShowPrivacyModal(true)}
+
               />
               {submitted && !accepted && (
                 <Text style={styles.err}>Debe aceptar los términos</Text>
@@ -1176,6 +1179,16 @@ function RegisterScreenInner() {
         maximumDate={new Date()}
         minimumDate={new Date(1900, 0, 1)}
         display={Platform.OS === "ios" ? "inline" : "default"}
+      />
+
+      <TermsConditionsModal
+        visible={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+      />
+
+      <PrivacyPolicyModal
+        visible={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
       />
     </SafeAreaView>
   );
