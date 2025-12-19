@@ -293,3 +293,24 @@ def get_analysis_history(user: AuthUser = Depends(get_current_user)):
     except Exception as e:
         print(f"[History] Error fetching history: {e}")
         raise HTTPException(status_code=500, detail="Error obteniendo historial")
+
+@router.delete("/history/{item_id}", status_code=204)
+def delete_analysis_history(item_id: str, user: AuthUser = Depends(get_current_user)):
+    """
+    Elimina un item del historial de análisis.
+    """
+    try:
+        sb = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+        sb.postgrest.auth(user.token)
+        
+        user_db_id = get_mi_usuario_id(sb, user)
+        if not user_db_id:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+        # Execute Delete with ownership check
+        sb.table("analisis_ia").delete().eq("id", item_id).eq("usuario_id", user_db_id).execute()
+        
+        return
+    except Exception as e:
+        print(f"[History] Error deleting history item {item_id}: {e}")
+        raise HTTPException(status_code=500, detail="Error eliminando el análisis")
