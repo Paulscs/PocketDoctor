@@ -150,7 +150,7 @@ export const useAuthStore = create<AuthStore>(set => ({
       if (msg.startsWith("LOCKED:")) {
         console.warn("[auth] login:locked_check", msg);
       } else {
-        console.error("[auth] login:exception", msg);
+        console.warn("[auth] login:exception", msg);
       }
       set({ error: msg, isLoading: false });
       throw e;

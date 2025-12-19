@@ -63,6 +63,26 @@ async def login(payload: dict):
     if not email or not password:
         raise HTTPException(status_code=400, detail="email y password son requeridos")
 
+    # 0. Check de Enumeración de Usuarios (UX > Seguridad en MVP)
+    if settings.SUPABASE_SERVICE_KEY:
+        try:
+            from supabase import create_client, Client
+            admin_client: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+            
+            # Intentamos consultar 'usuarios' usando lista (más robusto que maybe_single)
+            # res.data será [] si no existe
+            res = admin_client.table("usuarios").select("id").eq("email", email).execute()
+            
+            # Si la lista está vacía -> No registrado
+            if not res.data:
+                 raise HTTPException(status_code=400, detail="Este correo no está registrado en el sistema.")
+                 
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"[Auth Login Debug] EXCEPTION en check de usuario: {e}")
+            # Fallback a login normal
+
     # 1. Verificar si está bloqueado
     record = LOGIN_ATTEMPTS.get(email)
     if record:

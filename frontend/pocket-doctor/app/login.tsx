@@ -799,46 +799,16 @@ export default function LoginScreen() {
               DEMO MODE: Custom visual masking to prevent Android FLAG_SECURE (black screen).
               We render the dots manually in a background Text, and make the foreground TextInput transparent.
             */}
-            <View style={{ flex: 1, justifyContent: "center" }}>
-              {/* Visual Layer (Dots or Text) */}
-              <Text
-                style={[
-                  styles.input,
-                  {
-                    position: "absolute",
-                    color: !showPassword && password.length > 0 ? black : "transparent",
-                    zIndex: 0,
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    textAlignVertical: 'center',
-                    paddingTop: 14
-                  },
-                ]}
-                numberOfLines={1}
-              >
-                {!showPassword ? "•".repeat(password.length) : ""}
-              </Text>
-
-              {/* Functional Layer (Transparent Input) */}
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: !showPassword && password.length > 0 ? "transparent" : black,
-                    zIndex: 1,
-                  },
-                ]}
-                placeholder="Introduzca su contraseña"
-                placeholderTextColor={placeholder}
-                secureTextEntry={false}
-                autoComplete="password"
-                editable={!isLoading}
-                value={password}
-                onChangeText={setPassword}
-              />
-            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Introduzca su contraseña"
+              placeholderTextColor={placeholder}
+              secureTextEntry={!showPassword}
+              autoComplete="password"
+              editable={!isLoading}
+              value={password}
+              onChangeText={setPassword}
+            />
             <TouchableOpacity onPress={() => setShowPassword(p => !p)}>
               <Ionicons
                 name={showPassword ? "eye-off-outline" : "eye-outline"}
@@ -888,7 +858,7 @@ export default function LoginScreen() {
             <Animated.View style={[styles.errorToast, { opacity: fadeAnim }]}>
               <Ionicons name="close-circle" size={24} color={white} style={styles.errorIcon} />
               <Text style={styles.errorText}>
-                El correo electrónico o la contraseña son incorrectos.
+                {error || "Usuario o contraseña incorrectos."}
               </Text>
             </Animated.View>
           )}

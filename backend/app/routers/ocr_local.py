@@ -50,8 +50,12 @@ router = APIRouter(prefix="/ocr-local", tags=["OCR local"])
 # Supabase
 # ---------------------------
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
+# ---------------------------
+# Supabase
+# ---------------------------
+
+SUPABASE_URL = settings.SUPABASE_URL
+SUPABASE_SERVICE_KEY = settings.SUPABASE_SERVICE_KEY
 SUPABASE_BUCKET = "uploads"
 
 supabase_client: Optional[Client] = None
@@ -61,7 +65,7 @@ if SUPABASE_URL and SUPABASE_SERVICE_KEY:
     except Exception as e:
         print(f"[Supabase] Error creando cliente: {e}")
 else:
-    print("[Supabase] SUPABASE_URL o SUPABASE_SERVICE_KEY no configurados")
+    print(f"[Supabase] Warning: SUPABASE_URL o SUPABASE_SERVICE_KEY faltantes. Service Key Configurada: {bool(SUPABASE_SERVICE_KEY)}")
 
 
 def upload_pdf_to_supabase(content: bytes, filename: str) -> tuple[Optional[str], Optional[str]]:

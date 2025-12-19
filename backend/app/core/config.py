@@ -1,5 +1,10 @@
 # app/core/config.py
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+import os
+
+# Forzar carga de .env para asegurar que Pydantic lo vea
+load_dotenv()
 
 class Settings(BaseSettings):
     # --- Requeridos (sin default) primero ---
@@ -7,6 +12,7 @@ class Settings(BaseSettings):
     SUPABASE_KEY: str
 
     # --- Opcionales con default después ---
+    SUPABASE_SERVICE_KEY: str | None = None
     SUPABASE_JWT_SECRET: str | None = None
     SUPABASE_JWKS_URL: str | None = None
 
