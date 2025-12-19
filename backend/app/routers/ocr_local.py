@@ -164,7 +164,12 @@ Instrucciones adicionales:
 6. Genera recomendaciones prácticas basadas en los resultados anómalos o para mantener la buena salud.
 7. ASEGÚRATE de que cada warning y recomendación tenga un TÍTULO único y descriptivo.
 8. Genera las respuestas para la sección "qa" basándote EXCLUSIVAMENTE en los resultados analizados.
-9. NO incluyas texto fuera del JSON (como ```json ... ```). Devuelve SOLO el JSON crudo.
+10. Tono y Estilo:
+    - Usa un lenguaje sencillo y accesible (palabras llanas), pensando en una audiencia general que no sabe medicina.
+    - Mantén la calma: sé informativo pero NO alarmista.
+    - Si encuentras valores fuera de rango ("alto" o "bajo"), explícalos con tranquilidad. Solo usa un tono de urgencia si hay indicadores críticos para la vida (muy muy serios). En el resto de casos, sugiere consulta médica sin asustar.
+    - En el resumen y las recomendaciones, prioriza la claridad y la tranquilidad del paciente.
+11. NO incluyas texto fuera del JSON (como ```json ... ```). Devuelve SOLO el JSON crudo.
 """
 
 class PatientProfile(BaseModel):

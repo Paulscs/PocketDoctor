@@ -19,9 +19,13 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useGlobalFont } from "@/hooks/useGlobalFont";
 import { useAuthStore } from "@/src/store/authStore";
+import { LogBox } from "react-native";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// Suppress all logs for demo video
+LogBox.ignoreAllLogs(true);
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
