@@ -694,7 +694,7 @@ export default function LoginScreen() {
         }
 
         useAuthStore.setState({ user, session });
-        // Alert.alert("Bienvenido", "Inicio de sesión correcto con Google ✅");
+        Alert.alert("Bienvenido", "Inicio de sesión correcto con Google ✅");
       }
     } catch (err) {
       console.error("[GOOGLE] error inesperado:", err);
@@ -841,7 +841,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             {/* Microsoft / Apple: por ahora solo UI */}
-            
+
           </View>
 
           {/* Register */}
