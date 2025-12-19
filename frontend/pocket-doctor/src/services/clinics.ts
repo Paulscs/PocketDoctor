@@ -52,3 +52,19 @@ export async function getEspecialistasCentro(centroId: string, accessToken: stri
 
   return response.json();
 }
+
+export async function searchSpecialists(query: string, accessToken: string): Promise<EspecialistaCentro[]> {
+  const response = await fetch(`${API_BASE_URL}/especialistas?q=${encodeURIComponent(query)}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to search specialists: ${response.statusText}`);
+  }
+
+  return response.json();
+}

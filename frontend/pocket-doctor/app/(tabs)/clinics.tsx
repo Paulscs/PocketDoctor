@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store/authStore";
-import { getCentros, Centro, getEspecialistasCentro, EspecialistaCentro } from "@/src/services/clinics";
+import { getCentros, Centro, getEspecialistasCentro, EspecialistaCentro, searchSpecialists } from "@/src/services/clinics";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 
 interface Clinic {
@@ -147,6 +147,7 @@ export default function ClinicsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
   const [specialists, setSpecialists] = useState<EspecialistaCentro[]>([]);
+  const [searchedSpecialists, setSearchedSpecialists] = useState<EspecialistaCentro[]>([]);
 
 
   useEffect(() => {
@@ -182,6 +183,25 @@ export default function ClinicsScreen() {
     };
     fetchSpecialists();
   }, [selectedClinic, session]);
+
+  // Effect customizado para búsqueda en tiempo real de especialistas
+  useEffect(() => {
+    const doSearch = async () => {
+      if (!session?.access_token || searchQuery.length < 2) {
+        setSearchedSpecialists([]);
+        return;
+      }
+      try {
+        const results = await searchSpecialists(searchQuery, session.access_token);
+        setSearchedSpecialists(results);
+      } catch (error) {
+        console.error("Error searching specialists:", error);
+      }
+    };
+
+    const timeoutId = setTimeout(doSearch, 500); // Debounce de 500ms
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, session]);
 
   const filteredClinics = clinics.filter(clinic => {
     const matchesSearch =
@@ -404,8 +424,57 @@ export default function ClinicsScreen() {
           </View>
 
 
+
           <View style={styles.clinicsList}>
-            {filteredClinics.map(renderClinicCard)}
+            {/* Sección de Especialistas Encontrados */}
+            {searchQuery.length > 0 && searchedSpecialists.length > 0 && (
+              <View style={{ marginBottom: 20 }}>
+                <ThemedText style={{ fontSize: 16, fontWeight: '600', color: Colors.light.brandBlue, marginBottom: 12, marginLeft: 4 }}>
+                  Especialistas encontrados ({searchedSpecialists.length})
+                </ThemedText>
+                {searchedSpecialists.map((spec) => (
+                  <View key={spec.especialista_id} style={[styles.clinicCard, { flexDirection: 'column', alignItems: 'flex-start', padding: 12 }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, width: '100%' }}>
+                      <View style={[styles.clinicIcon, { backgroundColor: Colors.light.lightBlue, width: 32, height: 32, borderRadius: 16 }]}>
+                        <Ionicons name="person" size={16} color={Colors.light.white} />
+                      </View>
+                      <View style={{ flex: 1, marginLeft: 10 }}>
+                        <ThemedText style={[styles.clinicName, { fontSize: 14, marginBottom: 0 }]}>{spec.nombre} {spec.apellido || ''}</ThemedText>
+                        {spec.especialidad && spec.especialidad.length > 0 && (
+                          <ThemedText style={{ fontSize: 12, color: Colors.light.gray }}>{spec.especialidad.join(", ")}</ThemedText>
+                        )}
+                      </View>
+                    </View>
+                    {spec.contacto && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, marginLeft: 42 }}>
+                        <Ionicons name="call-outline" size={12} color={Colors.light.gray} />
+                        <ThemedText style={{ fontSize: 11, color: Colors.light.gray }}>{spec.contacto}</ThemedText>
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Sección de Clínicas */}
+            {(searchQuery.length === 0 || filteredClinics.length > 0) && (
+              <View>
+                {searchQuery.length > 0 && (
+                  <ThemedText style={{ fontSize: 16, fontWeight: '600', color: Colors.light.brandBlue, marginBottom: 12, marginLeft: 4 }}>
+                    Clínicas
+                  </ThemedText>
+                )}
+                {filteredClinics.map(renderClinicCard)}
+              </View>
+            )}
+
+            {/* Empty State */}
+            {searchQuery.length > 0 && filteredClinics.length === 0 && searchedSpecialists.length === 0 && (
+              <View style={{ alignItems: 'center', marginTop: 40, opacity: 0.6 }}>
+                <Ionicons name="search" size={48} color={Colors.light.gray} />
+                <ThemedText style={{ marginTop: 12, color: Colors.light.gray }}>No se encontraron resultados</ThemedText>
+              </View>
+            )}
           </View>
         </ScrollView>
       ) : (
@@ -553,15 +622,16 @@ const styles = StyleSheet.create({
   clinicsList: {
     paddingHorizontal: 20,
     paddingBottom: 20,
-    gap: 12,
+    // gap: 12 removed in favor of card margin for better compatibility
   },
 
   clinicCard: {
     backgroundColor: Colors.light.white,
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 12, // Explicit spacing
     shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -762,6 +832,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.light.textGray,
+    marginBottom: 2, // Reduced
   },
   specialistContact: {
     fontSize: 14,
