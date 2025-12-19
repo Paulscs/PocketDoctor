@@ -188,18 +188,15 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
-      {/* Header Background Curve */}
-      <View style={styles.headerBackground} />
-
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.logoContainer}>
             <Image
               source={require("@/assets/images/logoBlue.png")}
-              style={[styles.logo, { tintColor: Colors.light.white }]} // White logo on blue bg
+              style={styles.logo}
               resizeMode="contain"
             />
-            <ThemedText style={[styles.logoText, { color: Colors.light.white }]}>POCKET DOCTOR</ThemedText>
+            <ThemedText style={styles.logoText}>POCKET DOCTOR</ThemedText>
           </View>
         </View>
         <View style={styles.headerRight}>
@@ -539,7 +536,7 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 14,
     fontWeight: "700",
-    color: Colors.light.white,
+    color: Colors.light.brandBlue,
     letterSpacing: 0.5,
   },
   pageTitle: {
