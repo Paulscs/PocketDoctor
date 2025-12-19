@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, ScrollView, View } from 'react-native';
+import { StyleSheet, ScrollView, View, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -67,23 +67,58 @@ export default function HelpArticleScreen() {
                     </View>
                 )}
 
-                {/* Feedback Section Placeholder */}
+                {/* Feedback Section */}
                 <View style={styles.feedbackContainer}>
                     <ThemedText style={styles.feedbackLabel}>¿Fue útil este artículo?</ThemedText>
-                    <View style={styles.feedbackButtons}>
-                        <View style={[styles.feedbackBtn, { borderColor: colors.icon }]}>
-                            <Ionicons name="thumbs-up-outline" size={20} color={colors.text} />
-                        </View>
-                        <View style={[styles.feedbackBtn, { borderColor: colors.icon }]}>
-                            <Ionicons name="thumbs-down-outline" size={20} color={colors.text} />
-                        </View>
-                    </View>
+                    <FeedbackButtons colors={colors} />
                 </View>
-
             </ScrollView>
         </ThemedView>
     );
 }
+
+function FeedbackButtons({ colors }: { colors: any }) {
+    const [feedback, setFeedback] = React.useState<'up' | 'down' | null>(null);
+
+    return (
+        <View style={styles.feedbackButtons}>
+            <TouchableOpacity
+                style={[
+                    styles.feedbackBtn,
+                    {
+                        borderColor: feedback === 'up' ? colors.tint : colors.icon,
+                        backgroundColor: feedback === 'up' ? colors.tint + '20' : 'transparent'
+                    }
+                ]}
+                onPress={() => setFeedback('up')}
+            >
+                <Ionicons
+                    name={feedback === 'up' ? "thumbs-up" : "thumbs-up-outline"}
+                    size={20}
+                    color={feedback === 'up' ? colors.tint : colors.text}
+                />
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={[
+                    styles.feedbackBtn,
+                    {
+                        borderColor: feedback === 'down' ? colors.tint : colors.icon,
+                        backgroundColor: feedback === 'down' ? colors.tint + '20' : 'transparent'
+                    }
+                ]}
+                onPress={() => setFeedback('down')}
+            >
+                <Ionicons
+                    name={feedback === 'down' ? "thumbs-down" : "thumbs-down-outline"}
+                    size={20}
+                    color={feedback === 'down' ? colors.tint : colors.text}
+                />
+            </TouchableOpacity>
+        </View>
+    );
+}
+
+
 
 const styles = StyleSheet.create({
     container: {

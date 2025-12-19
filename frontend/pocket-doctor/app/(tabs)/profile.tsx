@@ -188,19 +188,21 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
+      {/* Header Background Curve */}
+      <View style={styles.headerBackground} />
+
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.logoContainer}>
             <Image
               source={require("@/assets/images/logoBlue.png")}
-              style={styles.logo}
+              style={[styles.logo, { tintColor: Colors.light.white }]} // White logo on blue bg
               resizeMode="contain"
             />
-            <ThemedText style={styles.logoText}>POCKET DOCTOR</ThemedText>
+            <ThemedText style={[styles.logoText, { color: Colors.light.white }]}>POCKET DOCTOR</ThemedText>
           </View>
         </View>
         <View style={styles.headerRight}>
-          <ThemedText style={styles.pageTitle}>Perfil</ThemedText>
           <UserAvatar />
         </View>
       </View>
@@ -211,281 +213,212 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Picture Section */}
-        <View style={styles.profilePictureSection}>
+        <View style={styles.profileHeaderCard}>
           <View style={styles.profilePictureContainer}>
             <View style={styles.profilePicture}>
-              <Ionicons
-                name="person"
-                size={40}
-                color={Colors.light.placeholderGray}
-              />
+              {profile.nombre ? (
+                <ThemedText style={styles.avatarText}>{profile.nombre[0]}</ThemedText>
+              ) : (
+                <Ionicons name="person" size={40} color={Colors.light.placeholderGray} />
+              )}
             </View>
             <TouchableOpacity
               style={styles.editPictureButton}
               onPress={handleEditProfile}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              <Ionicons name="pencil" size={12} color={Colors.light.white} />
+              <Ionicons name="camera" size={14} color={Colors.light.white} />
             </TouchableOpacity>
           </View>
           <ThemedText style={styles.fullName}>
             {profile.nombre || 'Nombre'} {profile.apellido || 'Apellido'}
           </ThemedText>
+          <ThemedText style={styles.emailText}>{profile.email}</ThemedText>
         </View>
 
-        {/* Personal Information Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>
-            Información Personal
-          </ThemedText>
+
+        {/* Info Card */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <ThemedText style={styles.cardTitle}>Información Personal</ThemedText>
+            <TouchableOpacity onPress={handleEditProfile} style={styles.cardHeaderAction}>
+              <ThemedText style={styles.cardHeaderActionText}>Editar</ThemedText>
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.inputRow}>
             <View style={styles.inputContainer}>
               <ThemedText style={styles.inputLabel}>Nombres</ThemedText>
               <TextInput
-                style={styles.textInputDisabled}
+                style={[styles.textInput, !isEditing && styles.textInputReadonly]}
                 value={profile.nombre || ''}
                 onChangeText={text => updateProfile("nombre", text)}
-                editable={false}
+                editable={isEditing}
                 placeholder="Nombres"
-                placeholderTextColor={Colors.light.placeholderGray}
               />
             </View>
             <View style={styles.inputContainer}>
               <ThemedText style={styles.inputLabel}>Apellidos</ThemedText>
               <TextInput
-                style={styles.textInputDisabled}
+                style={[styles.textInput, !isEditing && styles.textInputReadonly]}
                 value={profile.apellido || ''}
                 onChangeText={text => updateProfile("apellido", text)}
-                editable={false}
+                editable={isEditing}
                 placeholder="Apellidos"
-                placeholderTextColor={Colors.light.placeholderGray}
               />
             </View>
           </View>
-        </View>
 
-
-        {/* Email Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>
-            Correo Electrónico
-          </ThemedText>
           <View style={styles.inputContainer}>
+            <ThemedText style={styles.inputLabel}>Fecha de Nacimiento</ThemedText>
             <TextInput
-              style={styles.textInputDisabled}
-              value={profile.email}
-              onChangeText={text => updateProfile("email", text)}
-              editable={false}
-              placeholder="Correo electrónico"
-              placeholderTextColor={Colors.light.placeholderGray}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-        </View>
-        {/* Birth Date Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Fecha de Nacimiento</ThemedText>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInputDisabled}
+              style={[styles.textInput, !isEditing && styles.textInputReadonly]}
               value={profile.fecha_nacimiento || ''}
               onChangeText={text => updateProfile("fecha_nacimiento", text)}
-              editable={false}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={Colors.light.placeholderGray}
-            />
-          </View>
-        </View>
-
-        {/* Medical Information Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Información Médica</ThemedText>
-
-          {/* Height Section */}
-          <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Altura (cm)</ThemedText>
-            <TextInput
-              style={styles.textInputDisabled}
-              value={profile.altura_cm?.toString() || ''}
-              onChangeText={text => updateProfile("altura_cm", text ? parseFloat(text) : undefined)}
-              editable={false}
-              placeholder="Altura en cm"
-              placeholderTextColor={Colors.light.placeholderGray}
-              keyboardType="numeric"
-            />
-          </View>
-
-          {/* Weight Section */}
-          <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Peso (kg)</ThemedText>
-            <TextInput
-              style={styles.textInput}
-              value={profile.peso_kg?.toString() || ''}
-              onChangeText={text => updateProfile("peso_kg", text ? parseFloat(text) : undefined)}
               editable={isEditing}
-              placeholder="Peso en kg"
-              placeholderTextColor={Colors.light.placeholderGray}
-              keyboardType="numeric"
+              placeholder="YYYY-MM-DD"
             />
-          </View>
-
-          {/* Allergies Section */}
-          <View style={styles.inputContainer}>
-            <View style={styles.labelRow}>
-              <ThemedText style={styles.inputLabel}>Alérgias</ThemedText>
-              {isEditing && (
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => openItemModal('alergias')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="add-circle" size={20} color={Colors.light.brandBlue} />
-                </TouchableOpacity>
-              )}
-            </View>
-            <View style={styles.chipContainer}>
-              {profile.alergias && profile.alergias.length > 0 ? (
-                profile.alergias.map((alergia, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.chip}
-                    onPress={() => isEditing && openItemModal('alergias')}
-                    activeOpacity={0.7}
-                  >
-                    <ThemedText style={styles.chipText}>{alergia}</ThemedText>
-                    {isEditing && (
-                      <TouchableOpacity
-                        style={styles.chipRemove}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          const newAlergias = profile.alergias?.filter((_, i) => i !== index) || [];
-                          updateProfile('alergias', newAlergias);
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="close" size={14} color={Colors.light.error} />
-                      </TouchableOpacity>
-                    )}
-                  </TouchableOpacity>
-                ))
-              ) : (
-                <TouchableOpacity
-                  style={styles.addButtonInline}
-                  onPress={() => isEditing && openItemModal('alergias')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="add" size={16} color={Colors.light.brandBlue} />
-                  <ThemedText style={styles.addButtonTextInline}>
-                    {isEditing ? 'Agregar alergia' : 'No hay alergias registradas'}
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-
-          {/* Medical Conditions Section */}
-          <View style={styles.inputContainer}>
-            <View style={styles.labelRow}>
-              <ThemedText style={styles.inputLabel}>Condiciones Médicas</ThemedText>
-              {isEditing && (
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => openItemModal('condiciones_medicas')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="add-circle" size={20} color={Colors.light.brandBlue} />
-                </TouchableOpacity>
-              )}
-            </View>
-            <View style={styles.chipContainer}>
-              {profile.condiciones_medicas && profile.condiciones_medicas.length > 0 ? (
-                profile.condiciones_medicas.map((condicion, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.chip}
-                    onPress={() => isEditing && openItemModal('condiciones_medicas')}
-                    activeOpacity={0.7}
-                  >
-                    <ThemedText style={styles.chipText}>{condicion}</ThemedText>
-                    {isEditing && (
-                      <TouchableOpacity
-                        style={styles.chipRemove}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          const newCondiciones = profile.condiciones_medicas?.filter((_, i) => i !== index) || [];
-                          updateProfile('condiciones_medicas', newCondiciones);
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="close" size={14} color={Colors.light.error} />
-                      </TouchableOpacity>
-                    )}
-                  </TouchableOpacity>
-                ))
-              ) : (
-                <TouchableOpacity
-                  style={styles.addButtonInline}
-                  onPress={() => isEditing && openItemModal('condiciones_medicas')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="add" size={16} color={Colors.light.brandBlue} />
-                  <ThemedText style={styles.addButtonTextInline}>
-                    {isEditing ? 'Agregar condición médica' : 'No hay condiciones médicas registradas'}
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
-            </View>
           </View>
         </View>
 
-
-
-        {/* Save Changes Button */}
-        {isSaving ? (
-          <View style={styles.saveButton}>
-            <ActivityIndicator color={Colors.light.white} />
-            <ThemedText style={styles.saveButtonText}>Guardando...</ThemedText>
+        {/* Medical Card */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <ThemedText style={styles.cardTitle}>Información Médica</ThemedText>
           </View>
-        ) : (
+
+          <View style={styles.inputRow}>
+            <View style={styles.inputContainer}>
+              <ThemedText style={styles.inputLabel}>Altura (cm)</ThemedText>
+              <TextInput
+                style={[styles.textInput, !isEditing && styles.textInputReadonly]}
+                value={profile.altura_cm?.toString() || ''}
+                onChangeText={text => updateProfile("altura_cm", text ? parseFloat(text) : undefined)}
+                editable={isEditing}
+                placeholder="0"
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <ThemedText style={styles.inputLabel}>Peso (kg)</ThemedText>
+              <TextInput
+                style={[styles.textInput, !isEditing && styles.textInputReadonly]}
+                value={profile.peso_kg?.toString() || ''}
+                onChangeText={text => updateProfile("peso_kg", text ? parseFloat(text) : undefined)}
+                editable={isEditing}
+                placeholder="0"
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+
+          {/* Allergies */}
+          <View style={styles.divider} />
+          <View style={styles.labelRow}>
+            <ThemedText style={styles.inputLabel}>Alérgias</ThemedText>
+            {isEditing && (
+              <TouchableOpacity onPress={() => openItemModal('alergias')}>
+                <Ionicons name="add-circle" size={24} color={Colors.light.brandBlue} />
+              </TouchableOpacity>
+            )}
+          </View>
+          <View style={styles.chipContainer}>
+            {profile.alergias && profile.alergias.length > 0 ? (
+              profile.alergias.map((alergia, index) => (
+                <View key={index} style={styles.chip}>
+                  <ThemedText style={styles.chipText}>{alergia}</ThemedText>
+                  {isEditing && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        const newAlergias = profile.alergias?.filter((_, i) => i !== index) || [];
+                        updateProfile('alergias', newAlergias);
+                      }}
+                      style={styles.chipRemove}
+                    >
+                      <Ionicons name="close-circle" size={16} color={Colors.light.textGray} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))
+            ) : (
+              <ThemedText style={styles.emptyText}>No hay alergias registradas</ThemedText>
+            )}
+          </View>
+
+          {/* Conditions */}
+          <View style={styles.divider} />
+          <View style={styles.labelRow}>
+            <ThemedText style={styles.inputLabel}>Condiciones Médicas</ThemedText>
+            {isEditing && (
+              <TouchableOpacity onPress={() => openItemModal('condiciones_medicas')}>
+                <Ionicons name="add-circle" size={24} color={Colors.light.brandBlue} />
+              </TouchableOpacity>
+            )}
+          </View>
+          <View style={styles.chipContainer}>
+            {profile.condiciones_medicas && profile.condiciones_medicas.length > 0 ? (
+              profile.condiciones_medicas.map((condicion, index) => (
+                <View key={index} style={styles.chip}>
+                  <ThemedText style={styles.chipText}>{condicion}</ThemedText>
+                  {isEditing && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        const newCondiciones = profile.condiciones_medicas?.filter((_, i) => i !== index) || [];
+                        updateProfile('condiciones_medicas', newCondiciones);
+                      }}
+                      style={styles.chipRemove}
+                    >
+                      <Ionicons name="close-circle" size={16} color={Colors.light.textGray} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))
+            ) : (
+              <ThemedText style={styles.emptyText}>No hay condiciones registradas</ThemedText>
+            )}
+          </View>
+        </View>
+
+        {/* Action Buttons */}
+        {isEditing && (
           <TouchableOpacity
             style={styles.saveButton}
             onPress={handleSaveChanges}
-            activeOpacity={0.7}
+            disabled={isSaving}
           >
-            <ThemedText style={styles.saveButtonText}>Guardar Cambios</ThemedText>
+            {isSaving ? (
+              <ActivityIndicator color={Colors.light.white} />
+            ) : (
+              <ThemedText style={styles.saveButtonText}>Guardar Cambios</ThemedText>
+            )}
           </TouchableOpacity>
         )}
 
-        {/* Support Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Soporte</ThemedText>
+        {/* Links Section */}
+        <View style={styles.linksContainer}>
           <TouchableOpacity
-            style={styles.helpButton}
+            style={styles.linkRow}
             onPress={() => router.push('/help')}
-            activeOpacity={0.7}
           >
-            <View style={styles.helpButtonContent}>
-              <Ionicons name="help-buoy-outline" size={24} color={Colors.light.brandBlue} />
-              <ThemedText style={styles.helpButtonText}>Centro de Ayuda</ThemedText>
+            <View style={styles.linkIcon}>
+              <Ionicons name="help-buoy" size={22} color={Colors.light.brandBlue} />
             </View>
+            <ThemedText style={styles.linkText}>Centro de Ayuda</ThemedText>
             <Ionicons name="chevron-forward" size={20} color={Colors.light.placeholderGray} />
           </TouchableOpacity>
-        </View>
 
-        {/* Logout Button */}{/* Logout Button */}
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name="log-out-outline"
-            size={16}
-            color={Colors.light.error}
-          />
-          <ThemedText style={styles.logoutButtonText}>Cerrar Sesión</ThemedText>
-        </TouchableOpacity>
+          <View style={styles.linkDivider} />
+
+          <TouchableOpacity
+            style={styles.linkRow}
+            onPress={handleLogout}
+          >
+            <View style={[styles.linkIcon, { backgroundColor: '#ffe5e5' }]}>
+              <Ionicons name="log-out" size={22} color={Colors.light.error} />
+            </View>
+            <ThemedText style={[styles.linkText, { color: Colors.light.error }]}>Cerrar Sesión</ThemedText>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
       {/* Modal for editing allergies/medical conditions */}
@@ -568,14 +501,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 140, // Height to cover header and part of profile pic
+    backgroundColor: Colors.light.brandBlue,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.borderGray,
+    // Removed border
   },
   headerLeft: {
     flex: 1,
@@ -595,143 +537,228 @@ const styles = StyleSheet.create({
     height: 32,
   },
   logoText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "700",
-    color: Colors.light.brandBlue,
+    color: Colors.light.white,
     letterSpacing: 0.5,
   },
   pageTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.light.brandBlue,
-  },
-  profileIcon: {
-    width: 32,
-    height: 32,
-    backgroundColor: Colors.light.brandBlue,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profileIconText: {
-    fontSize: 14,
-    fontWeight: "700",
     color: Colors.light.white,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  profilePictureSection: {
-    alignItems: "center",
-    paddingTop: 24,
-    paddingBottom: 32,
+  profileHeaderCard: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    marginBottom: 20,
   },
   profilePictureContainer: {
     position: "relative",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   profilePicture: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.light.lightGray,
+    width: 100, // Larger
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.light.white,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: Colors.light.borderGray,
+    borderWidth: 4,
+    borderColor: Colors.light.white,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  avatarText: {
+    fontSize: 40,
+    fontWeight: '700',
+    color: Colors.light.brandBlue,
   },
   editPictureButton: {
     position: "absolute",
     bottom: 0,
     right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: Colors.light.brandBlue,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: Colors.light.white,
   },
   fullName: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
-    color: Colors.light.brandBlue,
+    color: Colors.light.black, // Changed to black for contrast below header
     textAlign: "center",
+    marginTop: 8,
+  },
+  emailText: {
+    fontSize: 14,
+    color: Colors.light.textGray,
+    marginTop: 2,
+  },
+  card: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: Colors.light.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.light.black,
+  },
+  cardHeaderAction: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  cardHeaderActionText: {
+    color: Colors.light.brandBlue,
+    fontWeight: '600',
+    fontSize: 14,
   },
   section: {
     marginBottom: 24,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.brandBlue,
-    marginBottom: 12,
-  },
   inputRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: 16,
+    marginBottom: 16, // Spacing between rows
   },
   inputContainer: {
     flex: 1,
+    marginBottom: 12,
   },
   inputLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "500",
     color: Colors.light.textGray,
-    marginBottom: 8,
+    marginBottom: 6,
+    opacity: 0.8,
   },
   textInput: {
-    backgroundColor: Colors.light.white,
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    backgroundColor: Colors.light.lightGray, // Lighter background
+    borderRadius: 10,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: Colors.light.textGray,
-    borderWidth: 1,
-    borderColor: Colors.light.borderGray,
-    shadowColor: Colors.light.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    color: Colors.light.black,
+    // Removed border
   },
-  textInputDisabled: {
-    backgroundColor: Colors.light.lightGray,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+  textInputReadonly: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 0,
+    paddingVertical: 0,
     fontSize: 16,
+    color: Colors.light.black,
+    fontWeight: '500',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.light.borderGray,
+    opacity: 0.5,
+    marginVertical: 16,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  chipContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    backgroundColor: Colors.light.brandBlue + '15', // Transparent blue
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  chipText: {
+    fontSize: 14,
+    color: Colors.light.brandBlue,
+    fontWeight: '500',
+  },
+  chipRemove: {
+    marginLeft: 4,
+  },
+  emptyText: {
+    fontSize: 14,
     color: Colors.light.placeholderGray,
-    borderWidth: 1,
-    borderColor: Colors.light.borderGray,
-    shadowColor: Colors.light.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    fontStyle: 'italic',
   },
   saveButton: {
     backgroundColor: Colors.light.brandBlue,
     borderRadius: 12,
     paddingVertical: 16,
-    paddingHorizontal: 24,
     alignItems: "center",
-    marginTop: 20,
-    shadowColor: Colors.light.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginBottom: 20,
+    shadowColor: Colors.light.brandBlue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   saveButtonText: {
     fontSize: 16,
     fontWeight: "600",
     color: Colors.light.white,
+  },
+  linksContainer: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 16,
+    padding: 8, // container padding
+    marginBottom: 40,
+    shadowColor: Colors.light.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  linkIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.light.brandBlue + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  linkText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.light.black,
+  },
+  linkDivider: {
+    height: 1,
+    backgroundColor: Colors.light.borderGray,
+    marginLeft: 68, // Offset icon
   },
   logoutButton: {
     backgroundColor: Colors.light.white,
@@ -761,37 +788,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.light.brandBlue,
   },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
   editButton: {
     padding: 4,
-  },
-  chipContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    backgroundColor: Colors.light.lightGray,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: Colors.light.borderGray,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  chipText: {
-    fontSize: 14,
-    color: Colors.light.textGray,
-  },
-  chipRemove: {
-    padding: 2,
   },
   addButtonInline: {
     flexDirection: 'row',
@@ -936,5 +934,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.light.textGray,
     fontWeight: '500',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
   },
 });
