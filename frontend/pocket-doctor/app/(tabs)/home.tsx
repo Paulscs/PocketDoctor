@@ -221,13 +221,7 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Search Bar */}
-        <View style={styles.searchSection}>
-          <SearchBar
-            placeholder="Buscar síntomas, medicamentos..."
-            style={styles.searchBar}
-          />
-        </View>
+
 
         {/* Quick Actions */}
         <View style={styles.quickActionsSection}>

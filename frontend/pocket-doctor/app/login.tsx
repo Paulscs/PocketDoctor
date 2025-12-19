@@ -631,20 +631,6 @@ const handleOpenLink = () => {
 
           {/* Remember + Forgot */}
           <View style={styles.optionsRow}>
-            <TouchableOpacity
-              style={styles.rememberRow}
-              onPress={() => setRemember(r => !r)}
-              activeOpacity={0.8}
-            >
-              <View
-                style={[styles.checkbox, remember && styles.checkboxChecked]}
-              >
-                {remember && (
-                  <Ionicons name="checkmark" size={12} color={white} />
-                )}
-              </View>
-              <Text style={styles.rememberText}>Recordarme</Text>
-            </TouchableOpacity>
 
             <TouchableOpacity onPress={navigateToForgotPassword}>
               <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
