@@ -89,26 +89,42 @@ async def parse_with_llm(
             max_output_tokens=8192,
         )
 
-        response = model.generate_content(
-            json.dumps(user_content, ensure_ascii=False),
-            generation_config=generation_config,
-        )
+        # Reintentos para manejar "JSON cortado"
+        max_retries = 3
+        data = None
+        last_error = None
+        final_raw_text = ""
 
-        raw_text = response.text
-        json_str = extract_json_from_text(raw_text)
+        for attempt in range(max_retries):
+            try:
+                print(f"[Gemini] Intento {attempt+1}/{max_retries}...")
+                response = model.generate_content(
+                    json.dumps(user_content, ensure_ascii=False),
+                    generation_config=generation_config,
+                )
 
-        try:
-            data = json.loads(json_str)
-        except json.JSONDecodeError as e:
+                final_raw_text = response.text
+                json_str = extract_json_from_text(final_raw_text)
+                data = json.loads(json_str)
+                # Éxito
+                break
+            except json.JSONDecodeError as e:
+                print(f"[Gemini] Fallo parseo JSON intento {attempt+1}: {e}")
+                last_error = e
+            except Exception as e:
+                print(f"[Gemini] Error API intento {attempt+1}: {e}")
+                last_error = e
+
+        if data is None:
             print("--------------------------------------------------")
-            print("ERROR PARSEANDO JSON DE GEMINI:")
-            print(f"Final del texto recibido: ...{raw_text[-200:]}")
-            print(f"Error: {e}")
+            print("ERROR PARSEANDO JSON DE GEMINI (FINAL):")
+            print(f"Final del texto recibido: ...{final_raw_text[-200:]}")
+            print(f"Error: {last_error}")
             print("--------------------------------------------------")
 
             raise HTTPException(
                 status_code=500,
-                detail="La IA devolvió un formato inválido o incompleto (JSON cortado).",
+                detail="La IA devolvió un formato inválido o incompleto (JSON cortado) tras varios intentos.",
             )
 
         llm_result = LLMInterpretation(**data)

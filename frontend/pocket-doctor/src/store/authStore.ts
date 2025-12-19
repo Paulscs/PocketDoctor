@@ -79,29 +79,56 @@ export const useAuthStore = create<AuthStore>(set => ({
         console.warn("[auth] login:signOut_cleanup_error", err)
       );
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // Usamos el backend proxy para manejar logic de bloqueo (lockout)
+      // en vez de llamar a supabase.auth.signInWithPassword directamente.
+      const { apiClient } = require("../utils/apiClient");
+
+      const response = await apiClient("auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (error) {
+      if (!response.ok) {
+        // Puede ser 401 (Credenciales invalidas) o 429 (LOCKED:time)
+        const errorData = await response.json().catch(() => ({}));
+        const detail = errorData.detail || "Error al iniciar sesión";
+
         console.warn("[auth] login:error", {
-          code: (error as any)?.status,
-          message: error.message,
+          status: response.status,
+          detail,
         });
-        set({ error: error.message, isLoading: false });
-        throw error;
+
+        // Lanzamos error con el mensaje exacto para que la UI lo parsee (e.g. "LOCKED:180")
+        throw new Error(detail);
       }
 
+      const data = await response.json();
+
+      // Data debe tener { access_token, refresh_token, user }
+      const { access_token, refresh_token } = data;
+
+      if (!access_token || !refresh_token) {
+        throw new Error("Respuesta inválida del servidor (faltan tokens)");
+      }
+
+      // Sincronizamos la sesión en Supabase cliente
+      const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      });
+
+      if (sessionError) throw sessionError;
+
       console.log("[auth] login:success", {
-        userId: data.user?.id,
-        email: data.user?.email,
-        hasSession: !!(data as any).session,
+        userId: sessionData.user?.id,
+        email: sessionData.user?.email,
+        hasSession: !!sessionData.session,
       });
 
       // Normalize names and fetch profile if we have a session token
-      const user = data.user ?? null;
-      const session = (data as any).session ?? null;
+      const user = sessionData.user ?? null;
+      const session = sessionData.session ?? null;
       let profile: UserProfile | null = null;
 
       if (session?.access_token) {
@@ -118,8 +145,14 @@ export const useAuthStore = create<AuthStore>(set => ({
 
       set({ user, session, userProfile: profile, isLoading: false });
     } catch (e: any) {
-      console.error("[auth] login:exception", e?.message ?? String(e));
-      set({ isLoading: false });
+      const msg = e?.message ?? String(e);
+      // Evitar stack trace gigante si es un error de bloqueo esperado
+      if (msg.startsWith("LOCKED:")) {
+        console.warn("[auth] login:locked_check", msg);
+      } else {
+        console.error("[auth] login:exception", msg);
+      }
+      set({ error: msg, isLoading: false });
       throw e;
     }
   },

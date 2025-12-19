@@ -44,25 +44,87 @@ async def register(payload: dict):
             raise HTTPException(status_code=400, detail=r.text)
         return {"ok": True, "message": "Usuario creado. Revisa tu correo si requiere verificación."}
 
+import time
+
+# Almacén en memoria para intentos fallidos
+# Key: email (str)
+# Value: dict { "count": int, "locked_until": float (timestamp) }
+LOGIN_ATTEMPTS = {}
+
 @router.post("/login")
 async def login(payload: dict):
     """
     Login por email/password contra Supabase Auth.
-    Espera: { "email": "...", "password": "..." }
-    Devuelve: { "access_token": "...", "token_type": "bearer" }
+    Maneja bloqueo de cuenta tras 5 intentos fallidos.
     """
     email = payload.get("email")
     password = payload.get("password")
+    
     if not email or not password:
         raise HTTPException(status_code=400, detail="email y password son requeridos")
 
+    # 1. Verificar si está bloqueado
+    record = LOGIN_ATTEMPTS.get(email)
+    if record:
+        now = time.time()
+        locked_until = record.get("locked_until", 0)
+        
+        if now < locked_until:
+            remaining = int(locked_until - now)
+            # Protocolo LOCKED:{segundos}
+            raise HTTPException(
+                status_code=429, 
+                detail=f"LOCKED:{remaining}"
+            )
+            
     url = f"{settings.SUPABASE_URL}/auth/v1/token?grant_type=password"
     headers = {"apikey": settings.SUPABASE_KEY, "Content-Type": "application/json"}
     body = {"email": email, "password": password}
 
     async with httpx.AsyncClient(timeout=15) as client:
         r = await client.post(url, headers=headers, json=body)
+        
+        # 2. Manejo de respuesta
         if r.status_code >= 400:
+            # Fallo el login
+            if not record:
+                record = {"count": 0, "locked_until": 0}
+                LOGIN_ATTEMPTS[email] = record
+            
+            record["count"] += 1
+            current_count = record["count"]
+            
+            # Lógica de bloqueo
+            # Intento 5 -> Bloqueo 3 mins
+            # Intento 6 -> Bloqueo 4 mins
+            # Intento 7 -> Bloqueo 5 mins...
+            if current_count >= 5:
+                # 3 minutos base + 1 minuto extra por cada intento adicional
+                extra_minutes = current_count - 5
+                lockout_seconds = (3 + extra_minutes) * 60
+                
+                record["locked_until"] = time.time() + lockout_seconds
+                
+                # Devolvemos error de bloqueo INMEDIATAMENTE al fallar el 5to
+                raise HTTPException(
+                    status_code=429,
+                    detail=f"LOCKED:{lockout_seconds}"
+                )
+            
+            # Si es intento 1-4, devolvemos 401 normal
+            # Opcional: Avisar cuantos quedan? Por ahora simple.
             raise HTTPException(status_code=401, detail="Email o contraseña inválidos")
+            
+        # Éxito
         data = r.json()
-        return {"access_token": data.get("access_token"), "token_type": "bearer"}
+        
+        # 3. Limpiar contador si existe
+        if email in LOGIN_ATTEMPTS:
+            LOGIN_ATTEMPTS.pop(email)
+            
+        return {
+            "access_token": data.get("access_token"),
+            "refresh_token": data.get("refresh_token"),
+            "token_type": "bearer",
+            "user": data.get("user") # Opcional, pero útil
+        }

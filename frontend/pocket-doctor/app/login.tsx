@@ -256,12 +256,14 @@ export default function LoginScreen() {
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showError, setShowError] = useState(false);
+  const [lockoutTime, setLockoutTime] = useState<number | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   // Global state
   const { login, isLoading, error, clearError, session } = useAuthStore();
 
-  // Theme colors
+  // Theme colors... (omitted for brevity, assume existing context hooks are fine)
+  // Re-declare theme hooks since I am replacing the whole block
   const brandBlue = useThemeColor(
     { light: Colors.light.brandBlue, dark: Colors.dark.brandBlue },
     "brandBlue"
@@ -355,6 +357,28 @@ export default function LoginScreen() {
     ]
   );
 
+  // ------------ LOCKOUT TIMER ------------
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (lockoutTime !== null && lockoutTime > 0) {
+      interval = setInterval(() => {
+        setLockoutTime((prev) => {
+          if (prev === null || prev <= 1) return null;
+          return prev - 1;
+        });
+      }, 1000);
+    } else if (lockoutTime === 0) {
+      setLockoutTime(null);
+    }
+    return () => clearInterval(interval);
+  }, [lockoutTime]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
+
   // ------------ EMAIL + PASSWORD LOGIN ------------
   const handleOpenLink = () => {
     const url = 'https://www.cdc.gov/phlp/php/resources/health-insurance-portability-and-accountability-act-of-1996-hipaa.html';
@@ -376,6 +400,7 @@ export default function LoginScreen() {
   }, [email, password]);
 
   const handleLogin = useCallback(async () => {
+    if (lockoutTime !== null) return; // Prevent invalid click
     if (!validate()) return;
     clearError();
     try {
@@ -384,12 +409,22 @@ export default function LoginScreen() {
     } catch (err) {
       // el store ya maneja error
     }
-  }, [validate, login, email, password, clearError]);
+  }, [validate, login, email, password, clearError, lockoutTime]);
 
   // Sync store error with local state and animation
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
+
     if (error) {
+      // Check for lockout protocol "LOCKED:123"
+      if (typeof error === 'string' && error.startsWith("LOCKED:")) {
+        const secondsStr = error.split(":")[1];
+        const seconds = parseInt(secondsStr, 10);
+        if (!isNaN(seconds)) {
+          setLockoutTime(seconds);
+        }
+      }
+
       setShowError(true);
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -397,7 +432,9 @@ export default function LoginScreen() {
         useNativeDriver: true,
       }).start();
 
-      // Auto-hide after 4 seconds
+      // Auto-hide logic
+      // Si es locked, también lo ocultamos después de 4s para limpiar el toast,
+      // pero el bloqueo (lockoutTime) persiste en el estado local.
       timer = setTimeout(() => {
         Animated.timing(fadeAnim, {
           toValue: 0,
@@ -408,6 +445,7 @@ export default function LoginScreen() {
           clearError(); // Clear in store
         });
       }, 4000);
+
     } else {
       setShowError(false);
       fadeAnim.setValue(0);
@@ -416,12 +454,7 @@ export default function LoginScreen() {
     return () => clearTimeout(timer);
   }, [error, fadeAnim, clearError]);
 
-  // ------------ GOOGLE LOGIN (SUPABASE OAUTH) ------------
 
-  // ------------ GOOGLE LOGIN (SUPABASE OAUTH) ------------
-  // ------------ GOOGLE LOGIN (SUPABASE OAUTH) ------------
-
-  // ------------ GOOGLE LOGIN (SUPABASE OAUTH) ------------
 
   const handleMicrosoftSignUp = useCallback(async () => {
     try {
@@ -762,16 +795,50 @@ export default function LoginScreen() {
               size={SIZES.ICON}
               color={muted}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Introduzca su contraseña"
-              placeholderTextColor={placeholder}
-              secureTextEntry={!showPassword}
-              autoComplete="password"
-              editable={!isLoading}
-              value={password}
-              onChangeText={setPassword}
-            />
+            {/* 
+              DEMO MODE: Custom visual masking to prevent Android FLAG_SECURE (black screen).
+              We render the dots manually in a background Text, and make the foreground TextInput transparent.
+            */}
+            <View style={{ flex: 1, justifyContent: "center" }}>
+              {/* Visual Layer (Dots or Text) */}
+              <Text
+                style={[
+                  styles.input,
+                  {
+                    position: "absolute",
+                    color: !showPassword && password.length > 0 ? black : "transparent",
+                    zIndex: 0,
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    textAlignVertical: 'center',
+                    paddingTop: 14
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {!showPassword ? "•".repeat(password.length) : ""}
+              </Text>
+
+              {/* Functional Layer (Transparent Input) */}
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    color: !showPassword && password.length > 0 ? "transparent" : black,
+                    zIndex: 1,
+                  },
+                ]}
+                placeholder="Introduzca su contraseña"
+                placeholderTextColor={placeholder}
+                secureTextEntry={false}
+                autoComplete="password"
+                editable={!isLoading}
+                value={password}
+                onChangeText={setPassword}
+              />
+            </View>
             <TouchableOpacity onPress={() => setShowPassword(p => !p)}>
               <Ionicons
                 name={showPassword ? "eye-off-outline" : "eye-outline"}
@@ -789,14 +856,31 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Lockout Warning */}
+          {lockoutTime !== null && (
+            <View style={{ marginBottom: 12, alignItems: "center", paddingHorizontal: 20 }}>
+              <Text style={{ color: "#EF4444", fontWeight: "600", textAlign: "center", marginBottom: 4 }}>
+                Cuenta bloqueada temporalmente
+              </Text>
+              <Text style={{ color: "#EF4444", fontSize: 13, textAlign: "center" }}>
+                Has superado el límite de intentos. Por favor espera {formatTime(lockoutTime)} antes de intentar de nuevo.
+              </Text>
+            </View>
+          )}
+
           {/* Button */}
           <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
+            style={[
+              styles.button,
+              (isLoading || lockoutTime !== null) && styles.buttonDisabled
+            ]}
             onPress={handleLogin}
-            disabled={isLoading}
+            disabled={isLoading || lockoutTime !== null}
           >
             <Text style={styles.buttonText}>
-              {isLoading ? "Iniciando..." : "Iniciar Sesión"}
+              {lockoutTime !== null
+                ? `Bloqueado (${formatTime(lockoutTime)})`
+                : (isLoading ? "Iniciando..." : "Iniciar Sesión")}
             </Text>
           </TouchableOpacity>
 
