@@ -95,12 +95,18 @@ def upload_pdf_to_supabase(content: bytes, filename: str) -> tuple[Optional[str]
 # ---------------------------
 # Modelos de respuesta
 # ---------------------------
-LLM_PARSER_SYSTEM_PROMPT = """
-Eres un modelo de IA especializado en interpretar OCR médico.
-Tu tarea es analizar el texto extraído de un análisis de laboratorio y estructurarlo en un formato JSON específico.
+# ---------------------------
+# Prompts Divididos (Extraction vs Analysis)
+# ---------------------------
 
-Debes devolver SIEMPRE un JSON válido que cumpla estrictamente con la siguiente estructura (schema):
+LLM_EXTRACTION_PROMPT = """
+Eres un asistente experto en digitalización de datos médicos (Data Entry).
+Tu ÚNICA tarea es extraer la información estructurada del siguiente texto OCR de análisis de laboratorio.
 
+Salida esperada: UNICAMENTE el objeto JSON con la clave "analysis_input".
+NO generes resumen, ni advertencias, ni recomendaciones. SOLO LOS DATOS CRUDOS.
+
+Schema ESTRICTO a seguir:
 {
   "analysis_input": {
     "patient_profile": {
@@ -131,45 +137,49 @@ Debes devolver SIEMPRE un JSON válido que cumpla estrictamente con la siguiente
         "line": str
       }
     ]
-  },
-  "summary": "Resumen conciso de los hallazgos principales en lenguaje natural (español).",
+  }
+}
+
+Instrucciones:
+1. Extrae TODO lo que parezca un resultado de laboratorio.
+2. Si el valor es numérico, ponlo en "value". Si es texto ("Negativo"), ponlo en "value_as_string".
+3. NO inventes datos. Si no está en el texto, usa null.
+4. Devuelve SOLO JSON. Nada de markdown.
+5. IMPORTANTE: Si el texto contiene comillas dobles ("), ESCÁPALAS con backslash (\"). Ejemplo: "Hemoglobina \"A\"" en lugar de "Hemoglobina "A"".
+"""
+
+LLM_ANALYSIS_PROMPT = """
+Eres un médico experto en análisis clínico con años de experiencia.
+Recibirás datos estructurados de un paciente (JSON) y tu tarea es generar una interpretación médica útil y comprensible.
+
+Salida esperada: Un objeto JSON con las claves de análisis (summary, warnings, recommendations, qa).
+NO repitas los datos de entrada ("analysis_input").
+
+Schema de salida:
+{
+  "summary": "Resumen conciso (máx 3 líneas) de los hallazgos. Tono tranquilo.",
   "warnings": [
-    {
-      "title": "Título corto del riesgo",
-      "description": "Explicación detallada del riesgo o valor fuera de rango."
-    }
+    { "title": "...", "description": "..." }
   ],
   "recommendations": [
-    {
-      "title": "Título de la recomendación",
-      "description": "Descripción accionable y específica."
-    }
+    { "title": "...", "description": "..." }
   ],
   "qa": {
-    "simple_explanation": "Respuesta a: Explícame qué significan estos resultados en palabras simples.",
-    "lifestyle_changes": "Respuesta a: ¿Qué cambios de estilo de vida (dieta/hábitos) me recomiendas?",
-    "causes": "Respuesta a: ¿Cuáles podrían ser las causas de estos valores?",
-    "warning_signs": "Respuesta a: ¿Hay señales de alerta urgentes a las que deba estar atento?",
-    "doctor_questions": "Respuesta a: ¿Qué preguntas específicas debería hacerle a mi médico?"
+    "simple_explanation": "...",
+    "lifestyle_changes": "...",
+    "causes": "...",
+    "warning_signs": "...",
+    "doctor_questions": "..."
   },
   "disclaimer": "Este análisis es generado por IA y no sustituye el diagnóstico médico profesional."
 }
 
-Instrucciones adicionales:
-1. Extrae la información del paciente si está disponible.
-2. Normaliza los nombres de los análisis.
-3. Interpreta los valores y rangos de referencia.
-4. Si el valor NO es numérico (ej: "NEGATIVO", "POSITIVO", "NO REACTIVO", texto largo), usa "value_as_string" y deja "value" en null.
-5. Genera un resumen útil para el paciente.
-6. Genera recomendaciones prácticas basadas en los resultados anómalos o para mantener la buena salud.
-7. ASEGÚRATE de que cada warning y recomendación tenga un TÍTULO único y descriptivo.
-8. Genera las respuestas para la sección "qa" basándote EXCLUSIVAMENTE en los resultados analizados.
-10. Tono y Estilo:
-    - Usa un lenguaje sencillo y accesible (palabras llanas), pensando en una audiencia general que no sabe medicina.
-    - Mantén la calma: sé informativo pero NO alarmista.
-    - Si encuentras valores fuera de rango ("alto" o "bajo"), explícalos con tranquilidad. Solo usa un tono de urgencia si hay indicadores críticos para la vida (muy muy serios). En el resto de casos, sugiere consulta médica sin asustar.
-    - En el resumen y las recomendaciones, prioriza la claridad y la tranquilidad del paciente.
-11. NO incluyas texto fuera del JSON (como ```json ... ```). Devuelve SOLO el JSON crudo.
+Instrucciones:
+1. Analiza los resultados anómalos (flag 'H' o 'L', 'alto' o 'bajo').
+2. Prioriza claridad y calma. No seas alarmista.
+3. El Resumen debe ser muy breve.
+4. Genera al menos 3 preguntas en 'doctor_questions'.
+5. Devuelve SOLO JSON válido.
 """
 
 class PatientProfile(BaseModel):
