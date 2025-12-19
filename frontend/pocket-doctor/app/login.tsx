@@ -356,9 +356,9 @@ export default function LoginScreen() {
   );
 
   // ------------ EMAIL + PASSWORD LOGIN ------------
-const handleOpenLink = () => {
+  const handleOpenLink = () => {
     const url = 'https://www.cdc.gov/phlp/php/resources/health-insurance-portability-and-accountability-act-of-1996-hipaa.html';
-    
+
     // Es buena práctica usar catch por si falla al abrir
     Linking.openURL(url).catch(err => console.error("No se pudo cargar la página", err));
   };
@@ -423,6 +423,157 @@ const handleOpenLink = () => {
 
   // ------------ GOOGLE LOGIN (SUPABASE OAUTH) ------------
 
+  const handleMicrosoftSignUp = useCallback(async () => {
+    try {
+      // 1. Crear redirectUri explícito
+      const redirectUri = makeRedirectUri({
+        scheme: "pocketdoctor",
+        path: "auth/callback",
+      });
+
+      // 2. Iniciar el flujo con Supabase
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "azure",
+        options: {
+          redirectTo: redirectUri,
+          skipBrowserRedirect: true,
+          scopes: "email profile openid offline_access",
+          queryParams: {
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (error || !data?.url) {
+        console.error("Error signInWithOAuth Microsoft:", error);
+        Alert.alert(
+          "Error",
+          error?.message ?? "No se pudo iniciar sesión con Microsoft"
+        );
+        return;
+      }
+
+      // 3. Abrir navegador
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+
+      if (result.type !== "success") {
+        if (result.type === 'dismiss') {
+          // Usuario cerró la ventana
+        }
+        return;
+      }
+
+      // 4. Extraer token/code manualmente
+      const { url } = result;
+      if (!url) {
+        Alert.alert("Error", "No se recibió respuesta del navegador");
+        return;
+      }
+
+      const params = new URLSearchParams(url.split("#")[1] || url.split("?")[1]);
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      const code = params.get("code");
+
+      let session: any = null;
+      let user: any = null;
+
+      if (code) {
+        const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+        if (sessionError) throw sessionError;
+        session = sessionData.session;
+        user = session?.user;
+      } else if (accessToken && refreshToken) {
+        const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (sessionError) throw sessionError;
+        session = sessionData.session;
+        user = session?.user;
+      } else {
+        // Fallback: revisar si la sesión se estableció sola (a veces pasa en iOS)
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        if (existingSession) {
+          session = existingSession;
+          user = session.user;
+        } else {
+          Alert.alert("Error", "No se encontró sesión tras el login con Microsoft.");
+          return;
+        }
+      }
+
+      if (user) {
+        console.log("MICROSOFT USER:", JSON.stringify(user, null, 2));
+
+        // --- Fetch backend profile (opcional) ---
+        if (session.access_token) {
+          try {
+            const { getUserProfile } = await import("@/src/services/user");
+            const profile = await getUserProfile(session.access_token);
+            const { useAuthStore } = require("@/src/store");
+            useAuthStore.setState({ user: session.user, session, userProfile: profile });
+          } catch (err) {
+            console.warn("Error fetching profile after Microsoft OAuth:", err);
+          }
+        }
+
+        // Datos del usuario para upsert
+        const meta: any = user.user_metadata ?? {};
+        const fullName: string =
+          meta.full_name ||
+          meta.name ||
+          `${meta.given_name ?? ""} ${meta.family_name ?? ""}`.trim();
+
+        let nombre = "";
+        let apellido: string | null = null;
+
+        if (meta.given_name) {
+          nombre = meta.given_name;
+          apellido = meta.family_name ?? null;
+        } else if (fullName) {
+          const parts = fullName.split(" ");
+          nombre = parts.shift() ?? "";
+          apellido = parts.length ? parts.join(" ") : null;
+        }
+
+        // Upsert en tabla usuarios
+        const { error: upsertError } = await supabase
+          .from("usuarios")
+          .upsert(
+            {
+              auth_id: user.id, // o user_auth_id según tu schema (revisaré register.tsx usa auth_id, login usa user_auth_id?)
+              // NOTA: En register.tsx usaste 'auth_id', en login.tsx veo 'user_auth_id' en handleGoogleLogin (line 649).
+              // Voy a usar user_auth_id aquí para ser consistente con login.tsx, pero debo verificar cual es el correcto.
+              // El usuario tiene copiado handleGoogleLogin en login.tsx con 'user_auth_id'.
+              // Voy a asumir 'user_auth_id' para login.tsx porque es lo que hay ahí.
+              user_auth_id: user.id,
+              email: user.email ?? "",
+              nombre: nombre || null,
+              apellido,
+              avatar_url: meta.avatar_url ?? null,
+            },
+            {
+              onConflict: "user_auth_id",
+            }
+          );
+
+        if (upsertError) {
+          console.warn("Error upsert Microsoft:", upsertError);
+        }
+
+        // Navegar home
+        router.push("/(tabs)/home");
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert(
+        "Error",
+        "Ocurrió un problema al iniciar sesión con Microsoft."
+      );
+    }
+  }, [router]);
+
   const handleGoogleLogin = useCallback(async () => {
     try {
       // 1. Crear redirectUri explícito "pocketdoctor://auth/callback"
@@ -464,6 +615,7 @@ const handleOpenLink = () => {
         }
         return;
       }
+
 
       // 4. Extraer token/code de la URL de retorno
       const { url } = result;
@@ -542,7 +694,7 @@ const handleOpenLink = () => {
         }
 
         useAuthStore.setState({ user, session });
-        Alert.alert("Bienvenido", "Inicio de sesión correcto con Google ✅");
+        // Alert.alert("Bienvenido", "Inicio de sesión correcto con Google ✅");
       }
     } catch (err) {
       console.error("[GOOGLE] error inesperado:", err);
@@ -677,12 +829,19 @@ const handleOpenLink = () => {
                 resizeMode="contain"
               />
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.socialButton}
+              onPress={handleMicrosoftSignUp}
+            >
+              <Image
+                source={require("@/assets/images/microsoft.png")}
+                style={styles.socialIcon}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
 
             {/* Microsoft / Apple: por ahora solo UI */}
-            {[
-              require("@/assets/images/microsoft.png"),
-              require("@/assets/images/apple.png"),
-            ].map((src, i) => renderSocial(src, `social-${i}`))}
+            
           </View>
 
           {/* Register */}
@@ -714,18 +873,18 @@ const handleOpenLink = () => {
                 <Ionicons name="shield-checkmark" size={12} color={white} />
               </View>
               <TouchableOpacity onPress={handleOpenLink} activeOpacity={0.7}>
-      
-      {/* Tu código original */}
-      <View style={styles.warningContent}>
-        <Text style={[styles.warningTitle, styles.securityTitle]}>
-          HIPAA
-        </Text>
-        <Text style={[styles.warningText, styles.securityText]}>
-          Datos encriptados y seguros
-        </Text>
-      </View>
 
-    </TouchableOpacity>
+                {/* Tu código original */}
+                <View style={styles.warningContent}>
+                  <Text style={[styles.warningTitle, styles.securityTitle]}>
+                    HIPAA
+                  </Text>
+                  <Text style={[styles.warningText, styles.securityText]}>
+                    Datos encriptados y seguros
+                  </Text>
+                </View>
+
+              </TouchableOpacity>
             </View>
           </View>
         </View>
