@@ -11,6 +11,7 @@ import {
   Modal,
   FlatList,
 } from "react-native";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
@@ -69,6 +70,7 @@ export default function ProfileScreen() {
   const [editingField, setEditingField] = useState<'alergias' | 'condiciones_medicas' | null>(null);
   const [tempItems, setTempItems] = useState<string[]>([]);
   const [newItem, setNewItem] = useState('');
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -159,9 +161,27 @@ export default function ProfileScreen() {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
+
+
   const handleProfilePress = () => {
     // Already on profile tab, no navigation needed
     console.log("Already on profile tab");
+  };
+
+  const showDatePicker = () => {
+    if (isEditing) {
+      setDatePickerVisibility(true);
+    }
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisibility(false);
+  };
+
+  const handleConfirmDate = (date: Date) => {
+    const formattedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    updateProfile("fecha_nacimiento", formattedDate);
+    hideDatePicker();
   };
 
   const handleLogout = async () => {
@@ -268,12 +288,29 @@ export default function ProfileScreen() {
 
           <View style={styles.inputContainer}>
             <ThemedText style={styles.inputLabel}>Fecha de Nacimiento</ThemedText>
-            <TextInput
-              style={[styles.textInput, !isEditing && styles.textInputReadonly]}
-              value={profile.fecha_nacimiento || ''}
-              onChangeText={text => updateProfile("fecha_nacimiento", text)}
-              editable={isEditing}
-              placeholder="YYYY-MM-DD"
+            {isEditing ? (
+              <TouchableOpacity
+                onPress={showDatePicker}
+                style={[styles.textInput, { justifyContent: 'center' }]}
+              >
+                <ThemedText style={{ color: profile.fecha_nacimiento ? Colors.light.black : Colors.light.placeholderGray }}>
+                  {profile.fecha_nacimiento || "YYYY-MM-DD"}
+                </ThemedText>
+              </TouchableOpacity>
+            ) : (
+              <TextInput
+                style={styles.textInputReadonly}
+                value={profile.fecha_nacimiento || ''}
+                editable={false}
+                placeholder="YYYY-MM-DD"
+              />
+            )}
+            <DateTimePickerModal
+              isVisible={isDatePickerVisible}
+              mode="date"
+              onConfirm={handleConfirmDate}
+              onCancel={hideDatePicker}
+              date={profile.fecha_nacimiento ? new Date(profile.fecha_nacimiento) : new Date()}
             />
           </View>
         </View>
