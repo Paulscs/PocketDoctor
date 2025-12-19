@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
   ScrollView,
+  Linking,
   ImageSourcePropType,
   Animated,
 } from "react-native";
@@ -355,7 +356,12 @@ export default function LoginScreen() {
   );
 
   // ------------ EMAIL + PASSWORD LOGIN ------------
-
+const handleOpenLink = () => {
+    const url = 'https://www.cdc.gov/phlp/php/resources/health-insurance-portability-and-accountability-act-of-1996-hipaa.html';
+    
+    // Es buena práctica usar catch por si falla al abrir
+    Linking.openURL(url).catch(err => console.error("No se pudo cargar la página", err));
+  };
   const validate = useCallback(() => {
     if (!email.trim() || !password.trim()) {
       Alert.alert("Error", "Por favor, completa todos los campos");
@@ -721,14 +727,19 @@ export default function LoginScreen() {
               <View style={[styles.warningIcon, styles.securityIcon]}>
                 <Ionicons name="shield-checkmark" size={12} color={white} />
               </View>
-              <View style={styles.warningContent}>
-                <Text style={[styles.warningTitle, styles.securityTitle]}>
-                  HIPAA
-                </Text>
-                <Text style={[styles.warningText, styles.securityText]}>
-                  Datos encriptados y seguros
-                </Text>
-              </View>
+              <TouchableOpacity onPress={handleOpenLink} activeOpacity={0.7}>
+      
+      {/* Tu código original */}
+      <View style={styles.warningContent}>
+        <Text style={[styles.warningTitle, styles.securityTitle]}>
+          HIPAA
+        </Text>
+        <Text style={[styles.warningText, styles.securityText]}>
+          Datos encriptados y seguros
+        </Text>
+      </View>
+
+    </TouchableOpacity>
             </View>
           </View>
         </View>
