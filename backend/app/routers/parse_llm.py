@@ -258,13 +258,15 @@ async def parse_with_llm(
                 "datos_completos": final_analysis # Guardamos insights, los datos crudos ya están en analysis_input si quisiéramos
             }
             # Guardamos un JSON mixto o solo lo que quepa. Idealmente todo full_response.dict()
-            # Ajuste: guardamos full_response mas completo
-            record["datos_completos"] = full_response.dict()
+            # Ajuste: guardamos full_response mas completo con serialización JSON segura (para fechas)
+            record["datos_completos"] = json.loads(full_response.json())
 
             sb.table("analisis_ia").insert(record).execute()
             print(f"[History] Análisis guardado para user_id {user_db_id}")
     except Exception as e:
-        print(f"[History] Error guardando historial: {e}")
+        import traceback
+        traceback.print_exc()
+        print(f"[History] Error GUARDANDO historial: {e}")
 
     return full_response
 
