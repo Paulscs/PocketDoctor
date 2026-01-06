@@ -17,6 +17,7 @@ import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
 import { useChatStore } from "@/src/store/chatStore";
 import { apiClient } from "@/src/utils/apiClient";
+import { HeartRateLoader } from "@/components/ui/HeartRateLoader";
 
 export default function IAAnalyticsScreen() {
   const params = useLocalSearchParams();
@@ -143,7 +144,7 @@ export default function IAAnalyticsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor, justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={Colors.light.brandBlue} />
+        <HeartRateLoader />
         <ThemedText style={{ marginTop: 20 }}>Analizando con IA...</ThemedText>
       </SafeAreaView>
     );
