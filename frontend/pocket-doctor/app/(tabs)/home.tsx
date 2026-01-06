@@ -313,7 +313,7 @@ export default function HomeScreen() {
               </View>
               <View style={styles.cardContent}>
                 <ThemedText style={styles.quickActionTitle}>
-                  Consulta AI
+                  Consulta IA
                 </ThemedText>
                 <View style={styles.subtitleContainer}>
                   <View style={styles.featureTag}>
