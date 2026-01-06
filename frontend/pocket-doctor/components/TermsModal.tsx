@@ -30,7 +30,7 @@ export function TermsModal({ visible, onClose, onAccept }: TermsModalProps) {
                     <SafeAreaView edges={["top"]} style={styles.safeArea}>
                         <View style={styles.header}>
                             <ThemedText style={styles.headerTitle}>
-                                Términos y Condiciones
+                                Aviso Legal
                             </ThemedText>
                             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                                 <Ionicons name="close" size={24} color={Colors.light.black} />

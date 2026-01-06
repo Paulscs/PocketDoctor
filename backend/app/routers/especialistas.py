@@ -23,8 +23,9 @@ def list_especialistas(
     c = client_for_user(user.token)
     query = c.table("especialistas").select("*")
     if q:
-        # Buscar por nombre
-        query = query.ilike("nombre", f"%{q}%")
+        # Buscar por nombre O apellido
+        # Sintaxis postgrest: or=(col1.op.val,col2.op.val)
+        query = query.or_(f"nombre.ilike.%{q}%,apellido.ilike.%{q}%")
     query = query.range(offset, offset + limit - 1)
     res = query.execute()
     return res.data or []

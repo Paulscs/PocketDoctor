@@ -5,6 +5,7 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
@@ -141,6 +142,40 @@ export default function HistoryScreen() {
     router.push("/(tabs)/profile");
   };
 
+  const handleDeletePress = (id: string) => {
+    Alert.alert(
+      "Eliminar análisis",
+      "¿Estás seguro de que quieres eliminar este resultado permanentemente?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              if (!session?.access_token) return;
+              // Optimistic update
+              setResults(prev => prev.filter(item => item.id !== id));
+
+              const res = await apiClient(`ocr-local/history/${id}`, {
+                method: "DELETE",
+                token: session.access_token
+              });
+
+              if (!res.ok) throw new Error("Failed to delete");
+
+            } catch (error) {
+              console.error("Delete error:", error);
+              Alert.alert("Error", "No se pudo eliminar el análisis");
+              // Revert if needed, but for MVP simple console log is ok or refetch
+              fetchHistory();
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const renderResultItem = (result: MedicalResult) => (
     <TouchableOpacity
       key={result.id}
@@ -162,6 +197,13 @@ export default function HistoryScreen() {
         </ThemedText>
       </View>
       <View style={styles.resultActions}>
+        <TouchableOpacity
+          onPress={() => handleDeletePress(result.id)}
+          style={{ padding: 4, marginRight: 8 }}
+        >
+          <Ionicons name="trash-outline" size={20} color={Colors.light.error} />
+        </TouchableOpacity>
+
         <View
           style={[
             styles.statusBadge,

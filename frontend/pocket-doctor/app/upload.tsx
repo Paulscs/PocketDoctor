@@ -32,6 +32,8 @@ type SelectedFile = {
 
 // API_BASE_URL removed (using centralized apiClient)
 
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+
 export default function UploadScreen() {
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -59,6 +61,12 @@ export default function UploadScreen() {
       if (result.canceled) return;
 
       const asset = result.assets[0];
+
+      if (asset.size && asset.size > MAX_FILE_SIZE) {
+        Alert.alert("Archivo demasiado grande", "El archivo excede el límite permitido de 20MB.");
+        return;
+      }
+
       const newFile = {
         id: Date.now().toString(),
         name: asset.name || "documento.pdf",
@@ -110,6 +118,11 @@ export default function UploadScreen() {
 
       if (!result.canceled) {
         const asset = result.assets[0];
+
+        if (asset.fileSize && asset.fileSize > MAX_FILE_SIZE) {
+          Alert.alert("Archivo demasiado grande", "La foto excede el límite permitido de 20MB.");
+          return;
+        }
 
         // Determinar nombre y tipo
         const fileName = asset.fileName || `foto_${Date.now()}.jpg`;
@@ -310,7 +323,7 @@ export default function UploadScreen() {
             <View style={styles.uploadOptions}>
               <TouchableOpacity
                 style={styles.optionButton}
-                onPress={handleCameraPress} // Ahora llama a la función real
+                onPress={handleAddMore} // Now opens the menu
                 activeOpacity={0.7}
               >
                 <Ionicons
@@ -344,7 +357,7 @@ export default function UploadScreen() {
               renderItem={renderFileItem}
               keyExtractor={(item) => item.id}
               horizontal
-              showsHorizontalScrollIndicator={false}
+              showsHorizontalScrollIndicator={true}
               contentContainerStyle={styles.filesListContent}
               ListFooterComponent={
                 !selectedFiles.some(f => f.type.includes("pdf")) ? (
@@ -379,7 +392,7 @@ export default function UploadScreen() {
               )}
             </View>
             <ThemedText style={styles.termsText}>
-              He leído y acepto los <ThemedText style={styles.termsLink}>Aviso Legal</ThemedText>
+              He leído y acepto el <ThemedText style={styles.termsLink}>Aviso Legal</ThemedText>
             </ThemedText>
           </TouchableOpacity>
 

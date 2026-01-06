@@ -11,6 +11,7 @@ import {
   Modal,
   FlatList,
 } from "react-native";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
@@ -69,6 +70,7 @@ export default function ProfileScreen() {
   const [editingField, setEditingField] = useState<'alergias' | 'condiciones_medicas' | null>(null);
   const [tempItems, setTempItems] = useState<string[]>([]);
   const [newItem, setNewItem] = useState('');
+  const [isDatePickerVisible, setDatePickerVisible] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -106,6 +108,10 @@ export default function ProfileScreen() {
         peso_kg: profile.peso_kg,
         alergias: profile.alergias,
         condiciones_medicas: profile.condiciones_medicas,
+        nombre: profile.nombre,
+        apellido: profile.apellido,
+        fecha_nacimiento: profile.fecha_nacimiento,
+        altura_cm: profile.altura_cm,
       };
 
       const updatedProfile = await updateUserProfile(session.access_token, updateData);
@@ -148,6 +154,20 @@ export default function ProfileScreen() {
     }
     setModalVisible(false);
     setEditingField(null);
+  };
+
+  const showDatePicker = () => {
+    setDatePickerVisible(true);
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisible(false);
+  };
+
+  const handleConfirmDate = (date: Date) => {
+    const formattedDate = date.toISOString().split('T')[0];
+    updateProfile("fecha_nacimiento", formattedDate);
+    hideDatePicker();
   };
 
   const cancelItems = () => {
@@ -242,10 +262,10 @@ export default function ProfileScreen() {
             <View style={styles.inputContainer}>
               <ThemedText style={styles.inputLabel}>Nombres</ThemedText>
               <TextInput
-                style={styles.textInputDisabled}
+                style={isEditing ? styles.textInput : styles.textInputDisabled}
                 value={profile.nombre || ''}
                 onChangeText={text => updateProfile("nombre", text)}
-                editable={false}
+                editable={isEditing}
                 placeholder="Nombres"
                 placeholderTextColor={Colors.light.placeholderGray}
               />
@@ -253,10 +273,10 @@ export default function ProfileScreen() {
             <View style={styles.inputContainer}>
               <ThemedText style={styles.inputLabel}>Apellidos</ThemedText>
               <TextInput
-                style={styles.textInputDisabled}
+                style={isEditing ? styles.textInput : styles.textInputDisabled}
                 value={profile.apellido || ''}
                 onChangeText={text => updateProfile("apellido", text)}
-                editable={false}
+                editable={isEditing}
                 placeholder="Apellidos"
                 placeholderTextColor={Colors.light.placeholderGray}
               />
@@ -283,18 +303,20 @@ export default function ProfileScreen() {
             />
           </View>
         </View>
+
         {/* Birth Date Section */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Fecha de Nacimiento</ThemedText>
           <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInputDisabled}
-              value={profile.fecha_nacimiento || ''}
-              onChangeText={text => updateProfile("fecha_nacimiento", text)}
-              editable={false}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={Colors.light.placeholderGray}
-            />
+            <TouchableOpacity
+              style={isEditing ? styles.textInput : styles.textInputDisabled}
+              onPress={() => isEditing && showDatePicker()}
+              activeOpacity={isEditing ? 0.7 : 1}
+            >
+              <ThemedText style={{ color: profile.fecha_nacimiento ? Colors.light.textGray : Colors.light.placeholderGray, fontSize: 16 }}>
+                {profile.fecha_nacimiento || "YYYY-MM-DD"}
+              </ThemedText>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -306,10 +328,10 @@ export default function ProfileScreen() {
           <View style={styles.inputContainer}>
             <ThemedText style={styles.inputLabel}>Altura (cm)</ThemedText>
             <TextInput
-              style={styles.textInputDisabled}
+              style={isEditing ? styles.textInput : styles.textInputDisabled}
               value={profile.altura_cm?.toString() || ''}
               onChangeText={text => updateProfile("altura_cm", text ? parseFloat(text) : undefined)}
-              editable={false}
+              editable={isEditing}
               placeholder="Altura en cm"
               placeholderTextColor={Colors.light.placeholderGray}
               keyboardType="numeric"
@@ -457,7 +479,23 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Logout Button */}
+        {/* Support Section */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Soporte</ThemedText>
+          <TouchableOpacity
+            style={styles.helpButton}
+            onPress={() => router.push('/help')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.helpButtonContent}>
+              <Ionicons name="help-buoy-outline" size={24} color={Colors.light.brandBlue} />
+              <ThemedText style={styles.helpButtonText}>Centro de Ayuda</ThemedText>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={Colors.light.placeholderGray} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Logout Button */}{/* Logout Button */}
         <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogout}
@@ -544,6 +582,13 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
+
+      <DateTimePickerModal
+        isVisible={isDatePickerVisible}
+        mode="date"
+        onConfirm={handleConfirmDate}
+        onCancel={hideDatePicker}
+      />
     </SafeAreaView>
   );
 }
@@ -894,5 +939,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: Colors.light.white,
+  },
+  helpButton: {
+    backgroundColor: Colors.light.white,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: Colors.light.borderGray,
+    shadowColor: Colors.light.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  helpButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  helpButtonText: {
+    fontSize: 16,
+    color: Colors.light.textGray,
+    fontWeight: '500',
   },
 });

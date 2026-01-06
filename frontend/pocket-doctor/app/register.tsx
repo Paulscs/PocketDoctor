@@ -18,6 +18,8 @@ import { ThemedText } from "@/components/themed-text";
 import { Ionicons } from "@expo/vector-icons";
 import CheckRow from "../components/ui/CheckRow";
 import { router } from "expo-router";
+import { TermsConditionsModal } from "@/components/TermsConditionsModal";
+import { PrivacyPolicyModal } from "@/components/PrivacyPolicyModal";
 import DropDownPicker, {
   ItemType as DDItem,
 } from "react-native-dropdown-picker";
@@ -294,6 +296,8 @@ function RegisterScreenInner() {
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
   const [otherConditions, setOtherConditions] = useState("");
 
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [secure, setSecure] = useState(true);
   const [secureConfirm, setSecureConfirm] = useState(true);
@@ -473,6 +477,133 @@ function RegisterScreenInner() {
       Alert.alert(
         "Error",
         "Ocurrió un problema al iniciar sesión con Google. Inténtalo de nuevo."
+      );
+    }
+  }, [router]);
+
+  const handleMicrosoftSignUp = useCallback(async () => {
+    try {
+      const redirectUri = makeRedirectUri({
+        scheme: "pocketdoctor",
+        path: "auth/callback",
+      });
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "azure",
+        options: {
+          redirectTo: redirectUri,
+          skipBrowserRedirect: true,
+          scopes: "email profile openid offline_access",
+          queryParams: {
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (error || !data?.url) {
+        console.error(error);
+        Alert.alert(
+          "Error",
+          error?.message ?? "No se pudo iniciar sesión con Microsoft"
+        );
+        return;
+      }
+
+      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+
+      if (res.type !== "success") return;
+
+      // Extract tokens manually
+      const { url } = res;
+      if (!url) {
+        Alert.alert("Error", "No se recibió respuesta del navegador");
+        return;
+      }
+
+      const params = new URLSearchParams(url.split("#")[1] || url.split("?")[1]);
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      const code = params.get("code");
+
+      let session: any = null;
+      let user: any = null;
+
+      if (code) {
+        const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+        if (sessionError) throw sessionError;
+        session = sessionData.session;
+        user = session?.user;
+      } else if (accessToken && refreshToken) {
+        const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (sessionError) throw sessionError;
+        session = sessionData.session;
+        user = session?.user;
+      } else {
+        // Fallback
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        if (existingSession) {
+          session = existingSession;
+          user = session.user;
+        } else {
+          Alert.alert("Error", "No se encontró sesión activa.");
+          return;
+        }
+      }
+
+      if (user) {
+        console.log("MICROSOFT USER:", JSON.stringify(user, null, 2));
+
+        if (session.access_token) {
+          try {
+            const { getUserProfile } = await import("@/src/services/user");
+            const profile = await getUserProfile(session.access_token);
+            // set store
+            const { useAuthStore } = require("@/src/store");
+            useAuthStore.setState({ user: session.user, session, userProfile: profile });
+          } catch (err) {
+            console.warn("Error fetching profile:", err);
+          }
+        }
+
+        const email = user.email ?? "";
+        const fullName =
+          (user.user_metadata.full_name as string) ||
+          (user.user_metadata.name as string) ||
+          "";
+        const givenName = user.user_metadata.given_name as string | undefined;
+        const familyName = user.user_metadata.family_name as string | undefined;
+        const avatarUrl = user.user_metadata.avatar_url as string | undefined;
+
+        // Upsert
+        const { error: upsertError } = await supabase
+          .from("usuarios")
+          .upsert(
+            {
+              auth_id: user.id, // register.tsx uses auth_id
+              email,
+              nombre: givenName || fullName,
+              apellido: familyName || null,
+              avatar_url: avatarUrl ?? null,
+            },
+            {
+              onConflict: "auth_id",
+            }
+          );
+
+        if (upsertError) {
+          console.warn("Error al sincronizar perfil básico:", upsertError);
+        }
+
+        router.push("/(tabs)/home");
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert(
+        "Error",
+        "Ocurrió un problema al iniciar sesión con Microsoft."
       );
     }
   }, [router]);
@@ -1087,12 +1218,11 @@ function RegisterScreenInner() {
                 onToggle={() => setAccepted(!accepted)}
                 text="Al registrarme, confirmo que he leído y acepto nuestra "
                 linkText="Términos y Condiciones"
-                onPressLink={() => Linking.openURL("https://example.com/terms")}
+                onPressLink={() => setShowTermsModal(true)}
                 afterLinkText=" y nuestra "
                 privacyText="Política de Privacidad"
-                onPressPrivacy={() =>
-                  Linking.openURL("https://example.com/privacy")
-                }
+                onPressPrivacy={() => setShowPrivacyModal(true)}
+
               />
               {submitted && !accepted && (
                 <Text style={styles.err}>Debe aceptar los términos</Text>
@@ -1105,15 +1235,15 @@ function RegisterScreenInner() {
               <TouchableOpacity
                 style={[
                   styles.registerButton,
-                  formValid && styles.registerButtonActive,
+                  styles.registerButtonActive,
                 ]}
                 onPress={onRegister}
-                disabled={!formValid || isLoading}
+                disabled={isLoading}
               >
                 <Text
                   style={[
                     styles.registerButtonText,
-                    formValid && styles.registerButtonTextActive,
+                    styles.registerButtonTextActive,
                   ]}
                 >
                   {isLoading ? "Registrando..." : "Registrarme"}
@@ -1137,16 +1267,11 @@ function RegisterScreenInner() {
                     resizeMode="contain"
                   />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.socialButton}>
+                <TouchableOpacity
+                  style={styles.socialButton}
+                  onPress={handleMicrosoftSignUp}>
                   <Image
                     source={require("@/assets/images/microsoft.png")}
-                    style={styles.socialIcon}
-                    resizeMode="contain"
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.socialButton}>
-                  <Image
-                    source={require("@/assets/images/apple.png")}
                     style={styles.socialIcon}
                     resizeMode="contain"
                   />
@@ -1176,6 +1301,16 @@ function RegisterScreenInner() {
         maximumDate={new Date()}
         minimumDate={new Date(1900, 0, 1)}
         display={Platform.OS === "ios" ? "inline" : "default"}
+      />
+
+      <TermsConditionsModal
+        visible={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+      />
+
+      <PrivacyPolicyModal
+        visible={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
       />
     </SafeAreaView>
   );
