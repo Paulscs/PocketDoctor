@@ -5,8 +5,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
-  ActivityIndicator,
 } from "react-native";
+import { CustomLoader } from "@/components/ui/CustomLoader";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { SearchBar } from "@/components/ui/SearchBar";
@@ -172,7 +172,7 @@ export default function HomeScreen() {
   if (isPageLoading) {
     return (
       <View style={[containerStyle, { justifyContent: "center", alignItems: "center" }]}>
-        <ActivityIndicator size="large" color={Colors.light.brandBlue} />
+        <CustomLoader />
       </View>
     );
   }
