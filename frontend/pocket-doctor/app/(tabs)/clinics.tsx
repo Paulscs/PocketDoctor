@@ -150,6 +150,8 @@ export default function ClinicsScreen() {
   const [specialists, setSpecialists] = useState<EspecialistaCentro[]>([]);
   const [searchedSpecialists, setSearchedSpecialists] = useState<EspecialistaCentro[]>([]);
   const [errorState, setErrorState] = useState<'timeout' | 'error' | null>(null);
+  const [areSpecialistsVisible, setAreSpecialistsVisible] = useState(false);
+  const [loadingSpecialists, setLoadingSpecialists] = useState(false);
 
 
   const loadData = async () => {
@@ -186,22 +188,28 @@ export default function ClinicsScreen() {
     loadData();
   }, [session]);
 
+  // Reset specialists state when clinic changes
   useEffect(() => {
-    const fetchSpecialists = async () => {
-      if (!selectedClinic || !session?.access_token) {
-        setSpecialists([]);
-        return;
-      }
-      try {
-        const specs = await getEspecialistasCentro(selectedClinic.id, session.access_token);
-        setSpecialists(specs);
-      } catch (error) {
-        console.error('Failed to fetch specialists:', error);
-        setSpecialists([]);
-      }
-    };
-    fetchSpecialists();
-  }, [selectedClinic, session]);
+    setSpecialists([]);
+    setAreSpecialistsVisible(false);
+  }, [selectedClinic]);
+
+  const handleLoadSpecialists = async () => {
+    if (!selectedClinic || !session?.access_token) return;
+
+    setLoadingSpecialists(true);
+    setAreSpecialistsVisible(true);
+
+    try {
+      const specs = await getEspecialistasCentro(selectedClinic.id, session.access_token);
+      setSpecialists(specs);
+    } catch (error) {
+      console.error('Failed to fetch specialists:', error);
+      setSpecialists([]);
+    } finally {
+      setLoadingSpecialists(false);
+    }
+  };
 
   // Effect customizado para búsqueda en tiempo real de especialistas
   useEffect(() => {
@@ -355,40 +363,60 @@ export default function ClinicsScreen() {
           <ThemedText style={styles.specialistsTitle}>
             Especialistas:
           </ThemedText>
-          <View style={styles.specialistsList}>
-            {specialists.map((specialist) => (
-              <View key={specialist.especialista_id} style={styles.specialistCard}>
-                <View style={styles.specialistHeader}>
-                  <Ionicons
-                    name="person-outline"
-                    size={20}
-                    color={Colors.light.brandBlue}
-                  />
-                  <View style={styles.specialistInfo}>
-                    <ThemedText style={styles.specialistName}>
-                      {specialist.nombre} {specialist.apellido || ''}
-                    </ThemedText>
-                    {specialist.contacto && (
-                      <ThemedText style={styles.specialistContact}>
-                        {specialist.contacto}
-                      </ThemedText>
+
+          {!areSpecialistsVisible ? (
+            <TouchableOpacity
+              style={styles.viewSpecialistsButton}
+              onPress={handleLoadSpecialists}
+              activeOpacity={0.8}
+            >
+              <ThemedText style={styles.viewSpecialistsButtonText}>Ver Especialistas</ThemedText>
+              <Ionicons name="people" size={20} color={Colors.light.white} />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.specialistsList}>
+              {loadingSpecialists ? (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <CustomLoader />
+                </View>
+              ) : specialists.length > 0 ? (
+                specialists.map((specialist) => (
+                  <View key={specialist.especialista_id} style={styles.specialistCard}>
+                    <View style={styles.specialistHeader}>
+                      <Ionicons
+                        name="person-outline"
+                        size={20}
+                        color={Colors.light.brandBlue}
+                      />
+                      <View style={styles.specialistInfo}>
+                        <ThemedText style={styles.specialistName}>
+                          {specialist.nombre} {specialist.apellido || ''}
+                        </ThemedText>
+                        {specialist.contacto && (
+                          <ThemedText style={styles.specialistContact}>
+                            {specialist.contacto}
+                          </ThemedText>
+                        )}
+                      </View>
+                    </View>
+                    {specialist.especialidad && specialist.especialidad.length > 0 && (
+                      <View style={styles.specialistSpecialties}>
+                        {specialist.especialidad.map((esp, index) => (
+                          <View key={index} style={styles.specialtyTag}>
+                            <ThemedText style={styles.specialtyText}>
+                              {esp}
+                            </ThemedText>
+                          </View>
+                        ))}
+                      </View>
                     )}
                   </View>
-                </View>
-                {specialist.especialidad && specialist.especialidad.length > 0 && (
-                  <View style={styles.specialistSpecialties}>
-                    {specialist.especialidad.map((esp, index) => (
-                      <View key={index} style={styles.specialtyTag}>
-                        <ThemedText style={styles.specialtyText}>
-                          {esp}
-                        </ThemedText>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-            ))}
-          </View>
+                ))
+              ) : (
+                <ThemedText style={{ color: Colors.light.gray, fontStyle: 'italic', marginTop: 8 }}>No hay especialistas disponibles.</ThemedText>
+              )}
+            </View>
+          )}
         </View>
       </View>
     </ScrollView>
@@ -799,6 +827,23 @@ const styles = StyleSheet.create({
     color: Colors.light.textGray,
     marginBottom: 4,
     lineHeight: 24,
+  },
+  viewSpecialistsButton: {
+    backgroundColor: Colors.light.brandBlue,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  viewSpecialistsButtonText: {
+    color: Colors.light.white,
+    fontWeight: '600',
+    fontSize: 14,
   },
   clinicDetailShortName: {
     fontSize: 16,
