@@ -70,39 +70,41 @@ export interface ChatActions {
 
 export type ChatStore = ChatState & ChatActions;
 
+export const DEFAULT_FOLLOW_UP_OPTIONS: FollowUpOption[] = [
+  {
+    id: "simple_explanation",
+    text: "Explícame qué significan estos resultados",
+    icon: "chatbubble-ellipses-outline",
+  },
+  {
+    id: "lifestyle_changes",
+    text: "¿Qué cambios de estilo de vida recomiendas?",
+    icon: "nutrition-outline",
+  },
+  {
+    id: "causes",
+    text: "¿Cuáles podrían ser las causas?",
+    icon: "search-outline",
+  },
+  {
+    id: "warning_signs",
+    text: "¿Hay señales de alerta urgentes?",
+    icon: "warning-outline",
+  },
+  {
+    id: "doctor_questions",
+    text: "¿Qué preguntas hacerle a mi médico?",
+    icon: "medical-outline",
+  },
+];
+
 const initialMessages: Message[] = [
   {
     id: "1",
     text: "¡Hola! 👋 Soy tu asistente médico con IA. He revisado tus resultados. ¿Qué te gustaría saber primero?",
     isUser: false,
     timestamp: new Date(),
-    followUpOptions: [
-      {
-        id: "simple_explanation",
-        text: "Explícame qué significan estos resultados",
-        icon: "chatbubble-ellipses-outline",
-      },
-      {
-        id: "lifestyle_changes",
-        text: "¿Qué cambios de estilo de vida recomiendas?",
-        icon: "nutrition-outline",
-      },
-      {
-        id: "causes",
-        text: "¿Cuáles podrían ser las causas?",
-        icon: "search-outline",
-      },
-      {
-        id: "warning_signs",
-        text: "¿Hay señales de alerta urgentes?",
-        icon: "warning-outline",
-      },
-      {
-        id: "doctor_questions",
-        text: "¿Qué preguntas hacerle a mi médico?",
-        icon: "medical-outline",
-      },
-    ],
+    followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS,
   },
 ];
 
