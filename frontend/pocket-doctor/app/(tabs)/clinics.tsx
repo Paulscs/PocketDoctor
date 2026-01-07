@@ -17,6 +17,7 @@ import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store/authStore";
 import { getCentros, Centro, getEspecialistasCentro, EspecialistaCentro, searchSpecialists } from "@/src/services/clinics";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { CustomLoader } from "@/components/ui/CustomLoader";
 
 interface Clinic {
   id: string;
@@ -520,6 +521,11 @@ export default function ClinicsScreen() {
             <ThemedText style={styles.retryButtonText}>Reintentar</ThemedText>
             <Ionicons name="refresh" size={18} color={Colors.light.white} />
           </TouchableOpacity>
+        </View>
+      )}
+      {loading && (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.8)', justifyContent: 'center', alignItems: 'center', zIndex: 100 }]}>
+          <CustomLoader />
         </View>
       )}
     </SafeAreaView>
