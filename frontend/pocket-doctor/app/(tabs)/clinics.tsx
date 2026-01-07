@@ -418,116 +418,118 @@ export default function ClinicsScreen() {
         </View>
       </View>
 
-      {!errorState ? (
-        !selectedClinic ? (
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            <View style={styles.searchContainer}>
-              <View style={styles.searchBar}>
-                <Ionicons
-                  name="search-outline"
-                  size={20}
-                  color={Colors.light.placeholderGray}
-                />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Buscar clínicas y especialistas..."
-                  placeholderTextColor={Colors.light.placeholderGray}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery('')}>
-                    <Ionicons name="close-circle" size={18} color={Colors.light.gray} />
-                  </TouchableOpacity>
+      <View style={{ flex: 1 }}>
+        {!errorState ? (
+          !selectedClinic ? (
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+              <View style={styles.searchContainer}>
+                <View style={styles.searchBar}>
+                  <Ionicons
+                    name="search-outline"
+                    size={20}
+                    color={Colors.light.placeholderGray}
+                  />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Buscar clínicas y especialistas..."
+                    placeholderTextColor={Colors.light.placeholderGray}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery('')}>
+                      <Ionicons name="close-circle" size={18} color={Colors.light.gray} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+
+
+
+              <View style={styles.clinicsList}>
+                {/* Sección de Especialistas Encontrados */}
+                {searchQuery.length > 0 && searchedSpecialists.length > 0 && (
+                  <View style={{ marginBottom: 20 }}>
+                    <ThemedText style={{ fontSize: 16, fontWeight: '600', color: Colors.light.brandBlue, marginBottom: 12, marginLeft: 4 }}>
+                      Especialistas encontrados ({searchedSpecialists.length})
+                    </ThemedText>
+                    {searchedSpecialists.map((spec) => (
+                      <View key={spec.especialista_id} style={[styles.clinicCard, { flexDirection: 'column', alignItems: 'flex-start', padding: 12 }]}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, width: '100%' }}>
+                          <View style={[styles.clinicIcon, { backgroundColor: Colors.light.lightBlue, width: 32, height: 32, borderRadius: 16 }]}>
+                            <Ionicons name="person" size={16} color={Colors.light.white} />
+                          </View>
+                          <View style={{ flex: 1, marginLeft: 10 }}>
+                            <ThemedText style={[styles.clinicName, { fontSize: 14, marginBottom: 0 }]}>{spec.nombre} {spec.apellido || ''}</ThemedText>
+                            {spec.especialidad && spec.especialidad.length > 0 && (
+                              <ThemedText style={{ fontSize: 12, color: Colors.light.gray }}>{spec.especialidad.join(", ")}</ThemedText>
+                            )}
+                          </View>
+                        </View>
+                        {spec.contacto && (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, marginLeft: 42 }}>
+                            <Ionicons name="call-outline" size={12} color={Colors.light.gray} />
+                            <ThemedText style={{ fontSize: 11, color: Colors.light.gray }}>{spec.contacto}</ThemedText>
+                          </View>
+                        )}
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Sección de Clínicas */}
+                {(searchQuery.length === 0 || filteredClinics.length > 0) && (
+                  <View>
+                    {searchQuery.length > 0 && (
+                      <ThemedText style={{ fontSize: 16, fontWeight: '600', color: Colors.light.brandBlue, marginBottom: 12, marginLeft: 4 }}>
+                        Clínicas
+                      </ThemedText>
+                    )}
+                    {filteredClinics.map(renderClinicCard)}
+                  </View>
+                )}
+
+                {/* Empty State */}
+                {searchQuery.length > 0 && filteredClinics.length === 0 && searchedSpecialists.length === 0 && (
+                  <View style={{ alignItems: 'center', marginTop: 40, opacity: 0.6 }}>
+                    <Ionicons name="search" size={48} color={Colors.light.gray} />
+                    <ThemedText style={{ marginTop: 12, color: Colors.light.gray }}>No se encontraron resultados</ThemedText>
+                  </View>
                 )}
               </View>
-            </View>
-
-
-
-            <View style={styles.clinicsList}>
-              {/* Sección de Especialistas Encontrados */}
-              {searchQuery.length > 0 && searchedSpecialists.length > 0 && (
-                <View style={{ marginBottom: 20 }}>
-                  <ThemedText style={{ fontSize: 16, fontWeight: '600', color: Colors.light.brandBlue, marginBottom: 12, marginLeft: 4 }}>
-                    Especialistas encontrados ({searchedSpecialists.length})
-                  </ThemedText>
-                  {searchedSpecialists.map((spec) => (
-                    <View key={spec.especialista_id} style={[styles.clinicCard, { flexDirection: 'column', alignItems: 'flex-start', padding: 12 }]}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, width: '100%' }}>
-                        <View style={[styles.clinicIcon, { backgroundColor: Colors.light.lightBlue, width: 32, height: 32, borderRadius: 16 }]}>
-                          <Ionicons name="person" size={16} color={Colors.light.white} />
-                        </View>
-                        <View style={{ flex: 1, marginLeft: 10 }}>
-                          <ThemedText style={[styles.clinicName, { fontSize: 14, marginBottom: 0 }]}>{spec.nombre} {spec.apellido || ''}</ThemedText>
-                          {spec.especialidad && spec.especialidad.length > 0 && (
-                            <ThemedText style={{ fontSize: 12, color: Colors.light.gray }}>{spec.especialidad.join(", ")}</ThemedText>
-                          )}
-                        </View>
-                      </View>
-                      {spec.contacto && (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, marginLeft: 42 }}>
-                          <Ionicons name="call-outline" size={12} color={Colors.light.gray} />
-                          <ThemedText style={{ fontSize: 11, color: Colors.light.gray }}>{spec.contacto}</ThemedText>
-                        </View>
-                      )}
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              {/* Sección de Clínicas */}
-              {(searchQuery.length === 0 || filteredClinics.length > 0) && (
-                <View>
-                  {searchQuery.length > 0 && (
-                    <ThemedText style={{ fontSize: 16, fontWeight: '600', color: Colors.light.brandBlue, marginBottom: 12, marginLeft: 4 }}>
-                      Clínicas
-                    </ThemedText>
-                  )}
-                  {filteredClinics.map(renderClinicCard)}
-                </View>
-              )}
-
-              {/* Empty State */}
-              {searchQuery.length > 0 && filteredClinics.length === 0 && searchedSpecialists.length === 0 && (
-                <View style={{ alignItems: 'center', marginTop: 40, opacity: 0.6 }}>
-                  <Ionicons name="search" size={48} color={Colors.light.gray} />
-                  <ThemedText style={{ marginTop: 12, color: Colors.light.gray }}>No se encontraron resultados</ThemedText>
-                </View>
-              )}
-            </View>
-          </ScrollView>
+            </ScrollView>
+          ) : (
+            renderClinicDetail(selectedClinic)
+          )
         ) : (
-          renderClinicDetail(selectedClinic)
-        )
-      ) : (
-        <View style={styles.errorContainer}>
-          <Ionicons
-            name={errorState === 'timeout' ? "time-outline" : "cloud-offline-outline"}
-            size={64}
-            color={Colors.light.gray}
-          />
-          <ThemedText style={styles.errorTitle}>
-            {errorState === 'timeout'
-              ? "Tiempo de espera agotado"
-              : "Error de conexión"}
-          </ThemedText>
-          <ThemedText style={styles.errorMessage}>
-            {errorState === 'timeout'
-              ? "No pudimos cargar la información a tiempo. Por favor verifica tu conexión e intenta nuevamente."
-              : "Algo salió mal al cargar las clínicas."}
-          </ThemedText>
-          <TouchableOpacity style={styles.retryButton} onPress={loadData}>
-            <ThemedText style={styles.retryButtonText}>Reintentar</ThemedText>
-            <Ionicons name="refresh" size={18} color={Colors.light.white} />
-          </TouchableOpacity>
-        </View>
-      )}
-      {loading && (
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.8)', justifyContent: 'center', alignItems: 'center', zIndex: 100 }]}>
-          <CustomLoader />
-        </View>
-      )}
+          <View style={styles.errorContainer}>
+            <Ionicons
+              name={errorState === 'timeout' ? "time-outline" : "cloud-offline-outline"}
+              size={64}
+              color={Colors.light.gray}
+            />
+            <ThemedText style={styles.errorTitle}>
+              {errorState === 'timeout'
+                ? "Tiempo de espera agotado"
+                : "Error de conexión"}
+            </ThemedText>
+            <ThemedText style={styles.errorMessage}>
+              {errorState === 'timeout'
+                ? "No pudimos cargar la información a tiempo. Por favor verifica tu conexión e intenta nuevamente."
+                : "Algo salió mal al cargar las clínicas."}
+            </ThemedText>
+            <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+              <ThemedText style={styles.retryButtonText}>Reintentar</ThemedText>
+              <Ionicons name="refresh" size={18} color={Colors.light.white} />
+            </TouchableOpacity>
+          </View>
+        )}
+        {loading && (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.8)', justifyContent: 'center', alignItems: 'center', zIndex: 100 }]}>
+            <CustomLoader />
+          </View>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
