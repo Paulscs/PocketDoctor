@@ -233,6 +233,7 @@ async def parse_with_llm(
         warnings=final_analysis.get("warnings", []),
         recommendations=final_analysis.get("recommendations", []),
         qa=qa_data,
+        recommended_specialist=final_analysis.get("recommended_specialist"),
         disclaimer=final_analysis.get("disclaimer", "IA generated")
     )
 

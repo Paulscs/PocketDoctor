@@ -175,6 +175,7 @@ Schema de salida:
     "warning_signs": "...",
     "doctor_questions": "..."
   },
+  "recommended_specialist": "Cardiología",
   "disclaimer": "Este análisis es generado por IA y no sustituye el diagnóstico médico profesional."
 }
 
@@ -183,7 +184,8 @@ Instrucciones:
 2. Prioriza claridad y calma. No seas alarmista.
 3. El Resumen debe ser muy breve.
 4. Genera al menos 3 preguntas en 'doctor_questions'.
-5. Devuelve SOLO JSON válido.
+5. Identifica UNA especialidad médica principal recomendada (ej: "Cardiología", "Endocrinología", "Gastroenterología", "Medicina General"). Si no es claro, usa null.
+6. Devuelve SOLO JSON válido.
 """
 
 class PatientProfile(BaseModel):
@@ -243,6 +245,7 @@ class LLMInterpretation(BaseModel):
     warnings: List[SuggestionItem] = []       # cosas a vigilar / posibles riesgos
     recommendations: List[SuggestionItem] = [] # recomendaciones de salud
     qa: Optional[QAResponse] = None            # Preguntas pre-generadas (Opcional para evitar 500)
+    recommended_specialist: Optional[str] = None # Especialidad recomendada para buscar doctores
     disclaimer: Optional[str] = "Este análisis es generado por IA y no sustituye el consejo médico profesional."                # recordatorio de que no es diagnóstico
 
 

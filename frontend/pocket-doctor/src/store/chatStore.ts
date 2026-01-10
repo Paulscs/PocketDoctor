@@ -15,6 +15,10 @@ export interface Message {
   readonly isUser: boolean;
   readonly timestamp: Date;
   readonly followUpOptions?: readonly FollowUpOption[];
+  readonly customContent?: {
+    type: 'clinics_list';
+    data: any[];
+  };
 }
 
 export interface QAContext {
@@ -36,6 +40,7 @@ export interface ChatSession {
   readonly context?: {
     qa: QAContext;
     summary?: string;
+    recommended_specialist?: string;
   };
 }
 
@@ -59,7 +64,8 @@ export interface ChatActions {
   addAIMessage: (
     sessionId: string,
     text: string,
-    followUpOptions?: readonly FollowUpOption[]
+    followUpOptions?: readonly FollowUpOption[],
+    customContent?: Message['customContent']
   ) => void;
   updateSessionTitle: (sessionId: string, title: string) => void;
   clearAllSessions: () => void;
@@ -162,16 +168,36 @@ export const useChatStore = create<ChatStore>()(
         // Handle potential case sensitivity issues from LLM raw JSON
         const qa = data?.qa || data?.QA || data?.Qa;
         const summary = data?.summary || data?.Summary || data?.SUMMARY;
+        const recommended_specialist = data?.recommended_specialist;
+
+        // Custom Initial Messages Logic
+        // Deep copy converts Date to string, so we must restore it.
+        let customMessages = JSON.parse(JSON.stringify(initialMessages)).map((m: any) => ({
+          ...m,
+          timestamp: new Date(m.timestamp)
+        }));
+
+        if (recommended_specialist) {
+          const specialistOption: FollowUpOption = {
+            id: "find_specialists_nearby",
+            text: `Buscar ${recommended_specialist} cercanos`,
+            icon: "map-outline",
+          };
+          // Add to first message options
+          if (customMessages[0] && customMessages[0].followUpOptions) {
+            customMessages[0].followUpOptions.push(specialistOption);
+          }
+        }
 
         // Start with the standard initial message, but we will use the QA context for answers
         const newSession: ChatSession = {
           id: sessionId,
           title: `Análisis ${new Date().toLocaleDateString()}`,
-          messages: initialMessages, // Use standard prompt options
+          messages: customMessages, // Use dynamic messages
           createdAt: new Date(),
           updatedAt: new Date(),
           analysisId: analysisId,    // Store the link
-          context: qa ? { qa, summary } : undefined,
+          context: qa ? { qa, summary, recommended_specialist } : undefined,
         };
 
         set(state => ({
@@ -247,7 +273,8 @@ export const useChatStore = create<ChatStore>()(
       addAIMessage: (
         sessionId: string,
         text: string,
-        followUpOptions?: readonly FollowUpOption[]
+        followUpOptions?: readonly FollowUpOption[],
+        customContent?: Message['customContent']
       ) => {
         const newMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -255,6 +282,7 @@ export const useChatStore = create<ChatStore>()(
           isUser: false,
           timestamp: new Date(),
           followUpOptions,
+          customContent,
         };
 
         set(state => ({

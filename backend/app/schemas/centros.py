@@ -34,3 +34,4 @@ class CentroUpdate(BaseModel):
 class CentroOut(CentroBase):
     id: int
     estado: bool
+    especialistas: Optional[List[EspecialistaCentro]] = None

@@ -14,6 +14,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import {
+  useAuthStore
+} from "@/src/store";
+import {
   useChatStore,
   useActiveSession,
   useActiveSessionMessages,
@@ -22,6 +25,9 @@ import {
 } from "@/src/store/chatStore";
 import { SideMenu } from "@/components/layout/SideMenu";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import * as Location from 'expo-location';
+import { getNearestClinics, EspecialistaCentro } from "@/src/services/clinics";
+import { Alert } from "react-native";
 
 export default function ChatScreen() {
   const containerBg = useThemeColor({ light: Colors.light.background, dark: Colors.dark.background }, "background");
@@ -39,6 +45,9 @@ export default function ChatScreen() {
     setError,
     sessions,
   } = useChatStore();
+
+  const session = useAuthStore((state) => state.session);
+  const accessToken = session?.access_token || '';
 
   const messages = useActiveSessionMessages();
   const activeSession = useActiveSession();
@@ -68,11 +77,60 @@ export default function ChatScreen() {
     // Let's check store logic.
   };
 
+  const handleFindNearbyClinics = useCallback(async (sessionId: string, specialty?: string) => {
+    try {
+      // 1. Request Permissions
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        addAIMessage(sessionId, "Necesito acceso a tu ubicación para encontrar clínicas cercanas. Por favor habilita los permisos en la configuración.");
+        return;
+      }
+
+      // 2. Get Location
+      // addAIMessage(sessionId, "Buscando especialistas cerca de ti..."); // Optional: "Thinking" state
+      let location = await Location.getCurrentPositionAsync({});
+
+      // 3. Call API
+      const clinics = await getNearestClinics(
+        location.coords.latitude,
+        location.coords.longitude,
+        3, // limit
+        accessToken,
+        specialty // Pass specialty filter
+      );
+
+      // Access Token is needed.
+      console.log("[FindNearby] Token being used:", accessToken ? accessToken.substring(0, 10) + "..." : "NULL/EMPTY");
+
+      const messageText = specialty
+        ? `Encontré ${clinics.length} centros de ${specialty} cercanos a tu ubicación:`
+        : `Encontré ${clinics.length} centros médicos cercanos a tu ubicación:`;
+
+      addAIMessage(
+        sessionId,
+        messageText,
+        [],
+        { type: 'clinics_list', data: clinics }
+      );
+
+    } catch (error) {
+      console.error(error);
+      addAIMessage(sessionId, "Lo siento, tuve problemas al buscar clínicas cercanas. Intenta nuevamente.");
+    }
+  }, [accessToken, addAIMessage]);
+
   const handleFollowUpOption = useCallback(
-    (option: FollowUpOption, messageId: string) => {
+    async (option: FollowUpOption, messageId: string) => {
       if (!activeSessionId) return;
 
       addUserMessage(activeSessionId, option.text);
+
+      if (option.id === 'find_specialists_nearby') {
+        // Use the recommended specialist from context if available
+        const specialist = activeSession?.context?.recommended_specialist;
+        await handleFindNearbyClinics(activeSessionId, specialist);
+        return;
+      }
 
 
       setTimeout(() => {
@@ -84,7 +142,7 @@ export default function ChatScreen() {
         );
       }, 600);
     },
-    [activeSessionId, addUserMessage, addAIMessage, activeSession] // Add activeSession dependency
+    [activeSessionId, addUserMessage, addAIMessage, activeSession, handleFindNearbyClinics] // Add handleFindNearbyClinics dependency
   );
 
   const generateFollowUpResponse = (
@@ -149,6 +207,21 @@ export default function ChatScreen() {
         };
     }
   };
+
+  // Inject "Find Nearby" into generic responses or as a default if appropriate
+  // For now, let's manually add it to options if it's "doctor_questions" or we can just append it.
+  const injectFindNearby = (response: { text: string; followUpOptions: FollowUpOption[] }) => {
+    response.followUpOptions = [
+      ...response.followUpOptions,
+      { id: 'find_specialists_nearby', text: 'Buscar clínicas cercanas', icon: 'map-outline' }
+    ];
+    return response;
+  };
+
+  // Wrap generateFollowUpResponse or use logic inside handleFollowUpOption response generation
+  // Since the output of handleFollowUp uses generateFollowUpResponse inside strict timeout,
+  // We should modify generateFollowUpResponse to return it.
+
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: containerBg }]}>
@@ -264,28 +337,59 @@ export default function ChatScreen() {
                   ))}
                 </View>
               )}
+
+              {/* Render Custom Content (Clinics List) */}
+              {message.customContent?.type === 'clinics_list' && (
+                <View style={{ marginLeft: 44, marginTop: 8, marginBottom: 16 }}>
+                  {message.customContent.data.map((clinic: any, index: number) => (
+                    <TouchableOpacity
+                      key={clinic.id || index}
+                      style={styles.clinicCard}
+                      onPress={() => router.push(`/clinic/${clinic.id}`)}
+                    >
+                      <View style={styles.clinicCardIcon}>
+                        <Ionicons name="medical" size={20} color={Colors.light.white} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <ThemedText style={styles.clinicCardTitle}>{clinic.nombre}</ThemedText>
+
+                        {/* Show specialists if available */}
+                        {clinic.especialistas && clinic.especialistas.length > 0 && (
+                          <ThemedText style={{ fontSize: 12, color: Colors.light.brandBlue, marginTop: 2 }}>
+                            {clinic.especialistas.length} {clinic.especialistas.length === 1 ? 'Especialista' : 'Especialistas'}: {clinic.especialistas.map((e: any) => e.apellido || e.nombre).slice(0, 2).join(", ")}
+                            {clinic.especialistas.length > 2 ? "..." : ""}
+                          </ThemedText>
+                        )}
+
+                        <ThemedText style={styles.clinicCardAddress} numberOfLines={1}>{clinic.direccion}</ThemedText>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={Colors.light.gray} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
           ))
         )}
 
-        {/* Medical Disclaimer Inside Chat */}
-        <View style={styles.warningSection}>
-          <View style={styles.warningCard}>
-            <View style={styles.warningIcon}>
-              <Ionicons name="warning" size={20} color={Colors.light.white} />
-            </View>
-            <View style={styles.warningContent}>
-              <ThemedText style={styles.warningTitle}>Advertencia</ThemedText>
-              <ThemedText style={styles.warningText}>
-                Esta aplicación es solo para fines informativos y no reemplaza
-                el diagnóstico médico profesional. Siempre consulte con un
-                médico calificado para obtener asesoramiento médico adecuado.
-              </ThemedText>
-            </View>
-          </View>
-        </View>
       </ScrollView>
 
+      {/* Medical Disclaimer Inside Chat */}
+      < View style={styles.warningSection} >
+        <View style={styles.warningCard}>
+          <View style={styles.warningIcon}>
+            <Ionicons name="warning" size={20} color={Colors.light.white} />
+          </View>
+          <View style={styles.warningContent}>
+            <ThemedText style={styles.warningTitle}>Advertencia</ThemedText>
+            <ThemedText style={styles.warningText}>
+              Esta aplicación es solo para fines informativos y no reemplaza
+              el diagnóstico médico profesional. Siempre consulte con un
+              médico calificado para obtener asesoramiento médico adecuado.
+            </ThemedText>
+          </View>
+        </View>
+      </View>
       {/* Side Menu */}
       <SideMenu
         isVisible={isSideMenuVisible}
@@ -300,7 +404,7 @@ export default function ChatScreen() {
         onSelectSession={handleSelectSession}
         onDeleteSession={handleDeleteSession}
       />
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
 
@@ -555,5 +659,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.light.white,
+  },
+
+
+  clinicCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.light.white,
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+    shadowColor: Colors.light.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    gap: 12,
+  },
+  clinicCardIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.light.brandBlue,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clinicCardTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.light.textGray,
+  },
+  clinicCardAddress: {
+    fontSize: 12,
+    color: Colors.light.gray,
   },
 });

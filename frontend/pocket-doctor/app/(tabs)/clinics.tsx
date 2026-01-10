@@ -17,20 +17,10 @@ import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store/authStore";
 import { getCentros, Centro, getEspecialistasCentro, EspecialistaCentro, searchSpecialists } from "@/src/services/clinics";
 import { UserAvatar } from "@/components/ui/UserAvatar";
-import { CustomLoader } from "@/components/ui/CustomLoader";
+import { ClinicsMap } from "@/components/ClinicsMap";
 
-interface Clinic {
-  id: string;
-  name: string;
-  fullName: string;
-  address: string;
-  specialties: string[];
-  image: string;
-  mapCode: string;
-  rating: number;
-  phone: string;
-  website: string;
-}
+// Clinic interface imported from component to ensure compatibility
+import { Clinic } from "@/components/ClinicsMap";
 
 interface MedicalData {
   id: string;
@@ -136,6 +126,7 @@ export default function ClinicsScreen() {
     { light: Colors.light.white, dark: Colors.dark.background },
     "background"
   );
+  const tintColor = useThemeColor({ light: Colors.light.tint, dark: Colors.dark.tint }, 'tint');
 
   const { session } = useAuthStore();
 
@@ -146,12 +137,11 @@ export default function ClinicsScreen() {
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
-  const [specialists, setSpecialists] = useState<EspecialistaCentro[]>([]);
+  // selectedClinic state removed
+  // specialists state removed (fetched in detail screen now)
   const [searchedSpecialists, setSearchedSpecialists] = useState<EspecialistaCentro[]>([]);
   const [errorState, setErrorState] = useState<'timeout' | 'error' | null>(null);
-  const [areSpecialistsVisible, setAreSpecialistsVisible] = useState(false);
-  const [loadingSpecialists, setLoadingSpecialists] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
 
   const loadData = async () => {
@@ -188,28 +178,7 @@ export default function ClinicsScreen() {
     loadData();
   }, [session]);
 
-  // Reset specialists state when clinic changes
-  useEffect(() => {
-    setSpecialists([]);
-    setAreSpecialistsVisible(false);
-  }, [selectedClinic]);
-
-  const handleLoadSpecialists = async () => {
-    if (!selectedClinic || !session?.access_token) return;
-
-    setLoadingSpecialists(true);
-    setAreSpecialistsVisible(true);
-
-    try {
-      const specs = await getEspecialistasCentro(selectedClinic.id, session.access_token);
-      setSpecialists(specs);
-    } catch (error) {
-      console.error('Failed to fetch specialists:', error);
-      setSpecialists([]);
-    } finally {
-      setLoadingSpecialists(false);
-    }
-  };
+  // Removed useEffect for fetching specialists for selectedClinic
 
   // Effect customizado para búsqueda en tiempo real de especialistas
   useEffect(() => {
@@ -240,23 +209,12 @@ export default function ClinicsScreen() {
   });
 
   const handleClinicPress = (clinic: Clinic) => {
-    setSelectedClinic(clinic);
+    // Navigate to detail screen
+    router.push(`/clinic/${clinic.id}`);
   };
 
-  const handleBackToList = () => {
-    setSelectedClinic(null);
-  };
-
-  const handleOpenMap = (mapCode: string) => {
-    if (!mapCode) return;
-    const match = mapCode.match(/\(([^,]+),([^)]+)\)/);
-    if (match) {
-      const lat = match[1];
-      const lng = match[2];
-      const url = `https://www.google.com/maps?q=${lat},${lng}`;
-      Linking.openURL(url);
-    }
-  };
+  // handleBackToList removed
+  // handleOpenMap removed (handled in detail screen)
 
   const renderClinicCard = (clinic: Clinic) => (
     <TouchableOpacity
@@ -288,139 +246,7 @@ export default function ClinicsScreen() {
     </TouchableOpacity>
   );
 
-  const renderClinicDetail = (clinic: Clinic) => (
-    <ScrollView
-      style={styles.detailContainer}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.backButtonContainer}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleBackToList}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color={Colors.light.brandBlue}
-          />
-          <ThemedText style={styles.backButtonText}>Volver</ThemedText>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.clinicImageContainer}>
-        <View style={styles.clinicImagePlaceholder}>
-          <Ionicons
-            name="business-outline"
-            size={48}
-            color={Colors.light.placeholderGray}
-          />
-          <ThemedText style={styles.imagePlaceholderText}>
-            {clinic.name}
-          </ThemedText>
-        </View>
-      </View>
-
-      <View style={styles.clinicDetailCard}>
-        <View style={styles.clinicDetailHeader}>
-          <View style={styles.clinicDetailIcon}>
-            <Ionicons
-              name="heart-outline"
-              size={20}
-              color={Colors.light.brandBlue}
-            />
-          </View>
-          <View style={styles.clinicDetailInfo}>
-            <ThemedText style={styles.clinicDetailName}>
-              {clinic.fullName}
-            </ThemedText>
-            <ThemedText style={styles.clinicDetailShortName}>
-              {clinic.name}
-            </ThemedText>
-            <ThemedText style={styles.clinicDetailAddress}>
-              {clinic.address}
-            </ThemedText>
-          </View>
-        </View>
-
-        <TouchableOpacity style={styles.mapButton} activeOpacity={0.7} onPress={() => handleOpenMap(clinic.mapCode)}>
-          <Ionicons
-            name="location-outline"
-            size={16}
-            color={Colors.light.brandBlue}
-          />
-          <ThemedText style={styles.mapButtonText}>Ver ubicación</ThemedText>
-        </TouchableOpacity>
-
-        <View style={styles.clinicDetails}>
-          <View style={styles.detailRow}>
-            <Ionicons name="call-outline" size={16} color={Colors.light.gray} />
-            <ThemedText style={styles.detailText}>{clinic.phone}</ThemedText>
-          </View>
-        </View>
-
-        <View style={styles.specialistsSection}>
-          <ThemedText style={styles.specialistsTitle}>
-            Especialistas:
-          </ThemedText>
-
-          {!areSpecialistsVisible ? (
-            <TouchableOpacity
-              style={styles.viewSpecialistsButton}
-              onPress={handleLoadSpecialists}
-              activeOpacity={0.8}
-            >
-              <ThemedText style={styles.viewSpecialistsButtonText}>Ver Especialistas</ThemedText>
-              <Ionicons name="people" size={20} color={Colors.light.white} />
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.specialistsList}>
-              {loadingSpecialists ? (
-                <View style={{ padding: 20, alignItems: 'center' }}>
-                  <CustomLoader />
-                </View>
-              ) : specialists.length > 0 ? (
-                specialists.map((specialist) => (
-                  <View key={specialist.especialista_id} style={styles.specialistCard}>
-                    <View style={styles.specialistHeader}>
-                      <Ionicons
-                        name="person-outline"
-                        size={20}
-                        color={Colors.light.brandBlue}
-                      />
-                      <View style={styles.specialistInfo}>
-                        <ThemedText style={styles.specialistName}>
-                          {specialist.nombre} {specialist.apellido || ''}
-                        </ThemedText>
-                        {specialist.contacto && (
-                          <ThemedText style={styles.specialistContact}>
-                            {specialist.contacto}
-                          </ThemedText>
-                        )}
-                      </View>
-                    </View>
-                    {specialist.especialidad && specialist.especialidad.length > 0 && (
-                      <View style={styles.specialistSpecialties}>
-                        {specialist.especialidad.map((esp, index) => (
-                          <View key={index} style={styles.specialtyTag}>
-                            <ThemedText style={styles.specialtyText}>
-                              {esp}
-                            </ThemedText>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                  </View>
-                ))
-              ) : (
-                <ThemedText style={{ color: Colors.light.gray, fontStyle: 'italic', marginTop: 8 }}>No hay especialistas disponibles.</ThemedText>
-              )}
-            </View>
-          )}
-        </View>
-      </View>
-    </ScrollView>
-  );
+  // renderClinicDetail removed
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
@@ -446,53 +272,79 @@ export default function ClinicsScreen() {
         </View>
       </View>
 
-      <View style={{ flex: 1 }}>
-        {!errorState ? (
-          !selectedClinic ? (
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-              <View style={styles.searchContainer}>
-                <View style={styles.searchBar}>
-                  <Ionicons
-                    name="search-outline"
-                    size={20}
-                    color={Colors.light.placeholderGray}
-                  />
-                  <TextInput
-                    style={styles.searchInput}
-                    placeholder="Buscar clínicas y especialistas..."
-                    placeholderTextColor={Colors.light.placeholderGray}
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                  />
-                  {searchQuery.length > 0 && (
-                    <TouchableOpacity onPress={() => setSearchQuery('')}>
-                      <Ionicons name="close-circle" size={18} color={Colors.light.gray} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
+      {!errorState ? (
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBar}>
+              <Ionicons
+                name="search-outline"
+                size={20}
+                color={Colors.light.placeholderGray}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Buscar clínicas y especialistas..."
+                placeholderTextColor={Colors.light.placeholderGray}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={18} color={Colors.light.gray} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
 
+          {/* Toggle View Mode */}
+          <View style={styles.viewToggleContainer}>
+            <View style={styles.viewToggle}>
+              <TouchableOpacity
+                style={[styles.toggleButton, viewMode === 'list' && styles.toggleButtonActive]}
+                onPress={() => setViewMode('list')}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="list" size={18} color={viewMode === 'list' ? Colors.light.white : Colors.light.gray} />
+                <ThemedText style={[styles.toggleButtonText, viewMode === 'list' && styles.toggleButtonTextActive]}>
+                  Lista
+                </ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.toggleButton, viewMode === 'map' && styles.toggleButtonActive]}
+                onPress={() => setViewMode('map')}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="map" size={18} color={viewMode === 'map' ? Colors.light.white : Colors.light.gray} />
+                <ThemedText style={[styles.toggleButtonText, viewMode === 'map' && styles.toggleButtonTextActive]}>
+                  Mapa
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
 
-
-              <View style={styles.clinicsList}>
-                {/* Sección de Especialistas Encontrados */}
-                {searchQuery.length > 0 && searchedSpecialists.length > 0 && (
-                  <View style={{ marginBottom: 20 }}>
-                    <ThemedText style={{ fontSize: 16, fontWeight: '600', color: Colors.light.brandBlue, marginBottom: 12, marginLeft: 4 }}>
-                      Especialistas encontrados ({searchedSpecialists.length})
-                    </ThemedText>
-                    {searchedSpecialists.map((spec) => (
-                      <View key={spec.especialista_id} style={[styles.clinicCard, { flexDirection: 'column', alignItems: 'flex-start', padding: 12 }]}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, width: '100%' }}>
-                          <View style={[styles.clinicIcon, { backgroundColor: Colors.light.lightBlue, width: 32, height: 32, borderRadius: 16 }]}>
-                            <Ionicons name="person" size={16} color={Colors.light.white} />
-                          </View>
-                          <View style={{ flex: 1, marginLeft: 10 }}>
-                            <ThemedText style={[styles.clinicName, { fontSize: 14, marginBottom: 0 }]}>{spec.nombre} {spec.apellido || ''}</ThemedText>
-                            {spec.especialidad && spec.especialidad.length > 0 && (
-                              <ThemedText style={{ fontSize: 12, color: Colors.light.gray }}>{spec.especialidad.join(", ")}</ThemedText>
-                            )}
-                          </View>
+          {viewMode === 'map' ? (
+            <View style={{ flex: 1, height: '100%' }}>
+              <ClinicsMap clinics={filteredClinics} onClinicPress={handleClinicPress} />
+            </View>
+          ) : (
+            <View style={styles.clinicsList}>
+              {/* Sección de Especialistas Encontrados */}
+              {searchQuery.length > 0 && searchedSpecialists.length > 0 && (
+                <View style={{ marginBottom: 20 }}>
+                  <ThemedText style={{ fontSize: 16, fontWeight: '600', color: Colors.light.brandBlue, marginBottom: 12, marginLeft: 4 }}>
+                    Especialistas encontrados ({searchedSpecialists.length})
+                  </ThemedText>
+                  {searchedSpecialists.map((spec) => (
+                    <View key={spec.especialista_id} style={[styles.clinicCard, { flexDirection: 'column', alignItems: 'flex-start', padding: 12 }]}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2, width: '100%' }}>
+                        <View style={[styles.clinicIcon, { backgroundColor: Colors.light.lightBlue, width: 32, height: 32, borderRadius: 16 }]}>
+                          <Ionicons name="person" size={16} color={Colors.light.white} />
+                        </View>
+                        <View style={{ flex: 1, marginLeft: 10 }}>
+                          <ThemedText style={[styles.clinicName, { fontSize: 14, marginBottom: 0 }]}>{spec.nombre} {spec.apellido || ''}</ThemedText>
+                          {spec.especialidad && spec.especialidad.length > 0 && (
+                            <ThemedText style={{ fontSize: 12, color: Colors.light.gray }}>{spec.especialidad.join(", ")}</ThemedText>
+                          )}
                         </View>
                         {spec.contacto && (
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, marginLeft: 42 }}>
@@ -517,47 +369,40 @@ export default function ClinicsScreen() {
                   </View>
                 )}
 
-                {/* Empty State */}
-                {searchQuery.length > 0 && filteredClinics.length === 0 && searchedSpecialists.length === 0 && (
-                  <View style={{ alignItems: 'center', marginTop: 40, opacity: 0.6 }}>
-                    <Ionicons name="search" size={48} color={Colors.light.gray} />
-                    <ThemedText style={{ marginTop: 12, color: Colors.light.gray }}>No se encontraron resultados</ThemedText>
-                  </View>
-                )}
-              </View>
-            </ScrollView>
-          ) : (
-            renderClinicDetail(selectedClinic)
-          )
-        ) : (
-          <View style={styles.errorContainer}>
-            <Ionicons
-              name={errorState === 'timeout' ? "time-outline" : "cloud-offline-outline"}
-              size={64}
-              color={Colors.light.gray}
-            />
-            <ThemedText style={styles.errorTitle}>
-              {errorState === 'timeout'
-                ? "Tiempo de espera agotado"
-                : "Error de conexión"}
-            </ThemedText>
-            <ThemedText style={styles.errorMessage}>
-              {errorState === 'timeout'
-                ? "No pudimos cargar la información a tiempo. Por favor verifica tu conexión e intenta nuevamente."
-                : "Algo salió mal al cargar las clínicas."}
-            </ThemedText>
-            <TouchableOpacity style={styles.retryButton} onPress={loadData}>
-              <ThemedText style={styles.retryButtonText}>Reintentar</ThemedText>
-              <Ionicons name="refresh" size={18} color={Colors.light.white} />
-            </TouchableOpacity>
-          </View>
-        )}
-        {loading && (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.8)', justifyContent: 'center', alignItems: 'center', zIndex: 100 }]}>
-            <CustomLoader />
-          </View>
-        )}
-      </View>
+              {/* Empty State */}
+              {searchQuery.length > 0 && filteredClinics.length === 0 && searchedSpecialists.length === 0 && (
+                <View style={{ alignItems: 'center', marginTop: 40, opacity: 0.6 }}>
+                  <Ionicons name="search" size={48} color={Colors.light.gray} />
+                  <ThemedText style={{ marginTop: 12, color: Colors.light.gray }}>No se encontraron resultados</ThemedText>
+                </View>
+              )}
+
+            </View>
+          )}
+        </ScrollView>
+      ) : (
+        <View style={styles.errorContainer}>
+          <Ionicons
+            name={errorState === 'timeout' ? "time-outline" : "cloud-offline-outline"}
+            size={64}
+            color={Colors.light.gray}
+          />
+          <ThemedText style={styles.errorTitle}>
+            {errorState === 'timeout'
+              ? "Tiempo de espera agotado"
+              : "Error de conexión"}
+          </ThemedText>
+          <ThemedText style={styles.errorMessage}>
+            {errorState === 'timeout'
+              ? "No pudimos cargar la información a tiempo. Por favor verifica tu conexión e intenta nuevamente."
+              : "Algo salió mal al cargar las clínicas."}
+          </ThemedText>
+          <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+            <ThemedText style={styles.retryButtonText}>Reintentar</ThemedText>
+            <Ionicons name="refresh" size={18} color={Colors.light.white} />
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -754,205 +599,43 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  detailContainer: {
-    flex: 1,
-    backgroundColor: Colors.light.lightGray,
-  },
-
-  backButtonContainer: {
+  // Error View Styles
+  viewToggleContainer: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    alignSelf: "flex-start",
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.brandBlue,
-  },
-
-  clinicImageContainer: {
-    height: 200,
-    backgroundColor: Colors.light.white,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  clinicImagePlaceholder: {
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  imagePlaceholderText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.light.gray,
-  },
-
-  clinicDetailCard: {
-    backgroundColor: Colors.light.white,
-    margin: 20,
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: Colors.light.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  clinicDetailHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
     marginBottom: 16,
   },
-  clinicDetailIcon: {
-    width: 40,
-    height: 40,
-    backgroundColor: Colors.light.lightGray,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
+  viewToggle: {
+    flexDirection: 'row',
+    backgroundColor: Colors.light.white,
+    borderRadius: 12,
+    padding: 4,
+    shadowColor: Colors.light.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  clinicDetailInfo: {
+  toggleButton: {
     flex: 1,
-  },
-  clinicDetailName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.light.textGray,
-    marginBottom: 4,
-    lineHeight: 24,
-  },
-  viewSpecialistsButton: {
-    backgroundColor: Colors.light.brandBlue,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginTop: 8,
-    alignSelf: 'flex-start',
-  },
-  viewSpecialistsButtonText: {
-    color: Colors.light.white,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  clinicDetailShortName: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: Colors.light.brandBlue,
-    marginBottom: 4,
-  },
-  clinicDetailAddress: {
-    fontSize: 14,
-    color: Colors.light.gray,
-  },
-
-  mapButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.light.lightGray,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    alignSelf: "flex-start",
-    marginBottom: 20,
-    gap: 6,
-  },
-  mapButtonText: {
-    fontSize: 12,
-    color: Colors.light.brandBlue,
-    fontWeight: "500",
-  },
-
-  clinicDetails: {
-    gap: 12,
-    marginBottom: 20,
-  },
-  detailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  detailText: {
-    fontSize: 14,
-    color: Colors.light.gray,
-  },
-
-  specialtiesSection: {
-    marginTop: 8,
-  },
-  specialtiesTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.textGray,
-    marginBottom: 12,
-  },
-  specialtiesList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  specialistsSection: {
-    marginTop: 8,
-  },
-  specialistsTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.textGray,
-    marginBottom: 12,
-  },
-  specialistsList: {
-    gap: 12,
-  },
-  specialistCard: {
-    backgroundColor: Colors.light.lightGray,
+    paddingVertical: 10,
     borderRadius: 8,
-    padding: 12,
   },
-  specialistHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
+  toggleButtonActive: {
+    backgroundColor: Colors.light.brandBlue,
   },
-  specialistInfo: {
-    flex: 1,
-    marginLeft: 8,
-  },
-  specialistName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.textGray,
-    marginBottom: 2, // Reduced
-  },
-  specialistContact: {
+  toggleButtonText: {
     fontSize: 14,
+    fontWeight: '600',
     color: Colors.light.gray,
   },
-  specialistSpecialties: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  specialtyTag: {
-    backgroundColor: Colors.light.brandBlue,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  specialtyText: {
-    fontSize: 12,
+  toggleButtonTextActive: {
     color: Colors.light.white,
-    fontWeight: "500",
   },
+
   // Error View Styles
   errorContainer: {
     flex: 1,
