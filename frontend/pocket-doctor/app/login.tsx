@@ -644,7 +644,7 @@ export default function LoginScreen() {
 
       if (result.type !== "success") {
         if (result.type === 'dismiss') {
-          Alert.alert("Cancelado", "Inicio de sesión cancelado.");
+          // Usuario cerró la ventana, no mostramos nada.
         }
         return;
       }

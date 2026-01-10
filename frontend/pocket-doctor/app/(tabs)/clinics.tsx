@@ -346,29 +346,28 @@ export default function ClinicsScreen() {
                             <ThemedText style={{ fontSize: 12, color: Colors.light.gray }}>{spec.especialidad.join(", ")}</ThemedText>
                           )}
                         </View>
+                        {spec.contacto && (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, marginLeft: 42 }}>
+                            <Ionicons name="call-outline" size={12} color={Colors.light.gray} />
+                            <ThemedText style={{ fontSize: 11, color: Colors.light.gray }}>{spec.contacto}</ThemedText>
+                          </View>
+                        )}
                       </View>
-                      {spec.contacto && (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, marginLeft: 42 }}>
-                          <Ionicons name="call-outline" size={12} color={Colors.light.gray} />
-                          <ThemedText style={{ fontSize: 11, color: Colors.light.gray }}>{spec.contacto}</ThemedText>
-                        </View>
-                      )}
-                    </View>
-                  ))}
-                </View>
-              )}
+                    ))}
+                  </View>
+                )}
 
-              {/* Sección de Clínicas */}
-              {(searchQuery.length === 0 || filteredClinics.length > 0) && (
-                <View>
-                  {searchQuery.length > 0 && (
-                    <ThemedText style={{ fontSize: 16, fontWeight: '600', color: Colors.light.brandBlue, marginBottom: 12, marginLeft: 4 }}>
-                      Clínicas
-                    </ThemedText>
-                  )}
-                  {filteredClinics.map(renderClinicCard)}
-                </View>
-              )}
+                {/* Sección de Clínicas */}
+                {(searchQuery.length === 0 || filteredClinics.length > 0) && (
+                  <View>
+                    {searchQuery.length > 0 && (
+                      <ThemedText style={{ fontSize: 16, fontWeight: '600', color: Colors.light.brandBlue, marginBottom: 12, marginLeft: 4 }}>
+                        Clínicas
+                      </ThemedText>
+                    )}
+                    {filteredClinics.map(renderClinicCard)}
+                  </View>
+                )}
 
               {/* Empty State */}
               {searchQuery.length > 0 && filteredClinics.length === 0 && searchedSpecialists.length === 0 && (

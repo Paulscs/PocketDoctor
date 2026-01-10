@@ -21,6 +21,7 @@ import {
   useActiveSession,
   useActiveSessionMessages,
   FollowUpOption,
+  DEFAULT_FOLLOW_UP_OPTIONS,
 } from "@/src/store/chatStore";
 import { SideMenu } from "@/components/layout/SideMenu";
 import { UserAvatar } from "@/components/ui/UserAvatar";
@@ -166,7 +167,7 @@ export default function ChatScreen() {
       if (qaKey && qaContext[qaKey]) {
         return {
           text: qaContext[qaKey],
-          followUpOptions: [], // Terminal answer for now, or add "Ask another"
+          followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS, // Use default options for re-engagement
         };
       }
     }
@@ -176,33 +177,33 @@ export default function ChatScreen() {
       case "simple_explanation":
         return {
           text: "No tengo el contexto específico de un análisis para explicarte. Por favor, sube un documento primero para analizarlo.",
-          followUpOptions: [],
+          followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS,
         };
       case "lifestyle_changes":
         return {
           text: "Para recomendaciones precisas, necesito que analicemos tus resultados de laboratorio primero.",
-          followUpOptions: [],
+          followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS,
         };
       case "causes":
         return {
           text: "Necesito ver tus resultados para identificar posibles causas. ¿Te gustaría subir un análisis?",
-          followUpOptions: [],
+          followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS,
         };
       case "warning_signs":
         return {
           text: "Sin datos recientes es difícil alertarte. En general, dolor torácico o dificultad respiratoria son urgencias.",
-          followUpOptions: [],
+          followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS,
         };
       case "doctor_questions":
         return {
           text: "Lo ideal es preguntar basado en tus números. Sube un PDF para generarte las preguntas exactas.",
-          followUpOptions: [],
+          followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS,
         };
 
       default:
         return {
           text: "Entiendo. Estoy procesando esa solicitud.",
-          followUpOptions: [],
+          followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS,
         };
     }
   };
