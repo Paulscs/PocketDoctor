@@ -19,6 +19,7 @@ import { useState, useCallback } from "react";
 import { useFocusEffect } from "expo-router";
 import { apiClient } from "@/src/utils/apiClient";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { CustomLoader } from "@/components/ui/CustomLoader";
 
 interface MedicalResult {
   id: string;
@@ -253,7 +254,10 @@ export default function HistoryScreen() {
 
         <View style={styles.resultsList}>
           {isLoading ? (
-            <ThemedText style={{ textAlign: 'center', marginTop: 20 }}>Cargando historial...</ThemedText>
+            <View style={{ alignItems: 'center', marginTop: 40 }}>
+              <CustomLoader />
+              <ThemedText style={{ textAlign: 'center', marginTop: 20 }}>Cargando historial...</ThemedText>
+            </View>
           ) : results.length > 0 ? (
             results.map(renderResultItem)
           ) : (

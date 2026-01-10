@@ -6,6 +6,7 @@ import {
   ScrollView,
   Image,
 } from "react-native";
+import { CustomLoader } from "@/components/ui/CustomLoader";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { SearchBar } from "@/components/ui/SearchBar";
@@ -21,6 +22,7 @@ import { apiClient } from "@/src/utils/apiClient";
 import { useState } from "react";
 
 export default function HomeScreen() {
+  const [isPageLoading, setIsPageLoading] = useState(true);
   const [rootMessage, setRootMessage] = useState<string>("");
   const backgroundColor = useThemeColor(
     { light: Colors.light.white, dark: Colors.dark.background },
@@ -65,90 +67,74 @@ export default function HomeScreen() {
     router.push("/(tabs)/profile");
   }, []);
 
-  // When user logs in and session is available, call backend /users/me
-  // and log the response here on the home page for debugging/inspection.
+  // State for Recent Activities
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
+
   useEffect(() => {
     const token = session?.access_token;
-    console.log('[home] user profile before login:', token);
     if (!token) return;
 
     let mounted = true;
 
-    // Fetch user profile (only if not already loaded in store)
-    if (!userProfile) {
-      (async () => {
-        try {
-          const profile = await getUserProfile(token);
-          if (mounted) {
-            console.log('[home] user profile after login:', profile);
-            // Note: Profile is now stored in the auth store, so we don't need to set it locally
-          }
-        } catch (e) {
-          console.error('[home] failed to fetch user profile:', e);
-        }
-      })();
-    }
-
-    // Fetch root message independently
-    (async () => {
+    const loadAllData = async () => {
       try {
-        const rootResponse = await getRootMessage();
-        if (mounted) {
-          setRootMessage(rootResponse.message);
+        setIsPageLoading(true);
+        const promises = [];
+
+        // 1. Profile (only if needed)
+        if (!userProfile) {
+          promises.push(
+            getUserProfile(token).catch((e) =>
+              console.error("[home] user profile fetch error:", e)
+            )
+          );
         }
+
+        // 2. Root Message
+        promises.push(
+          getRootMessage()
+            .then((res) => {
+              if (mounted && res?.message) setRootMessage(res.message);
+            })
+            .catch((e) => console.error("[home] root message fetch error:", e))
+        );
+
+        // 3. Recent Activities
+        promises.push(
+          apiClient("ocr-local/history", { token })
+            .then(async (response) => {
+              if (response.ok) {
+                const data = await response.json();
+                const topActivities = data.slice(0, 3).map((item: any) => ({
+                  id: item.id.toString(),
+                  title: item.titulo || "Análisis",
+                  date: item.created_at,
+                  type: item.tipo || "other",
+                  status: item.estado === "alert" ? "elevated" : "normal",
+                  description: item.resumen,
+                }));
+                if (mounted) setRecentActivities(topActivities);
+              }
+            })
+            .catch((e) => console.error("[home] activities fetch error:", e))
+        );
+
+        await Promise.allSettled(promises);
       } catch (e) {
-        console.error('[home] failed to fetch root message:', e);
+        console.error("Error loading home data:", e);
+      } finally {
+        if (mounted) {
+          setIsPageLoading(false);
+        }
       }
-    })();
+    };
 
-    return () => { mounted = false; };
+    loadAllData();
+
+    return () => {
+      mounted = false;
+    };
   }, [session?.access_token]);
-
-  // State for Recent Activities
-  const [recentActivities, setRecentActivities] = useState<any[]>([]);
-  const [loadingActivities, setLoadingActivities] = useState(false);
-  const [hasLoadedActivities, setHasLoadedActivities] = useState(false);
-
-  // Use useFocusEffect to refresh analytics when navigating back to Home
-  // (Import useFocusEffect from expo-router if not already imported)
-  // But wait, useFocusEffect in react-navigation/expo-router is standard.
-  // I need to add it to imports first. For now I will add the logic.
-
-  useEffect(() => {
-    if (session?.access_token) {
-      fetchRecentActivities();
-    }
-  }, [session?.access_token]);
-
-  const fetchRecentActivities = async () => {
-    try {
-      setLoadingActivities(true);
-      const response = await apiClient("ocr-local/history", {
-        token: session?.access_token || "",
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Sort by date desc (if not already) and take top 3
-        // DB usually returns desc, but let's be safe if needed.
-        // Assuming API returns generic list.
-        const topActivities = data.slice(0, 3).map((item: any) => ({
-          id: item.id.toString(),
-          title: item.titulo || "Análisis",
-          date: item.created_at,
-          type: item.tipo || "other",
-          status: item.estado === "alert" ? "elevated" : "normal",
-          description: item.resumen
-        }));
-        setRecentActivities(topActivities);
-      }
-    } catch (e) {
-      console.error("Error fetching home activities:", e);
-    } finally {
-      setLoadingActivities(false);
-      setHasLoadedActivities(true);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -182,6 +168,14 @@ export default function HomeScreen() {
     const diffInDays = Math.floor(diffInHours / 24);
     return `Hace ${diffInDays} días`;
   };
+
+  if (isPageLoading) {
+    return (
+      <View style={[containerStyle, { justifyContent: "center", alignItems: "center" }]}>
+        <CustomLoader />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={containerStyle}>
@@ -319,7 +313,7 @@ export default function HomeScreen() {
               </View>
               <View style={styles.cardContent}>
                 <ThemedText style={styles.quickActionTitle}>
-                  Consulta AI
+                  Consulta IA
                 </ThemedText>
                 <View style={styles.subtitleContainer}>
                   <View style={styles.featureTag}>
@@ -373,11 +367,7 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.activitiesList}>
-            {loadingActivities && !hasLoadedActivities ? (
-              <View style={{ padding: 20, alignItems: 'center' }}>
-                <ThemedText>Cargando actividad...</ThemedText>
-              </View>
-            ) : recentActivities.length > 0 ? (
+            {recentActivities.length > 0 ? (
               recentActivities.map((activity) => (
                 <View key={activity.id} style={styles.activityItem}>
                   <View style={styles.activityIcon}>
