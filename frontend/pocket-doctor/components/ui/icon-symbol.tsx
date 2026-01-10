@@ -42,6 +42,7 @@ const MAPPING = {
   laptopcomputer: "laptop",
   applelogo: "apple",
   checkmark: "check",
+  "exclamationmark.triangle.fill": "warning",
 } as const;
 
 /**

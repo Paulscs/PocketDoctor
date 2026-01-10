@@ -67,6 +67,12 @@ export default {
         },
       ],
       "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Necesitamos tu ubicación para mostrarte las clínicas y especialistas más cercanos a ti."
+        }
+      ]
     ],
 
     experiments: {

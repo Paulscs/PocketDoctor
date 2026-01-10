@@ -10,6 +10,7 @@ export interface Centro {
   rnc?: string;
   ubicacion_geografica?: string;
   estado: boolean;
+  especialistas?: EspecialistaCentro[];
 }
 
 export interface EspecialistaCentro {
@@ -66,5 +67,42 @@ export async function searchSpecialists(query: string, accessToken: string): Pro
     throw new Error(`Failed to search specialists: ${response.statusText}`);
   }
 
+  return response.json();
+}
+
+import { apiClient } from '@/src/utils/apiClient';
+
+export async function getNearestClinics(lat: number, lng: number, limit: number = 5, accessToken: string, specialty?: string): Promise<Centro[]> {
+  const params = new URLSearchParams({
+    lat: lat.toString(),
+    lng: lng.toString(),
+    limit: limit.toString(),
+  });
+
+  if (specialty) {
+    params.append('specialty', specialty);
+  }
+
+  const response = await apiClient(`centros/nearest?${params.toString()}`, {
+    method: 'GET',
+    token: accessToken,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch nearest clinics: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function getClinicById(id: number, accessToken: string): Promise<Centro> {
+  const response = await apiClient(`centros/${id}`, {
+    method: 'GET',
+    token: accessToken
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch clinic ${id}: ${response.statusText}`);
+  }
   return response.json();
 }
