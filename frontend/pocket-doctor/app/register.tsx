@@ -278,43 +278,8 @@ function SelectField({
 }
 
 
-// Dropdown items
-const bloodTypeItems = [
-  { label: "A+", value: "A+" },
-  { label: "A-", value: "A-" },
-  { label: "B+", value: "B+" },
-  { label: "B-", value: "B-" },
-  { label: "AB+", value: "AB+" },
-  { label: "AB-", value: "AB-" },
-  { label: "O+", value: "O+" },
-  { label: "O-", value: "O-" },
-];
+// Mapped items created inside component with hooks
 
-const genderItems = [
-  { label: "Masculino", value: "masculino" },
-  { label: "Femenino", value: "femenino" },
-  { label: "Otro", value: "otro" },
-];
-
-// Allergies & Conditions lists
-const commonAllergies = [
-  "Penicilina",
-  "Mariscos",
-  "Polen",
-  "Lácteos",
-  "Nueces",
-  "Huevos",
-  "Otro",
-];
-
-const commonConditions = [
-  "Diabetes",
-  "Hipertensión",
-  "Asma",
-  "Artritis",
-  "Enfermedad cardíaca",
-  "Otro",
-];
 
 function RegisterScreenInner() {
   const { t } = useTranslation();
@@ -345,6 +310,44 @@ function RegisterScreenInner() {
 
   const [openBlood, setOpenBlood] = useState(false);
   const [openGenderDD, setOpenGenderDD] = useState(false);
+
+  // --- MEMOIZED OPTIONS WITH TRANSLATIONS ---
+  const bloodTypeItems = useMemo(() => [
+    { label: "A+", value: "A+" },
+    { label: "A-", value: "A-" },
+    { label: "B+", value: "B+" },
+    { label: "B-", value: "B-" },
+    { label: "AB+", value: "AB+" },
+    { label: "AB-", value: "AB-" },
+    { label: "O+", value: "O+" },
+    { label: "O-", value: "O-" },
+  ], []);
+
+  const genderItems = useMemo(() => [
+    { label: t('auth.register.options.gender.male'), value: "masculino" },
+    { label: t('auth.register.options.gender.female'), value: "femenino" },
+    { label: t('auth.register.options.gender.other'), value: "otro" },
+  ], [t]);
+
+  const allergyItems = useMemo(() => [
+    { label: t('auth.register.options.allergies.penicillin'), value: "Penicilina" },
+    { label: t('auth.register.options.allergies.shellfish'), value: "Mariscos" },
+    { label: t('auth.register.options.allergies.pollen'), value: "Polen" },
+    { label: t('auth.register.options.allergies.dairy'), value: "Lácteos" },
+    { label: t('auth.register.options.allergies.nuts'), value: "Nueces" },
+    { label: t('auth.register.options.allergies.eggs'), value: "Huevos" },
+    { label: t('auth.register.options.allergies.other'), value: "Otro" },
+  ], [t]);
+
+  const conditionItems = useMemo(() => [
+    { label: t('auth.register.options.conditions.diabetes'), value: "Diabetes" },
+    { label: t('auth.register.options.conditions.hypertension'), value: "Hipertensión" },
+    { label: t('auth.register.options.conditions.asthma'), value: "Asma" },
+    { label: t('auth.register.options.conditions.arthritis'), value: "Artritis" },
+    { label: t('auth.register.options.conditions.heart_disease'), value: "Enfermedad cardíaca" },
+    { label: t('auth.register.options.conditions.other'), value: "Otro" },
+  ], [t]);
+
 
   const [submitted, setSubmitted] = useState(false);
 
@@ -609,17 +612,17 @@ function RegisterScreenInner() {
     });
 
   const toggleAllergy = useCallback(
-    (allergy: string) => {
-      if (allergy === "Otro") {
+    (allergyValue: string) => {
+      if (allergyValue === "Otro") {
         if (selectedAllergies.includes("Otro")) {
           setSelectedAllergies(selectedAllergies.filter(a => a !== "Otro"));
           setOtherAllergies("");
         } else setSelectedAllergies([...selectedAllergies, "Otro"]);
       } else {
         setSelectedAllergies(prev =>
-          prev.includes(allergy)
-            ? prev.filter(a => a !== allergy)
-            : [...prev, allergy]
+          prev.includes(allergyValue)
+            ? prev.filter(a => a !== allergyValue)
+            : [...prev, allergyValue]
         );
       }
     },
@@ -627,17 +630,17 @@ function RegisterScreenInner() {
   );
 
   const toggleCondition = useCallback(
-    (condition: string) => {
-      if (condition === "Otro") {
+    (conditionValue: string) => {
+      if (conditionValue === "Otro") {
         if (selectedConditions.includes("Otro")) {
           setSelectedConditions(selectedConditions.filter(c => c !== "Otro"));
           setOtherConditions("");
         } else setSelectedConditions([...selectedConditions, "Otro"]);
       } else {
         setSelectedConditions(prev =>
-          prev.includes(condition)
-            ? prev.filter(c => c !== condition)
-            : [...prev, condition]
+          prev.includes(conditionValue)
+            ? prev.filter(c => c !== conditionValue)
+            : [...prev, conditionValue]
         );
       }
     },
@@ -1055,32 +1058,24 @@ function RegisterScreenInner() {
 
               <Label styles={styles}>{t('auth.register.allergies')}</Label>
               <View style={styles.checkboxContainer}>
-                {[
-                  "Penicilina",
-                  "Mariscos",
-                  "Polen",
-                  "Lácteos",
-                  "Nueces",
-                  "Huevos",
-                  "Otro",
-                ].map(allergy => (
+                {allergyItems.map(item => (
                   <TouchableOpacity
-                    key={allergy}
+                    key={item.value}
                     style={styles.checkboxRow}
-                    onPress={() => toggleAllergy(allergy)}
+                    onPress={() => toggleAllergy(item.value)}
                   >
                     <View
                       style={[
                         styles.checkbox,
-                        selectedAllergies.includes(allergy) &&
+                        selectedAllergies.includes(item.value) &&
                         styles.checkboxSelected,
                       ]}
                     >
-                      {selectedAllergies.includes(allergy) && (
+                      {selectedAllergies.includes(item.value) && (
                         <Ionicons name="checkmark" size={12} color="white" />
                       )}
                     </View>
-                    <Text style={styles.checkboxLabel}>{allergy}</Text>
+                    <Text style={styles.checkboxLabel}>{item.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -1098,24 +1093,24 @@ function RegisterScreenInner() {
 
               <Label styles={styles}>{t('auth.register.conditions')}</Label>
               <View style={styles.checkboxContainer}>
-                {commonConditions.map(condition => (
+                {conditionItems.map(item => (
                   <TouchableOpacity
-                    key={condition}
+                    key={item.value}
                     style={styles.checkboxRow}
-                    onPress={() => toggleCondition(condition)}
+                    onPress={() => toggleCondition(item.value)}
                   >
                     <View
                       style={[
                         styles.checkbox,
-                        selectedConditions.includes(condition) &&
+                        selectedConditions.includes(item.value) &&
                         styles.checkboxSelected,
                       ]}
                     >
-                      {selectedConditions.includes(condition) && (
+                      {selectedConditions.includes(item.value) && (
                         <Ionicons name="checkmark" size={12} color="white" />
                       )}
                     </View>
-                    <Text style={styles.checkboxLabel}>{condition}</Text>
+                    <Text style={styles.checkboxLabel}>{item.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>

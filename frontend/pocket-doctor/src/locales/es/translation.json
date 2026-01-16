@@ -136,7 +136,31 @@
             "password_strength_very_weak": "Muy débil",
             "password_strength_weak": "Débil",
             "password_strength_medium": "Regular",
-            "password_strength_strong": "Fuerte"
+            "password_strength_strong": "Fuerte",
+            "options": {
+                "gender": {
+                    "male": "Masculino",
+                    "female": "Femenino",
+                    "other": "Otro"
+                },
+                "allergies": {
+                    "penicillin": "Penicilina",
+                    "shellfish": "Mariscos",
+                    "pollen": "Polen",
+                    "dairy": "Lácteos",
+                    "nuts": "Nueces",
+                    "eggs": "Huevos",
+                    "other": "Otro"
+                },
+                "conditions": {
+                    "diabetes": "Diabetes",
+                    "hypertension": "Hipertensión",
+                    "asthma": "Asma",
+                    "arthritis": "Artritis",
+                    "heart_disease": "Enfermedad cardíaca",
+                    "other": "Otro"
+                }
+            }
         }
     },
     "profile": {
