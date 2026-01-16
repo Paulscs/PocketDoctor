@@ -556,5 +556,23 @@
                 }
             }
         }
+    },
+    "analytics": {
+        "title": "Analíticas IA",
+        "analyzing": "Analizando con IA...",
+        "error_loading_history": "Error cargando datos del historial.",
+        "error_no_data": "No se recibieron datos del documento.",
+        "error_analyzing": "Error al analizar con IA",
+        "error_unknown": "Error desconocido",
+        "complete_analysis": "Análisis Completo",
+        "no_summary": "No hay resumen disponible.",
+        "medical_details": "Detalles médicos",
+        "normal": "NORMAL",
+        "result": "Resultado",
+        "ref_range": "(Ref: {{low}} - {{high}})",
+        "no_numeric_result": "Sin resultado numérico",
+        "possible_risks": "Posibles Riesgos",
+        "view_recommendations": "Ver recomendaciones detalladas",
+        "chat_assistant": "Chat con Asistente"
     }
 }

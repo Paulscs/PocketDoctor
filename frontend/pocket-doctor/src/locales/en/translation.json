@@ -556,5 +556,23 @@
                 }
             }
         }
+    },
+    "analytics": {
+        "title": "AI Analytics",
+        "analyzing": "Analyzing with AI...",
+        "error_loading_history": "Error loading history data.",
+        "error_no_data": "No document data received.",
+        "error_analyzing": "Error analyzing with AI",
+        "error_unknown": "Unknown error",
+        "complete_analysis": "Complete Analysis",
+        "no_summary": "No summary available.",
+        "medical_details": "Medical Details",
+        "normal": "NORMAL",
+        "result": "Result",
+        "ref_range": "(Ref: {{low}} - {{high}})",
+        "no_numeric_result": "No numeric result",
+        "possible_risks": "Possible Risks",
+        "view_recommendations": "View detailed recommendations",
+        "chat_assistant": "Chat with Assistant"
     }
 }
