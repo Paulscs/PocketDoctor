@@ -16,8 +16,9 @@ import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import CheckRow from "../components/ui/CheckRow";
-import { router } from "expo-router";
+import { router, useRouter } from "expo-router";
 import { TermsConditionsModal } from "@/components/TermsConditionsModal";
 import { PrivacyPolicyModal } from "@/components/PrivacyPolicyModal";
 import DropDownPicker, {
@@ -25,7 +26,7 @@ import DropDownPicker, {
 } from "react-native-dropdown-picker";
 import { Colors } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { useAuthStore } from "@/src/store";
+import { useAuthStore } from "@/src/store/authStore";
 import * as WebBrowser from "expo-web-browser";
 import { supabase } from "@/src/lib/supabase";
 import { makeRedirectUri } from "expo-auth-session"; // 👈 solo esto de auth-session
@@ -277,7 +278,47 @@ function SelectField({
 }
 
 
+// Dropdown items
+const bloodTypeItems = [
+  { label: "A+", value: "A+" },
+  { label: "A-", value: "A-" },
+  { label: "B+", value: "B+" },
+  { label: "B-", value: "B-" },
+  { label: "AB+", value: "AB+" },
+  { label: "AB-", value: "AB-" },
+  { label: "O+", value: "O+" },
+  { label: "O-", value: "O-" },
+];
+
+const genderItems = [
+  { label: "Masculino", value: "masculino" },
+  { label: "Femenino", value: "femenino" },
+  { label: "Otro", value: "otro" },
+];
+
+// Allergies & Conditions lists
+const commonAllergies = [
+  "Penicilina",
+  "Mariscos",
+  "Polen",
+  "Lácteos",
+  "Nueces",
+  "Huevos",
+  "Otro",
+];
+
+const commonConditions = [
+  "Diabetes",
+  "Hipertensión",
+  "Asma",
+  "Artritis",
+  "Enfermedad cardíaca",
+  "Otro",
+];
+
 function RegisterScreenInner() {
+  const { t } = useTranslation();
+  const router = useRouter();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -367,119 +408,19 @@ function RegisterScreenInner() {
       white,
     ]
   );
-  const handleGoogleSignUp = useCallback(async () => {
+  const handleGoogleSignUp = async () => {
     try {
-      const redirectTo = makeRedirectUri({
-        scheme,
-        path: "auth/callback",
-      });
-
-      // 1) Pedimos URL de login a Supabase
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
         options: {
-          redirectTo,
-          skipBrowserRedirect: true,
+          redirectTo: "pocketdoctor://home",
         },
       });
-
-      if (error || !data?.url) {
-        console.error(error);
-        Alert.alert(
-          "Error",
-          error?.message ?? "No se pudo iniciar sesión con Google"
-        );
-        return;
-      }
-
-      // 2) Abrimos el navegador / pestaña del sistema
-      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-
-      if (res.type === "success") {
-        // 3) Obtener sesión y usuario de Supabase
-        const { data: sessionData, error: sessionError } =
-          await supabase.auth.getSession();
-
-        if (sessionError) {
-          console.error(sessionError);
-          Alert.alert("Error", "No se pudo obtener la sesión de Supabase");
-          return;
-        }
-
-        const session = sessionData.session;
-        if (!session) {
-          Alert.alert(
-            "Error",
-            "No se encontró una sesión activa después del login con Google."
-          );
-          return;
-        }
-
-        const user = session.user;
-
-        console.log("USER:", JSON.stringify(user, null, 2));
-        console.log("USER METADATA:", JSON.stringify(user.user_metadata, null, 2));
-
-        // --- Fetch backend profile and populate store ---
-        if (session.access_token) {
-          try {
-            const { getUserProfile } = await import("@/src/services/user");
-            const profile = await getUserProfile(session.access_token);
-            // set store directly so the app has the profile available
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            const { useAuthStore } = require("@/src/store");
-            useAuthStore.setState({ user: session.user, session, userProfile: profile });
-          } catch (err) {
-            console.warn("Error fetching profile after Google OAuth:", err);
-          }
-        }
-        // ---- AQUÍ SOLO EXTRAEMOS DATOS BÁSICOS ----
-        const email = user.email ?? "";
-        const fullName =
-          (user.user_metadata.full_name as string) ||
-          (user.user_metadata.name as string) ||
-          "";
-        const givenName = user.user_metadata.given_name as string | undefined;
-        const familyName = user.user_metadata.family_name as string | undefined;
-        const avatarUrl = user.user_metadata.avatar_url as string | undefined;
-
-        // 4) Upsert mínimo en tu tabla usuarios
-        const { error: upsertError } = await supabase
-          .from("usuarios") // 👈 ajusta si tu tabla se llama distinto
-          .upsert(
-            {
-              auth_id: user.id,              // FK a auth.users.id
-              email,
-              nombre: givenName || fullName, // nombre de pila o completo
-              apellido: familyName || null,
-              avatar_url: avatarUrl ?? null, // solo si existe la columna
-              // completed_profile: false,   // si creas este campo
-            },
-            {
-              onConflict: "auth_id", // que no duplique si ya existe
-            }
-          );
-
-        if (upsertError) {
-          console.warn("Error al sincronizar perfil básico:", upsertError);
-          // No bloqueamos la sesión; puedes mostrar solo un aviso si quieres.
-        }
-
-        // 5) Navegar dentro de la app
-        router.push("/(tabs)/home");
-      } else if (res.type === "cancel") {
-        console.log("Login con Google cancelado por el usuario");
-      } else {
-        console.log("Resultado OAuth inesperado:", res);
-      }
-    } catch (err) {
-      console.error(err);
-      Alert.alert(
-        "Error",
-        "Ocurrió un problema al iniciar sesión con Google. Inténtalo de nuevo."
-      );
+      if (error) Alert.alert(t('common.error'), error.message);
+    } catch (error: any) {
+      Alert.alert(t('common.error'), error.message);
     }
-  }, [router]);
+  };
 
   const handleMicrosoftSignUp = useCallback(async () => {
     try {
@@ -503,8 +444,8 @@ function RegisterScreenInner() {
       if (error || !data?.url) {
         console.error(error);
         Alert.alert(
-          "Error",
-          error?.message ?? "No se pudo iniciar sesión con Microsoft"
+          t('common.error'),
+          error?.message ?? t('auth.register.error_microsoft_login')
         );
         return;
       }
@@ -516,7 +457,7 @@ function RegisterScreenInner() {
       // Extract tokens manually
       const { url } = res;
       if (!url) {
-        Alert.alert("Error", "No se recibió respuesta del navegador");
+        Alert.alert(t('common.error'), t('auth.register.error_no_browser_response'));
         return;
       }
 
@@ -546,9 +487,9 @@ function RegisterScreenInner() {
         const { data: { session: existingSession } } = await supabase.auth.getSession();
         if (existingSession) {
           session = existingSession;
-          user = session.user;
+          user = existingSession.user;
         } else {
-          Alert.alert("Error", "No se encontró sesión activa.");
+          Alert.alert(t('common.error'), t('auth.register.error_no_active_session'));
           return;
         }
       }
@@ -561,7 +502,7 @@ function RegisterScreenInner() {
             const { getUserProfile } = await import("@/src/services/user");
             const profile = await getUserProfile(session.access_token);
             // set store
-            const { useAuthStore } = require("@/src/store");
+            const { useAuthStore } = require("@/src/store/authStore");
             useAuthStore.setState({ user: session.user, session, userProfile: profile });
           } catch (err) {
             console.warn("Error fetching profile:", err);
@@ -602,11 +543,11 @@ function RegisterScreenInner() {
     } catch (err) {
       console.error(err);
       Alert.alert(
-        "Error",
-        "Ocurrió un problema al iniciar sesión con Microsoft."
+        t('common.error'),
+        t('auth.register.error_microsoft_login_unexpected')
       );
     }
-  }, [router]);
+  }, [router, t]);
 
 
   const requiredStr = (s: string) => s.trim().length > 0;
@@ -633,16 +574,16 @@ function RegisterScreenInner() {
     switch (passwordStrength) {
       case 0:
       case 1:
-        return { text: "Muy débil", color: "#E74C3C" };
+        return { text: t('auth.register.password_strength_very_weak'), color: "#E74C3C" };
       case 2:
-        return { text: "Débil", color: "#F39C12" };
+        return { text: t('auth.register.password_strength_weak'), color: "#F39C12" };
       case 3:
-        return { text: "Regular", color: "#F1C40F" };
+        return { text: t('auth.register.password_strength_medium'), color: "#F1C40F" };
       case 4:
       default:
-        return { text: "Fuerte", color: "#27AE60" };
+        return { text: t('auth.register.password_strength_strong'), color: "#27AE60" };
     }
-  }, [passwordStrength]);
+  }, [passwordStrength, t]);
 
   const formValid =
     requiredStr(firstName) &&
@@ -659,22 +600,6 @@ function RegisterScreenInner() {
     !!dateOfBirth &&
     password === confirmPassword &&
     accepted;
-
-  const bloodTypeItems: Item[] = [
-    { label: "A+", value: "A+" },
-    { label: "A-", value: "A-" },
-    { label: "B+", value: "B+" },
-    { label: "B-", value: "B-" },
-    { label: "AB+", value: "AB+" },
-    { label: "AB-", value: "AB-" },
-    { label: "O+", value: "O+" },
-    { label: "O-", value: "O-" },
-  ];
-
-  const genderItems: Item[] = [
-    { label: "Masculino", value: "Masculino" },
-    { label: "Femenino", value: "Femenino" },
-  ];
 
   const formatDate = (date: Date) =>
     date.toLocaleDateString("es-ES", {
@@ -724,41 +649,41 @@ function RegisterScreenInner() {
 
     // Basic client-side validations with user-friendly alerts
     if (!isValidEmail(email)) {
-      Alert.alert("Correo inválido", "Introduzca un correo electrónico válido.");
+      Alert.alert(t('auth.login.error_invalid_email'), t('auth.login.error_invalid_email_message'));
       return;
     }
 
     // collect missing required fields to show a helpful alert
     const missing: string[] = [];
-    if (!requiredStr(firstName)) missing.push("Nombres");
-    if (!requiredStr(lastName)) missing.push("Apellidos");
-    if (!requiredStr(email)) missing.push("Correo electrónico");
-    if (!requiredStr(password)) missing.push("Contraseña");
-    if (!requiredStr(confirmPassword)) missing.push("Confirmar contraseña");
-    if (!requiredStr(height)) missing.push("Altura");
-    if (!requiredStr(weight)) missing.push("Peso");
-    if (!requiredStr(bloodType)) missing.push("Tipo de sangre");
-    if (!requiredStr(gender)) missing.push("Género");
-    if (!dateOfBirth) missing.push("Fecha de nacimiento");
-    if (!accepted) missing.push("Aceptar términos");
+    if (!requiredStr(firstName)) missing.push(t('auth.register.names'));
+    if (!requiredStr(lastName)) missing.push(t('auth.register.surnames'));
+    if (!requiredStr(email)) missing.push(t('auth.register.email'));
+    if (!requiredStr(password)) missing.push(t('auth.register.password'));
+    if (!requiredStr(confirmPassword)) missing.push(t('auth.register.confirm_password'));
+    if (!requiredStr(height)) missing.push(t('auth.register.height'));
+    if (!requiredStr(weight)) missing.push(t('auth.register.weight'));
+    if (!requiredStr(bloodType)) missing.push(t('auth.register.blood_type'));
+    if (!requiredStr(gender)) missing.push(t('auth.register.gender'));
+    if (!dateOfBirth) missing.push(t('auth.register.birth_date'));
+    if (!accepted) missing.push(t('auth.register.accept_terms'));
 
     if (missing.length > 0) {
       Alert.alert(
-        "Campos faltantes",
-        `Por favor complete los siguientes campos: ${missing.join(", ")}`
+        t('auth.register.missing_fields_title'),
+        `${t('auth.register.missing_fields_message')}: ${missing.join(", ")}`
       );
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert("Contraseñas no coinciden", "Revise que ambas contraseñas sean iguales.");
+      Alert.alert(t('auth.forgot_password.error_password_mismatch'), t('auth.forgot_password.error_password_mismatch_message'));
       return;
     }
 
     if (!passwordMeetsPolicy(password)) {
       Alert.alert(
-        "Contraseña débil",
-        "La contraseña debe tener al menos 8 caracteres e incluir mayúsculas, minúsculas y un carácter especial."
+        t('auth.register.weak_password_title'),
+        t('auth.register.weak_password_message')
       );
       return;
     }
@@ -778,8 +703,8 @@ function RegisterScreenInner() {
         // continue — we don't block registration if check fails, fallback to register
       } else if (existsData && Array.isArray(existsData) && existsData.length > 0) {
         Alert.alert(
-          "Correo ya registrado",
-          "El correo ya está en uso. Intente iniciar sesión o recuperar su contraseña."
+          t('auth.register.email_already_registered_title'),
+          t('auth.register.email_already_registered_message')
         );
         return;
       }
@@ -826,15 +751,15 @@ function RegisterScreenInner() {
             </View>
 
             <View style={styles.header}>
-              <ThemedText style={styles.title}>Crear Cuenta</ThemedText>
+              <ThemedText style={styles.title}>{t('auth.register.title')}</ThemedText>
               <ThemedText style={styles.subtitle}>
-                Unos pocos pasos y estará listo para comenzar.
+                {t('auth.register.subtitle')}
               </ThemedText>
             </View>
 
             <View style={styles.form}>
               <Label required styles={styles}>
-                Nombres
+                {t('auth.register.names')}
               </Label>
               <View
                 style={[
@@ -844,7 +769,7 @@ function RegisterScreenInner() {
               >
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Introduzca sus nombres"
+                  placeholder={t('auth.register.names_placeholder')}
                   value={firstName}
                   onChangeText={setFirstName}
                   placeholderTextColor={placeholderGray}
@@ -852,11 +777,11 @@ function RegisterScreenInner() {
                 />
               </View>
               {submitted && !requiredStr(firstName) && (
-                <Text style={styles.err}>Requerido</Text>
+                <Text style={styles.err}>{t('common.required')}</Text>
               )}
 
               <Label required styles={styles}>
-                Apellidos
+                {t('auth.register.surnames')}
               </Label>
               <View
                 style={[
@@ -866,7 +791,7 @@ function RegisterScreenInner() {
               >
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Introduzca sus apellidos"
+                  placeholder={t('auth.register.surnames_placeholder')}
                   value={lastName}
                   onChangeText={setLastName}
                   placeholderTextColor={placeholderGray}
@@ -874,11 +799,11 @@ function RegisterScreenInner() {
                 />
               </View>
               {submitted && !requiredStr(lastName) && (
-                <Text style={styles.err}>Requerido</Text>
+                <Text style={styles.err}>{t('common.required')}</Text>
               )}
 
               <Label required styles={styles}>
-                Correo electrónico
+                {t('auth.register.email')}
               </Label>
               <View
                 style={[
@@ -888,7 +813,7 @@ function RegisterScreenInner() {
               >
                 <TextInput
                   style={styles.textInput}
-                  placeholder="ejemplo@gmail.com"
+                  placeholder={t('auth.login.email_placeholder')}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -900,18 +825,18 @@ function RegisterScreenInner() {
                 />
               </View>
               {!submitted && email.length > 0 && !isValidEmail(email) && (
-                <Text style={styles.err}>Correo inválido</Text>
+                <Text style={styles.err}>{t('auth.login.error_invalid_email')}</Text>
               )}
 
               {submitted && !requiredStr(email) && (
-                <Text style={styles.err}>Requerido</Text>
+                <Text style={styles.err}>{t('common.required')}</Text>
               )}
               {submitted && requiredStr(email) && !isValidEmail(email) && (
-                <Text style={styles.err}>Correo inválido</Text>
+                <Text style={styles.err}>{t('auth.login.error_invalid_email')}</Text>
               )}
 
               <Label required styles={styles}>
-                Contraseña
+                {t('auth.register.password')}
               </Label>
               <View
                 style={[
@@ -921,7 +846,7 @@ function RegisterScreenInner() {
               >
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Introduzca su contraseña"
+                  placeholder={t('auth.register.password')}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={secure}
@@ -940,13 +865,13 @@ function RegisterScreenInner() {
                 </TouchableOpacity>
               </View>
               <Text style={styles.policyText}>
-                Mínimo de 8 caracteres: mayúscula, minúscula, número, carácter especial
+                {t('auth.register.password_policy')}
               </Text>
               {submitted && !requiredStr(password) && (
-                <Text style={styles.err}>Requerido</Text>
+                <Text style={styles.err}>{t('common.required')}</Text>
               )}
               {submitted && requiredStr(password) && !passwordMeetsPolicy(password) && (
-                <Text style={styles.err}>La contraseña debe tener al menos 8 caracteres e incluir mayúsculas, minúsculas y un carácter especial</Text>
+                <Text style={styles.err}>{t('auth.forgot_password.error_password_length')}</Text>
               )}
 
               {/* Password strength meter */}
@@ -975,7 +900,7 @@ function RegisterScreenInner() {
               )}
 
               <Label required styles={styles}>
-                Confirmar contraseña
+                {t('auth.register.confirm_password')}
               </Label>
               <View
                 style={[
@@ -988,7 +913,7 @@ function RegisterScreenInner() {
               >
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Confirme su contraseña"
+                  placeholder={t('auth.register.confirm_password')}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={secureConfirm}
@@ -1008,21 +933,21 @@ function RegisterScreenInner() {
               </View>
               {/* real-time mismatch alert */}
               {!submitted && confirmPassword.length > 0 && password !== confirmPassword && (
-                <Text style={styles.err}>Las contraseñas no coinciden</Text>
+                <Text style={styles.err}>{t('auth.forgot_password.error_password_mismatch')}</Text>
               )}
               {submitted && !requiredStr(confirmPassword) && (
-                <Text style={styles.err}>Requerido</Text>
+                <Text style={styles.err}>{t('common.required')}</Text>
               )}
               {submitted && requiredStr(confirmPassword) && password !== confirmPassword && (
-                <Text style={styles.err}>Las contraseñas no coinciden</Text>
+                <Text style={styles.err}>{t('auth.forgot_password.error_password_mismatch')}</Text>
               )}
 
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Información de Salud</Text>
+                <Text style={styles.sectionTitle}>{t('auth.register.health_info')}</Text>
               </View>
 
               <Label required styles={styles}>
-                Altura (cm)
+                {t('auth.register.height')}
               </Label>
               <View
                 style={[
@@ -1032,7 +957,7 @@ function RegisterScreenInner() {
               >
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Ej: 175"
+                  placeholder={t('auth.register.height_placeholder')}
                   value={height}
                   onChangeText={setHeight}
                   keyboardType="numeric"
@@ -1040,11 +965,11 @@ function RegisterScreenInner() {
                 />
               </View>
               {submitted && !requiredStr(height) && (
-                <Text style={styles.err}>Requerido</Text>
+                <Text style={styles.err}>{t('common.required')}</Text>
               )}
 
               <Label required styles={styles}>
-                Peso (kg)
+                {t('auth.register.weight')}
               </Label>
               <View
                 style={[
@@ -1054,7 +979,7 @@ function RegisterScreenInner() {
               >
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Ej: 70"
+                  placeholder={t('auth.register.weight_placeholder')}
                   value={weight}
                   onChangeText={setWeight}
                   keyboardType="numeric"
@@ -1062,14 +987,14 @@ function RegisterScreenInner() {
                 />
               </View>
               {submitted && !requiredStr(weight) && (
-                <Text style={styles.err}>Requerido</Text>
+                <Text style={styles.err}>{t('common.required')}</Text>
               )}
 
               <SelectField
-                label="Tipo de sangre"
+                label={t('auth.register.blood_type')}
                 value={bloodType}
                 onChange={setBloodType}
-                placeholder="Seleccione su tipo de sangre"
+                placeholder={t('auth.register.blood_type_placeholder')}
                 items={bloodTypeItems}
                 open={openBlood}
                 setOpen={o => {
@@ -1082,11 +1007,11 @@ function RegisterScreenInner() {
                 styles={styles}
               />
               {submitted && !requiredStr(bloodType) && (
-                <Text style={styles.err}>Requerido</Text>
+                <Text style={styles.err}>{t('common.required')}</Text>
               )}
 
               <Label required styles={styles}>
-                Fecha de nacimiento
+                {t('auth.register.birth_date')}
               </Label>
               <TouchableOpacity
                 style={[
@@ -1105,14 +1030,14 @@ function RegisterScreenInner() {
                 <Ionicons name="calendar-outline" size={20} color={brandBlue} />
               </TouchableOpacity>
               {submitted && !dateOfBirth && (
-                <Text style={styles.err}>Requerido</Text>
+                <Text style={styles.err}>{t('common.required')}</Text>
               )}
 
               <SelectField
-                label="Género"
+                label={t('auth.register.gender')}
                 value={gender}
                 onChange={setGender}
-                placeholder="Seleccione su género"
+                placeholder={t('auth.register.gender_placeholder')}
                 items={genderItems}
                 open={openGenderDD}
                 setOpen={o => {
@@ -1125,10 +1050,10 @@ function RegisterScreenInner() {
                 styles={styles}
               />
               {submitted && !requiredStr(gender) && (
-                <Text style={styles.err}>Requerido</Text>
+                <Text style={styles.err}>{t('common.required')}</Text>
               )}
 
-              <Label styles={styles}>Alergias (opcional)</Label>
+              <Label styles={styles}>{t('auth.register.allergies')}</Label>
               <View style={styles.checkboxContainer}>
                 {[
                   "Penicilina",
@@ -1163,7 +1088,7 @@ function RegisterScreenInner() {
                 <View style={styles.inputContainer}>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Especifique otras alergias"
+                    placeholder={t('auth.register.other_allergies_placeholder')}
                     value={otherAllergies}
                     onChangeText={setOtherAllergies}
                     placeholderTextColor={placeholderGray}
@@ -1171,16 +1096,9 @@ function RegisterScreenInner() {
                 </View>
               )}
 
-              <Label styles={styles}>Condiciones médicas (opcional)</Label>
+              <Label styles={styles}>{t('auth.register.conditions')}</Label>
               <View style={styles.checkboxContainer}>
-                {[
-                  "Diabetes",
-                  "Hipertensión",
-                  "Asma",
-                  "Artritis",
-                  "Enfermedad cardíaca",
-                  "Otro",
-                ].map(condition => (
+                {commonConditions.map(condition => (
                   <TouchableOpacity
                     key={condition}
                     style={styles.checkboxRow}
@@ -1205,7 +1123,7 @@ function RegisterScreenInner() {
                 <View style={styles.inputContainer}>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="Especifique otras condiciones médicas"
+                    placeholder={t('auth.register.other_conditions_placeholder')}
                     value={otherConditions}
                     onChangeText={setOtherConditions}
                     placeholderTextColor={placeholderGray}
@@ -1216,20 +1134,20 @@ function RegisterScreenInner() {
               <CheckRow
                 checked={accepted}
                 onToggle={() => setAccepted(!accepted)}
-                text="Al registrarme, confirmo que he leído y acepto nuestra "
-                linkText="Términos y Condiciones"
+                text={t('auth.register.terms_text')}
+                linkText={t('auth.register.terms_link')}
                 onPressLink={() => setShowTermsModal(true)}
-                afterLinkText=" y nuestra "
-                privacyText="Política de Privacidad"
+                afterLinkText={t('auth.register.privacy_text')}
+                privacyText={t('auth.register.privacy_link')}
                 onPressPrivacy={() => setShowPrivacyModal(true)}
 
               />
               {submitted && !accepted && (
-                <Text style={styles.err}>Debe aceptar los términos</Text>
+                <Text style={styles.err}>{t('auth.register.error_accept_terms')}</Text>
               )}
 
               {submitted && !formValid && (
-                <Text style={styles.err}>Faltan campos requeridos. Por favor, complete todos los campos obligatorios.</Text>
+                <Text style={styles.err}>{t('auth.register.error_missing_fields')}</Text>
               )}
 
               <TouchableOpacity
@@ -1246,13 +1164,13 @@ function RegisterScreenInner() {
                     styles.registerButtonTextActive,
                   ]}
                 >
-                  {isLoading ? "Registrando..." : "Registrarme"}
+                  {isLoading ? t('auth.register.registering') : t('auth.register.register_button')}
                 </Text>
               </TouchableOpacity>
 
               <View style={styles.dividerContainer}>
                 <View style={styles.dividerLine} />
-                <Text style={styles.orText}>O regístrate con</Text>
+                <Text style={styles.orText}>{t('auth.register.or_register_with')}</Text>
                 <View style={styles.dividerLine} />
               </View>
 
@@ -1279,15 +1197,15 @@ function RegisterScreenInner() {
               </View>
 
               <View style={styles.signInRow}>
-                <Text style={styles.signInText}>¿Ya tienes una cuenta? </Text>
+                <Text style={styles.signInText}>{t('auth.register.already_have_account')}</Text>
                 <TouchableOpacity onPress={() => router.push("/login")}>
-                  <Text style={styles.signInLink}>Inicia sesión</Text>
+                  <Text style={styles.signInLink}>{t('auth.register.login_link')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
           </ScrollView>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingView >
 
       <DateTimePickerModal
         isVisible={showDatePicker}
@@ -1312,7 +1230,7 @@ function RegisterScreenInner() {
         visible={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}
       />
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
 

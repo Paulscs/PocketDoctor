@@ -15,6 +15,7 @@ import {
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
+import "@/src/i18n";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useGlobalFont } from "@/hooks/useGlobalFont";
@@ -67,7 +68,6 @@ export default function RootLayout() {
     // "login", "register", "forgot-password" are public
     const isPublicRoute =
       currentRoute === undefined || // root /
-      currentRoute === "index" ||
       currentRoute === "login" ||
       currentRoute === "register" ||
       currentRoute === "forgot-password";

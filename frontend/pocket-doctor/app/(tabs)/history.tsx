@@ -20,6 +20,7 @@ import { useFocusEffect } from "expo-router";
 import { apiClient } from "@/src/utils/apiClient";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { CustomLoader } from "@/components/ui/CustomLoader";
+import { useTranslation } from "react-i18next";
 
 interface MedicalResult {
   id: string;
@@ -63,22 +64,23 @@ const getStatusColor = (status: MedicalResult["status"]) => {
   }
 };
 
-const getStatusText = (status: MedicalResult["status"]) => {
+const getStatusText = (status: MedicalResult["status"], t: any) => {
   switch (status) {
     case "normal":
-      return "Normal";
+      return t('history.status.normal');
     case "elevated":
-      return "Elevado";
+      return t('history.status.elevated');
     case "low":
-      return "Bajo";
+      return t('history.status.low');
     case "critical":
-      return "Crítico";
+      return t('history.status.critical');
     default:
-      return "Pendiente";
+      return t('history.status.pending');
   }
 };
 
 export default function HistoryScreen() {
+  const { t } = useTranslation();
   const backgroundColor = useThemeColor(
     { light: Colors.light.white, dark: Colors.dark.background },
     "background"
@@ -111,11 +113,11 @@ export default function HistoryScreen() {
       // Map DB to UI model
       const mappedResults: MedicalResult[] = data.map((item: any) => ({
         id: item.id.toString(),
-        title: item.titulo || "Análisis",
-        date: item.created_at ? item.created_at.split("T")[0] : "Fecha desconocida",
+        title: item.titulo || t('history.analysis'),
+        date: item.created_at ? item.created_at.split("T")[0] : t('history.date_unknown'),
         type: item.tipo || "other",
         status: item.estado === "alert" ? "elevated" : "normal", // simple mapping
-        description: item.resumen || "Sin resumen disponible",
+        description: item.resumen || t('history.no_summary'),
         raw_data: item.datos_completos
       }));
 
@@ -145,12 +147,12 @@ export default function HistoryScreen() {
 
   const handleDeletePress = (id: string) => {
     Alert.alert(
-      "Eliminar análisis",
-      "¿Estás seguro de que quieres eliminar este resultado permanentemente?",
+      t('history.delete_title'),
+      t('history.delete_confirmation'),
       [
-        { text: "Cancelar", style: "cancel" },
+        { text: t('common.cancel'), style: "cancel" },
         {
-          text: "Eliminar",
+          text: t('common.delete'),
           style: "destructive",
           onPress: async () => {
             try {
@@ -167,7 +169,7 @@ export default function HistoryScreen() {
 
             } catch (error) {
               console.error("Delete error:", error);
-              Alert.alert("Error", "No se pudo eliminar el análisis");
+              Alert.alert(t('common.error'), t('history.delete_error'));
               // Revert if needed, but for MVP simple console log is ok or refetch
               fetchHistory();
             }
@@ -212,7 +214,7 @@ export default function HistoryScreen() {
           ]}
         >
           <ThemedText style={styles.statusText}>
-            {getStatusText(result.status)}
+            {getStatusText(result.status, t)}
           </ThemedText>
         </View>
         <IconSymbol
@@ -238,7 +240,7 @@ export default function HistoryScreen() {
           </View>
         </View>
         <View style={styles.headerRight}>
-          <ThemedText style={styles.pageTitle}>Historial</ThemedText>
+          <ThemedText style={styles.pageTitle}>{t('history.title')}</ThemedText>
           <UserAvatar />
         </View>
       </View>
@@ -249,14 +251,14 @@ export default function HistoryScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.titleSection}>
-          <ThemedText style={styles.title}>Historial médico</ThemedText>
+          <ThemedText style={styles.title}>{t('history.medical_history')}</ThemedText>
         </View>
 
         <View style={styles.resultsList}>
           {isLoading ? (
             <View style={{ alignItems: 'center', marginTop: 40 }}>
               <CustomLoader />
-              <ThemedText style={{ textAlign: 'center', marginTop: 20 }}>Cargando historial...</ThemedText>
+              <ThemedText style={{ textAlign: 'center', marginTop: 20 }}>{t('history.loading')}</ThemedText>
             </View>
           ) : results.length > 0 ? (
             results.map(renderResultItem)
@@ -267,7 +269,7 @@ export default function HistoryScreen() {
 
         <View style={styles.emptySpace}>
           <ThemedText style={styles.emptyText}>
-            Más resultados aparecerán aquí conforme los agregues
+            {t('history.empty')}
           </ThemedText>
         </View>
       </ScrollView>

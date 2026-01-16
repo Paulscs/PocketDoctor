@@ -10,6 +10,7 @@ import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 interface TermsModalProps {
     visible: boolean;
@@ -18,6 +19,7 @@ interface TermsModalProps {
 }
 
 export function TermsModal({ visible, onClose, onAccept }: TermsModalProps) {
+    const { t } = useTranslation();
     return (
         <Modal
             animationType="slide"
@@ -30,7 +32,7 @@ export function TermsModal({ visible, onClose, onAccept }: TermsModalProps) {
                     <SafeAreaView edges={["top"]} style={styles.safeArea}>
                         <View style={styles.header}>
                             <ThemedText style={styles.headerTitle}>
-                                Aviso Legal
+                                {t('legal.terms_notice')}
                             </ThemedText>
                             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                                 <Ionicons name="close" size={24} color={Colors.light.black} />
@@ -128,11 +130,11 @@ export function TermsModal({ visible, onClose, onAccept }: TermsModalProps) {
 
                         <View style={styles.footer}>
                             <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-                                <ThemedText style={styles.cancelButtonText}>Cancelar</ThemedText>
+                                <ThemedText style={styles.cancelButtonText}>{t('common.cancel')}</ThemedText>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.acceptButton} onPress={onAccept}>
                                 <ThemedText style={styles.acceptButtonText}>
-                                    Aceptar y Continuar
+                                    {t('legal.accept_continue')}
                                 </ThemedText>
                             </TouchableOpacity>
                         </View>

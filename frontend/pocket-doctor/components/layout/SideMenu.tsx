@@ -13,6 +13,8 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { useTranslation } from "react-i18next";
+import i18n from "@/src/i18n";
 
 interface ChatSession {
   readonly id: string;
@@ -42,6 +44,7 @@ export function SideMenu({
   // onCreateNewChat,
   onDeleteSession,
 }: SideMenuProps) {
+  const { t } = useTranslation();
   const backgroundColor = useThemeColor(
     { light: Colors.light.white, dark: Colors.dark.surface },
     "background"
@@ -68,14 +71,15 @@ export function SideMenu({
     const diffTime = Math.abs(now.getTime() - dateObj.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 1) return "Hoy";
-    if (diffDays === 2) return "Ayer";
-    if (diffDays <= 7) return `Hace ${diffDays} días`;
-    return dateObj.toLocaleDateString("es-ES", {
+    if (diffDays === 1) return t('common.today');
+    if (diffDays === 2) return t('common.yesterday');
+    if (diffDays <= 7) return t('common.days_ago', { count: diffDays });
+
+    return dateObj.toLocaleDateString(i18n.language, {
       day: "numeric",
       month: "short",
     });
-  }, []);
+  }, [t]);
 
   const handleSessionSelect = useCallback(
     (sessionId: string) => {
@@ -133,7 +137,7 @@ export function SideMenu({
                 size={24}
                 color={Colors.light.brandBlue}
               />
-              <ThemedText style={styles.headerTitle}>Chats</ThemedText>
+              <ThemedText style={styles.headerTitle}>{t('chat.sidemenu.chats')}</ThemedText>
             </View>
             <TouchableOpacity
               style={styles.closeButton}
@@ -188,7 +192,7 @@ export function SideMenu({
                         {formatDate(session.timestamp)}
                       </ThemedText>
                       <ThemedText style={styles.sessionCount}>
-                        {session.messageCount} mensajes
+                        {session.messageCount} {t('common.messages')}
                       </ThemedText>
                     </View>
                   </View>
@@ -215,10 +219,10 @@ export function SideMenu({
                   color={Colors.light.muted}
                 />
                 <ThemedText style={styles.emptyStateText}>
-                  No hay chats disponibles
+                  {t('chat.sidemenu.empty')}
                 </ThemedText>
                 <ThemedText style={styles.emptyStateSubtext}>
-                  Sube un análisis médico para iniciar una conversación con el asistente IA.
+                  {t('chat.sidemenu.empty_desc')}
                 </ThemedText>
               </View>
             )}
