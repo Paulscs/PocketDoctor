@@ -17,10 +17,12 @@ import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 
 // IMPORTANTE: Ajusta esta ruta a donde tengas tu cliente de supabase
 import { supabase } from "@/src/lib/supabase";
+import { useTranslation } from "react-i18next";
 
 type Step = "email" | "code" | "password" | "success";
 
 export default function ForgotPasswordScreen() {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -33,19 +35,19 @@ export default function ForgotPasswordScreen() {
 
   // Nuevo estado para el foco visual
   const [isInputFocused, setIsInputFocused] = useState(false);
-  
+
   // Referencia para el input oculto
   const inputRef = useRef<TextInput>(null);
 
   // --- VALIDACIONES ---
   const validateEmail = useCallback(() => {
     if (!email.trim()) {
-      Alert.alert("Error", "Por favor, ingresa tu correo electrónico");
+      Alert.alert(t('common.error'), t('auth.forgot_password.error_email_required'));
       return false;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      Alert.alert("Error", "Por favor, ingresa un correo electrónico válido");
+      Alert.alert(t('common.error'), t('auth.login.error_invalid_email'));
       return false;
     }
     return true;
@@ -53,7 +55,7 @@ export default function ForgotPasswordScreen() {
 
   const validateCode = useCallback(() => {
     if (!code.trim() || code.length !== 6) {
-      Alert.alert("Error", "Por favor, ingresa el código de 6 dígitos");
+      Alert.alert(t('common.error'), t('auth.forgot_password.error_code_required'));
       return false;
     }
     return true;
@@ -61,15 +63,15 @@ export default function ForgotPasswordScreen() {
 
   const validatePasswords = useCallback(() => {
     if (!newPassword.trim()) {
-      Alert.alert("Error", "Por favor, ingresa tu nueva contraseña");
+      Alert.alert(t('common.error'), t('auth.forgot_password.error_password_required'));
       return false;
     }
     if (newPassword.length < 8) {
-      Alert.alert("Error", "La contraseña debe tener al menos 8 caracteres");
+      Alert.alert(t('common.error'), t('auth.forgot_password.error_password_length'));
       return false;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert("Error", "Las contraseñas no coinciden");
+      Alert.alert(t('common.error'), t('auth.forgot_password.error_password_mismatch'));
       return false;
     }
     return true;
@@ -89,7 +91,7 @@ export default function ForgotPasswordScreen() {
       // Si todo sale bien, pasamos al siguiente paso
       setCurrentStep("code");
     } catch (error: any) {
-      Alert.alert("Error", error.message || "No se pudo enviar el código.");
+      Alert.alert(t('common.error'), error.message || "No se pudo enviar el código.");
     } finally {
       setLoading(false);
     }
@@ -111,7 +113,7 @@ export default function ForgotPasswordScreen() {
       // Al verificar, Supabase inicia sesión automáticamente.
       setCurrentStep("password");
     } catch (error: any) {
-      Alert.alert("Error", "El código es incorrecto o ha expirado.");
+      Alert.alert(t('common.error'), "El código es incorrecto o ha expirado.");
     } finally {
       setLoading(false);
     }
@@ -131,7 +133,7 @@ export default function ForgotPasswordScreen() {
       setShowSuccessModal(true);
     } catch (error: any) {
       Alert.alert(
-        "Error",
+        t('common.error'),
         error.message || "No se pudo actualizar la contraseña."
       );
     } finally {
@@ -145,13 +147,13 @@ export default function ForgotPasswordScreen() {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email);
       if (error) throw error;
-      
+
       Alert.alert(
-        "Código Reenviado",
-        "Se ha enviado un nuevo código a tu correo"
+        t('auth.forgot_password.code_resent_title'),
+        t('auth.forgot_password.code_resent_message')
       );
     } catch (error: any) {
-      Alert.alert("Error", "Espera un momento antes de solicitar otro código.");
+      Alert.alert(t('common.error'), "Espera un momento antes de solicitar otro código.");
     } finally {
       setLoading(false);
     }
@@ -159,7 +161,7 @@ export default function ForgotPasswordScreen() {
 
   const handleSuccessConfirm = () => {
     setShowSuccessModal(false);
-    router.replace("/login"); 
+    router.replace("/login");
   };
 
   // --- RENDERS ---
@@ -167,18 +169,18 @@ export default function ForgotPasswordScreen() {
   const renderEmailStep = () => (
     <>
       <View style={styles.header}>
-        <Text style={styles.title}>Recuperar Contraseña</Text>
+        <Text style={styles.title}>{t('auth.forgot_password.title')}</Text>
         <Text style={styles.subtitle}>
-          Ingresa tu correo y te enviaremos un código para reestablecerla.
+          {t('auth.forgot_password.subtitle')}
         </Text>
       </View>
 
       <View style={styles.form}>
-        <Text style={styles.label}>CORREO ELECTRÓNICO</Text>
+        <Text style={styles.label}>{t('auth.forgot_password.email_label')}</Text>
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
-            placeholder="ejemplo@correo.com"
+            placeholder={t('auth.login.email_placeholder')}
             placeholderTextColor={Colors.light.placeholderGray}
             keyboardType="email-address"
             autoCapitalize="none"
@@ -199,13 +201,13 @@ export default function ForgotPasswordScreen() {
           disabled={!email.trim() || loading}
         >
           <Text style={styles.buttonText}>
-            {loading ? "Enviando..." : "Enviar"}
+            {loading ? t('auth.forgot_password.sending') : t('auth.forgot_password.submit_email')}
           </Text>
         </TouchableOpacity>
 
         <View style={styles.linksRow}>
           <TouchableOpacity onPress={() => router.push("/login")}>
-            <Text style={styles.linkText}>Volver a Iniciar Sesión</Text>
+            <Text style={styles.linkText}>{t('auth.forgot_password.back_to_login')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -225,27 +227,27 @@ export default function ForgotPasswordScreen() {
             color={Colors.light.brandBlue}
           />
         </TouchableOpacity>
-        <Text style={styles.title}>Ingresa el código</Text>
+        <Text style={styles.title}>{t('auth.forgot_password.code_title')}</Text>
         <Text style={styles.subtitle}>
-          Revisa tu correo y escribe el código que te enviamos.
+          {t('auth.forgot_password.code_subtitle')}
         </Text>
       </View>
 
       <View style={styles.form}>
         {/* Envoltura Pressable para recuperar el foco al tocar los cuadros */}
-        <Pressable 
-          style={styles.codeContainer} 
+        <Pressable
+          style={styles.codeContainer}
           onPress={() => inputRef.current?.focus()}
         >
           {[0, 1, 2, 3, 4, 5].map((index) => {
-             // Es activo si el teclado está abierto y coincide con la posición del cursor
-             const isActive = isInputFocused && code.length === index;
-             
-             return (
-              <View 
-                key={index} 
+            // Es activo si el teclado está abierto y coincide con la posición del cursor
+            const isActive = isInputFocused && code.length === index;
+
+            return (
+              <View
+                key={index}
                 style={[
-                  styles.codeInput, 
+                  styles.codeInput,
                   isActive && styles.codeInputFocused // Aplica borde azul si es el activo
                 ]}
               >
@@ -279,12 +281,12 @@ export default function ForgotPasswordScreen() {
           disabled={code.length !== 6 || loading}
         >
           <Text style={styles.buttonText}>
-            {loading ? "Verificando..." : "Verificar Código"}
+            {loading ? t('auth.forgot_password.verifying') : t('auth.forgot_password.verify_code')}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={handleResendCode} disabled={loading}>
-          <Text style={styles.linkText}>¿No recibiste el código? Reenviar</Text>
+          <Text style={styles.linkText}>{t('auth.forgot_password.resend_code')}</Text>
         </TouchableOpacity>
       </View>
     </>
@@ -293,18 +295,18 @@ export default function ForgotPasswordScreen() {
   const renderPasswordStep = () => (
     <>
       <View style={styles.header}>
-        <Text style={styles.title}>Crear nueva contraseña</Text>
+        <Text style={styles.title}>{t('auth.forgot_password.new_password_title')}</Text>
         <Text style={styles.subtitle}>
-          Escribe tu nueva contraseña y confírmala para continuar.
+          {t('auth.forgot_password.new_password_subtitle')}
         </Text>
       </View>
 
       <View style={styles.form}>
-        <Text style={styles.label}>Nueva contraseña</Text>
+        <Text style={styles.label}>{t('auth.forgot_password.new_password_label')}</Text>
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
-            placeholder="Mínimo 8 caracteres"
+            placeholder={t('auth.forgot_password.new_password_placeholder')}
             placeholderTextColor={Colors.light.placeholderGray}
             secureTextEntry={!showPassword}
             autoComplete="new-password"
@@ -321,11 +323,11 @@ export default function ForgotPasswordScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.label}>Confirma contraseña</Text>
+        <Text style={styles.label}>{t('auth.forgot_password.confirm_password_label')}</Text>
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
-            placeholder="Confirma tu contraseña"
+            placeholder={t('auth.forgot_password.confirm_password_placeholder')}
             placeholderTextColor={Colors.light.placeholderGray}
             secureTextEntry={!showConfirmPassword}
             autoComplete="new-password"
@@ -346,13 +348,13 @@ export default function ForgotPasswordScreen() {
           style={[
             styles.button,
             (!newPassword.trim() || !confirmPassword.trim() || loading) &&
-              styles.buttonDisabled,
+            styles.buttonDisabled,
           ]}
           onPress={handleUpdatePassword}
           disabled={!newPassword.trim() || !confirmPassword.trim() || loading}
         >
           <Text style={styles.buttonText}>
-            {loading ? "Actualizando..." : "Actualizar Contraseña"}
+            {loading ? t('auth.forgot_password.updating') : t('auth.forgot_password.update_password')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -375,15 +377,15 @@ export default function ForgotPasswordScreen() {
               color={Colors.light.success}
             />
           </View>
-          <Text style={styles.modalTitle}>¡Listo!</Text>
+          <Text style={styles.modalTitle}>{t('auth.forgot_password.success_title')}</Text>
           <Text style={styles.modalMessage}>
-            Tu contraseña ha sido actualizada exitosamente.
+            {t('auth.forgot_password.success_message')}
           </Text>
           <TouchableOpacity
             style={styles.modalButton}
             onPress={handleSuccessConfirm}
           >
-            <Text style={styles.modalButtonText}>Ir a Iniciar Sesión</Text>
+            <Text style={styles.modalButtonText}>{t('auth.forgot_password.go_to_login')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -468,7 +470,7 @@ const styles = StyleSheet.create({
   codeContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 12, 
+    gap: 12,
     marginBottom: 32,
   },
   codeInput: {
@@ -485,7 +487,7 @@ const styles = StyleSheet.create({
   codeInputFocused: {
     borderColor: Colors.light.brandBlue,
     borderWidth: 2,
-    backgroundColor: "#F0F8FF", 
+    backgroundColor: "#F0F8FF",
   },
   codeText: {
     fontSize: 22,

@@ -17,11 +17,13 @@ import { router } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useAuthStore } from "@/src/store";
+import { useTranslation } from "react-i18next";
 import { getUserProfile, getRootMessage, UserProfile } from "@/src/services/user";
 import { apiClient } from "@/src/utils/apiClient";
 import { useState } from "react";
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [rootMessage, setRootMessage] = useState<string>("");
   const backgroundColor = useThemeColor(
@@ -44,9 +46,9 @@ export default function HomeScreen() {
   const greetingText = useMemo(
     () => {
       if (userProfile?.nombre) {
-        return `Hola, ${userProfile.nombre}`;
+        return `${t('home.hello')}, ${userProfile.nombre}`;
       }
-      return `Hola, ${user?.email?.split('@')[0] || "Usuario"}`;
+      return `${t('home.hello')}, ${user?.email?.split('@')[0] || "Usuario"}`;
     },
     [user?.email, userProfile]
   );
@@ -107,7 +109,7 @@ export default function HomeScreen() {
                 const data = await response.json();
                 const topActivities = data.slice(0, 3).map((item: any) => ({
                   id: item.id.toString(),
-                  title: item.titulo || "Análisis",
+                  title: item.titulo, // Fallback handled in render
                   date: item.created_at,
                   type: item.tipo || "other",
                   status: item.estado === "alert" ? "elevated" : "normal",
@@ -147,10 +149,10 @@ export default function HomeScreen() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case "normal": return "Normal";
-      case "elevated": return "Elevado";
-      case "critical": return "Crítico";
-      default: return "Info";
+      case "normal": return t('home.status.normal');
+      case "elevated": return t('home.status.elevated');
+      case "critical": return t('home.status.critical');
+      default: return t('home.status.info');
     }
   };
 
@@ -160,13 +162,13 @@ export default function HomeScreen() {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return "Hace un momento";
+    if (diffInSeconds < 60) return t('home.time_ago.moment');
     const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) return `Hace ${diffInMinutes} min`;
+    if (diffInMinutes < 60) return t('home.time_ago.minutes', { count: diffInMinutes });
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `Hace ${diffInHours} horas`;
+    if (diffInHours < 24) return t('home.time_ago.hours', { count: diffInHours });
     const diffInDays = Math.floor(diffInHours / 24);
-    return `Hace ${diffInDays} días`;
+    return t('home.time_ago.days', { count: diffInDays });
   };
 
   if (isPageLoading) {
@@ -192,7 +194,7 @@ export default function HomeScreen() {
           </View>
         </View>
         <View style={styles.headerRight}>
-          <ThemedText style={styles.pageTitle}>Inicio</ThemedText>
+          <ThemedText style={styles.pageTitle}>{t('home.title')}</ThemedText>
           <UserAvatar />
         </View>
       </View>
@@ -206,7 +208,7 @@ export default function HomeScreen() {
         <View style={styles.greetingSection}>
           <ThemedText style={styles.greeting}>{greetingText}</ThemedText>
           <ThemedText style={styles.subGreeting}>
-            ¿Cómo puedo ayudarte hoy?
+            {t('home.help_question')}
           </ThemedText>
           {rootMessage && (
             <ThemedText style={styles.rootMessage}>
@@ -219,7 +221,7 @@ export default function HomeScreen() {
 
         {/* Quick Actions */}
         <View style={styles.quickActionsSection}>
-          <ThemedText style={styles.sectionTitle}>Acciones rápidas</ThemedText>
+          <ThemedText style={styles.sectionTitle}>{t('home.quick_actions')}</ThemedText>
 
           <View style={styles.quickActionsGrid}>
             <TouchableOpacity
@@ -249,7 +251,7 @@ export default function HomeScreen() {
               </View>
               <View style={styles.cardContent}>
                 <ThemedText style={styles.quickActionTitle}>
-                  Cargar resultados
+                  {t('home.upload_results')}
                 </ThemedText>
                 <View style={styles.subtitleContainer}>
                   <View style={styles.featureTag}>
@@ -259,7 +261,7 @@ export default function HomeScreen() {
                       color={Colors.light.white}
                     />
                     <ThemedText style={styles.featureText}>
-                      Instantáneo
+                      {t('home.instant')}
                     </ThemedText>
                   </View>
                   <View style={styles.featureTag}>
@@ -269,14 +271,14 @@ export default function HomeScreen() {
                       color={Colors.light.white}
                     />
                     <ThemedText style={styles.featureText}>
-                      IA Powered
+                      {t('home.ia_powered')}
                     </ThemedText>
                   </View>
                 </View>
               </View>
               <View style={styles.cardFooter}>
                 <ThemedText style={styles.cardFooterText}>
-                  Toca para comenzar
+                  {t('home.tap_to_start')}
                 </ThemedText>
                 <IconSymbol
                   name="chevron.right"
@@ -313,7 +315,7 @@ export default function HomeScreen() {
               </View>
               <View style={styles.cardContent}>
                 <ThemedText style={styles.quickActionTitle}>
-                  Consulta IA
+                  {t('home.ai_consultation')}
                 </ThemedText>
                 <View style={styles.subtitleContainer}>
                   <View style={styles.featureTag}>
@@ -322,7 +324,7 @@ export default function HomeScreen() {
                       size={12}
                       color={Colors.light.white}
                     />
-                    <ThemedText style={styles.featureText}>24/7</ThemedText>
+                    <ThemedText style={styles.featureText}>{t('home.24_7')}</ThemedText>
                   </View>
                   <View style={styles.featureTag}>
                     <Ionicons
@@ -330,13 +332,13 @@ export default function HomeScreen() {
                       size={12}
                       color={Colors.light.white}
                     />
-                    <ThemedText style={styles.featureText}>Médico</ThemedText>
+                    <ThemedText style={styles.featureText}>{t('home.medical')}</ThemedText>
                   </View>
                 </View>
               </View>
               <View style={styles.cardFooter}>
                 <ThemedText style={styles.cardFooterText}>
-                  Toca para comenzar
+                  {t('home.tap_to_start')}
                 </ThemedText>
                 <IconSymbol
                   name="chevron.right"
@@ -352,7 +354,7 @@ export default function HomeScreen() {
         <View style={styles.activitiesSection}>
           <View style={styles.activitiesHeader}>
             <ThemedText style={styles.sectionTitle}>
-              Actividades recientes
+              {t('home.recent_activities')}
             </ThemedText>
             {recentActivities.length > 0 && (
               <TouchableOpacity
@@ -361,7 +363,7 @@ export default function HomeScreen() {
                 accessibilityRole="button"
                 accessibilityHint="Navega a la pantalla de historial completo"
               >
-                <ThemedText style={styles.seeAllLink}>Ver todas</ThemedText>
+                <ThemedText style={styles.seeAllLink}>{t('home.view_all')}</ThemedText>
               </TouchableOpacity>
             )}
           </View>
@@ -379,7 +381,7 @@ export default function HomeScreen() {
                   </View>
                   <View style={styles.activityContent}>
                     <ThemedText style={styles.activityTitle}>
-                      {activity.title}
+                      {activity.title || t('home.analysis')}
                     </ThemedText>
                     <ThemedText style={styles.activityTime}>
                       {formatTimeAgo(activity.date)}
@@ -401,12 +403,12 @@ export default function HomeScreen() {
                 <View style={styles.emptyIconContainer}>
                   <Ionicons name="clipboard-outline" size={40} color={Colors.light.placeholderGray} />
                 </View>
-                <ThemedText style={styles.emptyTitle}>Sin actividades recientes</ThemedText>
+                <ThemedText style={styles.emptyTitle}>{t('home.no_activities')}</ThemedText>
                 <ThemedText style={styles.emptyDescription}>
-                  Sube tús análisis médicos para llevar un control detallado de tu salud con IA.
+                  {t('home.no_activities_desc')}
                 </ThemedText>
                 <TouchableOpacity style={styles.emptyButton} onPress={handleUploadResults}>
-                  <ThemedText style={styles.emptyButtonText}>Analizar mi primer documento</ThemedText>
+                  <ThemedText style={styles.emptyButtonText}>{t('home.analyze_first_doc')}</ThemedText>
                 </TouchableOpacity>
               </View>
             )}
@@ -420,11 +422,9 @@ export default function HomeScreen() {
               <Ionicons name="warning" size={20} color={Colors.light.white} />
             </View>
             <View style={styles.warningContent}>
-              <ThemedText style={styles.warningTitle}>Advertencia</ThemedText>
+              <ThemedText style={styles.warningTitle}>{t('home.warning_title')}</ThemedText>
               <ThemedText style={styles.warningText}>
-                Esta aplicación es solo para fines informativos y no reemplaza
-                el diagnóstico médico profesional. Siempre consulte con un
-                médico calificado para obtener asesoramiento médico adecuado.
+                {t('home.warning_text')}
               </ThemedText>
             </View>
           </View>

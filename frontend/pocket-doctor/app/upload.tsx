@@ -22,6 +22,7 @@ import { router } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { useTranslation } from "react-i18next";
 
 type SelectedFile = {
   id: string;
@@ -39,6 +40,7 @@ export default function UploadScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const { t } = useTranslation();
 
   const session = useAuthStore((state) => state.session);
   const accessToken = session?.access_token;
@@ -63,7 +65,7 @@ export default function UploadScreen() {
       const asset = result.assets[0];
 
       if (asset.size && asset.size > MAX_FILE_SIZE) {
-        Alert.alert("Archivo demasiado grande", "El archivo excede el límite permitido de 20MB.");
+        Alert.alert(t('upload.error_size_title'), t('upload.error_size_message'));
         return;
       }
 
@@ -94,7 +96,7 @@ export default function UploadScreen() {
 
     } catch (error) {
       console.error("Error selecting file:", error);
-      Alert.alert("Error", "No se pudo seleccionar el archivo");
+      Alert.alert(t('upload.error_select_title'), t('upload.error_select_message'));
     }
   };
 
@@ -105,7 +107,7 @@ export default function UploadScreen() {
       const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
 
       if (permissionResult.granted === false) {
-        Alert.alert("Permiso requerido", "Es necesario acceder a la cámara para tomar fotos de los documentos.");
+        Alert.alert(t('upload.permission_title'), t('upload.permission_message'));
         return;
       }
 
@@ -120,7 +122,7 @@ export default function UploadScreen() {
         const asset = result.assets[0];
 
         if (asset.fileSize && asset.fileSize > MAX_FILE_SIZE) {
-          Alert.alert("Archivo demasiado grande", "La foto excede el límite permitido de 20MB.");
+          Alert.alert(t('upload.error_size_title'), t('upload.error_size_message'));
           return;
         }
 
@@ -147,19 +149,19 @@ export default function UploadScreen() {
       }
     } catch (error) {
       console.error("Error opening camera:", error);
-      Alert.alert("Error", "No se pudo abrir la cámara");
+      Alert.alert(t('upload.error_camera_title'), t('upload.error_camera_message'));
     }
   };
 
   // Helper to trigger ActionSheet for the "+" button
   const handleAddMore = () => {
     Alert.alert(
-      "Agregar otro documento",
-      "¿Quieres tomar una foto o seleccionar de la galería?",
+      t('upload.add_more_title'),
+      t('upload.add_more_message'),
       [
-        { text: "Cancelar", style: "cancel" },
-        { text: "Galería", onPress: handleFilePress },
-        { text: "Cámara", onPress: handleCameraPress },
+        { text: t('common.cancel'), style: "cancel" },
+        { text: t('upload.gallery'), onPress: handleFilePress },
+        { text: t('upload.camera'), onPress: handleCameraPress },
       ]
     );
   };
@@ -176,12 +178,12 @@ export default function UploadScreen() {
     // Alert.alert("Debug", `Iniciando subida de ${selectedFiles.length} archivos`); // Removed debug alert
 
     if (selectedFiles.length === 0) {
-      Alert.alert("Error", "Por favor selecciona al menos un archivo");
+      Alert.alert(t('common.error'), t('upload.error_empty'));
       return;
     }
 
     if (!isAccepted) {
-      Alert.alert("Error", "Debe aceptar el aviso legal para continuar.");
+      Alert.alert(t('common.error'), t('upload.error_terms'));
       return;
     }
 
@@ -310,14 +312,14 @@ export default function UploadScreen() {
           </View>
         </View>
 
-        <ThemedText style={styles.title}>Subir resultados médicos</ThemedText>
+        <ThemedText style={styles.title}>{t('upload.title')}</ThemedText>
 
         <View style={styles.uploadArea}>
           <View style={styles.uploadControls}>
             <ThemedText style={styles.uploadText}>
               {selectedFiles.length > 0
-                ? `${selectedFiles.length} archivo(s) seleccionado(s)`
-                : "Selecciona un archivo"}
+                ? t('upload.files_selected', { count: selectedFiles.length })
+                : t('upload.select_file')}
             </ThemedText>
 
             <View style={styles.uploadOptions}>
@@ -331,7 +333,7 @@ export default function UploadScreen() {
                   size={20}
                   color={Colors.light.brandBlue}
                 />
-                <ThemedText style={styles.optionText}>Cámara</ThemedText>
+                <ThemedText style={styles.optionText}>{t('upload.camera')}</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.optionButton}
@@ -343,7 +345,7 @@ export default function UploadScreen() {
                   size={20}
                   color={Colors.light.brandBlue}
                 />
-                <ThemedText style={styles.optionText}>Archivo</ThemedText>
+                <ThemedText style={styles.optionText}>{t('upload.file')}</ThemedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -351,7 +353,7 @@ export default function UploadScreen() {
 
         {selectedFiles.length > 0 && (
           <View style={styles.filesListContainer}>
-            <ThemedText style={styles.filesListTitle}>Archivos listos para enviar:</ThemedText>
+            <ThemedText style={styles.filesListTitle}>{t('upload.files_ready')}</ThemedText>
             <FlatList
               data={selectedFiles}
               renderItem={renderFileItem}
@@ -367,7 +369,7 @@ export default function UploadScreen() {
                     activeOpacity={0.7}
                   >
                     <Ionicons name="add" size={32} color={Colors.light.brandBlue} />
-                    <ThemedText style={styles.addMoreText}>Agregar</ThemedText>
+                    <ThemedText style={styles.addMoreText}>{t('upload.add')}</ThemedText>
                   </TouchableOpacity>
                 ) : null
               }
@@ -392,7 +394,7 @@ export default function UploadScreen() {
               )}
             </View>
             <ThemedText style={styles.termsText}>
-              He leído y acepto el <ThemedText style={styles.termsLink}>Aviso Legal</ThemedText>
+              {t('upload.accept_prefix')} <ThemedText style={styles.termsLink}>{t('upload.accept_terms')}</ThemedText>
             </ThemedText>
           </TouchableOpacity>
 
@@ -409,7 +411,7 @@ export default function UploadScreen() {
               <ActivityIndicator color={Colors.light.white} />
             ) : (
               <ThemedText style={styles.processButtonText}>
-                Procesar Documentos
+                {t('upload.process')}
               </ThemedText>
             )}
           </TouchableOpacity>
@@ -419,7 +421,7 @@ export default function UploadScreen() {
             onPress={handleCancel}
             disabled={isProcessing}
           >
-            <ThemedText style={styles.cancelButtonText}>Cancelar</ThemedText>
+            <ThemedText style={styles.cancelButtonText}>{t('common.cancel')}</ThemedText>
           </TouchableOpacity>
         </View>
       </ScrollView>

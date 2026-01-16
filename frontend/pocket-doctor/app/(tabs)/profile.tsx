@@ -22,6 +22,8 @@ import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { getUserProfile, updateUserProfile, UserProfile as ApiUserProfile } from "@/src/services/user";
 import { useAuthStore } from "@/src/store/authStore";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import LanguageSwitcher from "@/src/components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
 interface UserProfile {
   id: number;
@@ -60,6 +62,7 @@ export default function ProfileScreen() {
     { light: Colors.light.white, dark: Colors.dark.background },
     "background"
   );
+  const { t } = useTranslation();
 
   const { session, userProfile, logout } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile>(INITIAL_PROFILE);
@@ -83,7 +86,7 @@ export default function ProfileScreen() {
           setProfile(fetchedProfile);
         } catch (error) {
           console.error('Failed to load profile:', error);
-          Alert.alert('Error', 'No se pudo cargar el perfil');
+          Alert.alert(t('common.error'), t('profile.error_load'));
         } finally {
           setIsLoading(false);
         }
@@ -97,7 +100,7 @@ export default function ProfileScreen() {
 
   const handleSaveChanges = async () => {
     if (!session?.access_token) {
-      Alert.alert('Error', 'No hay sesión activa');
+      Alert.alert(t('common.error'), 'No hay sesión activa');
       return;
     }
 
@@ -117,10 +120,10 @@ export default function ProfileScreen() {
       const updatedProfile = await updateUserProfile(session.access_token, updateData);
       setProfile(updatedProfile);
       setIsEditing(false);
-      Alert.alert('Éxito', 'Perfil actualizado correctamente');
+      Alert.alert(t('common.save'), t('profile.success_update'));
     } catch (error) {
       console.error('Failed to save profile:', error);
-      Alert.alert('Error', 'No se pudo guardar el perfil');
+      Alert.alert(t('common.error'), t('profile.error_update'));
     } finally {
       setIsSaving(false);
     }
@@ -191,7 +194,7 @@ export default function ProfileScreen() {
       router.replace("/");
     } catch (error) {
       console.error("Logout error:", error);
-      Alert.alert("Error", "No se pudo cerrar sesión");
+      Alert.alert(t("common.error"), t("profile.error_logout"));
     }
   };
 
@@ -200,7 +203,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.light.brandBlue} />
-          <ThemedText style={styles.loadingText}>Cargando perfil...</ThemedText>
+          <ThemedText style={styles.loadingText}>{t("profile.loading")}</ThemedText>
         </View>
       </SafeAreaView>
     );
@@ -220,7 +223,7 @@ export default function ProfileScreen() {
           </View>
         </View>
         <View style={styles.headerRight}>
-          <ThemedText style={styles.pageTitle}>Perfil</ThemedText>
+          <ThemedText style={styles.pageTitle}>{t("profile.title")}</ThemedText>
           <UserAvatar />
         </View>
       </View>
@@ -256,28 +259,28 @@ export default function ProfileScreen() {
         {/* Personal Information Section */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>
-            Información Personal
+            {t("profile.personal_info")}
           </ThemedText>
           <View style={styles.inputRow}>
             <View style={styles.inputContainer}>
-              <ThemedText style={styles.inputLabel}>Nombres</ThemedText>
+              <ThemedText style={styles.inputLabel}>{t("profile.names")}</ThemedText>
               <TextInput
                 style={isEditing ? styles.textInput : styles.textInputDisabled}
                 value={profile.nombre || ''}
                 onChangeText={text => updateProfile("nombre", text)}
                 editable={isEditing}
-                placeholder="Nombres"
+                placeholder={t("profile.names")}
                 placeholderTextColor={Colors.light.placeholderGray}
               />
             </View>
             <View style={styles.inputContainer}>
-              <ThemedText style={styles.inputLabel}>Apellidos</ThemedText>
+              <ThemedText style={styles.inputLabel}>{t("profile.surnames")}</ThemedText>
               <TextInput
                 style={isEditing ? styles.textInput : styles.textInputDisabled}
                 value={profile.apellido || ''}
                 onChangeText={text => updateProfile("apellido", text)}
                 editable={isEditing}
-                placeholder="Apellidos"
+                placeholder={t("profile.surnames")}
                 placeholderTextColor={Colors.light.placeholderGray}
               />
             </View>
@@ -288,7 +291,7 @@ export default function ProfileScreen() {
         {/* Email Section */}
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>
-            Correo Electrónico
+            {t("profile.email")}
           </ThemedText>
           <View style={styles.inputContainer}>
             <TextInput
@@ -296,7 +299,7 @@ export default function ProfileScreen() {
               value={profile.email}
               onChangeText={text => updateProfile("email", text)}
               editable={false}
-              placeholder="Correo electrónico"
+              placeholder={t("profile.email")}
               placeholderTextColor={Colors.light.placeholderGray}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -306,7 +309,7 @@ export default function ProfileScreen() {
 
         {/* Birth Date Section */}
         <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Fecha de Nacimiento</ThemedText>
+          <ThemedText style={styles.sectionTitle}>{t("profile.birth_date")}</ThemedText>
           <View style={styles.inputContainer}>
             <TouchableOpacity
               style={isEditing ? styles.textInput : styles.textInputDisabled}
@@ -322,17 +325,17 @@ export default function ProfileScreen() {
 
         {/* Medical Information Section */}
         <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Información Médica</ThemedText>
+          <ThemedText style={styles.sectionTitle}>{t("profile.medical_info")}</ThemedText>
 
           {/* Height Section */}
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Altura (cm)</ThemedText>
+            <ThemedText style={styles.inputLabel}>{t("profile.height")}</ThemedText>
             <TextInput
               style={isEditing ? styles.textInput : styles.textInputDisabled}
               value={profile.altura_cm?.toString() || ''}
               onChangeText={text => updateProfile("altura_cm", text ? parseFloat(text) : undefined)}
               editable={isEditing}
-              placeholder="Altura en cm"
+              placeholder={t("profile.height_placeholder")}
               placeholderTextColor={Colors.light.placeholderGray}
               keyboardType="numeric"
             />
@@ -340,13 +343,13 @@ export default function ProfileScreen() {
 
           {/* Weight Section */}
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Peso (kg)</ThemedText>
+            <ThemedText style={styles.inputLabel}>{t("profile.weight")}</ThemedText>
             <TextInput
               style={styles.textInput}
               value={profile.peso_kg?.toString() || ''}
               onChangeText={text => updateProfile("peso_kg", text ? parseFloat(text) : undefined)}
               editable={isEditing}
-              placeholder="Peso en kg"
+              placeholder={t("profile.weight_placeholder")}
               placeholderTextColor={Colors.light.placeholderGray}
               keyboardType="numeric"
             />
@@ -355,7 +358,7 @@ export default function ProfileScreen() {
           {/* Allergies Section */}
           <View style={styles.inputContainer}>
             <View style={styles.labelRow}>
-              <ThemedText style={styles.inputLabel}>Alérgias</ThemedText>
+              <ThemedText style={styles.inputLabel}>{t("profile.allergies")}</ThemedText>
               {isEditing && (
                 <TouchableOpacity
                   style={styles.editButton}
@@ -399,7 +402,7 @@ export default function ProfileScreen() {
                 >
                   <Ionicons name="add" size={16} color={Colors.light.brandBlue} />
                   <ThemedText style={styles.addButtonTextInline}>
-                    {isEditing ? 'Agregar alergia' : 'No hay alergias registradas'}
+                    {isEditing ? t("profile.add_allergy") : t("profile.no_allergies")}
                   </ThemedText>
                 </TouchableOpacity>
               )}
@@ -409,7 +412,7 @@ export default function ProfileScreen() {
           {/* Medical Conditions Section */}
           <View style={styles.inputContainer}>
             <View style={styles.labelRow}>
-              <ThemedText style={styles.inputLabel}>Condiciones Médicas</ThemedText>
+              <ThemedText style={styles.inputLabel}>{t("profile.medical_conditions")}</ThemedText>
               {isEditing && (
                 <TouchableOpacity
                   style={styles.editButton}
@@ -453,7 +456,7 @@ export default function ProfileScreen() {
                 >
                   <Ionicons name="add" size={16} color={Colors.light.brandBlue} />
                   <ThemedText style={styles.addButtonTextInline}>
-                    {isEditing ? 'Agregar condición médica' : 'No hay condiciones médicas registradas'}
+                    {isEditing ? t("profile.add_condition") : t("profile.no_conditions")}
                   </ThemedText>
                 </TouchableOpacity>
               )}
@@ -467,7 +470,7 @@ export default function ProfileScreen() {
         {isSaving ? (
           <View style={styles.saveButton}>
             <ActivityIndicator color={Colors.light.white} />
-            <ThemedText style={styles.saveButtonText}>Guardando...</ThemedText>
+            <ThemedText style={styles.saveButtonText}>{t("profile.saving")}</ThemedText>
           </View>
         ) : (
           <TouchableOpacity
@@ -475,13 +478,19 @@ export default function ProfileScreen() {
             onPress={handleSaveChanges}
             activeOpacity={0.7}
           >
-            <ThemedText style={styles.saveButtonText}>Guardar Cambios</ThemedText>
+            <ThemedText style={styles.saveButtonText}>{t("profile.save_changes")}</ThemedText>
           </TouchableOpacity>
         )}
 
         {/* Support Section */}
         <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Soporte</ThemedText>
+          <ThemedText style={styles.sectionTitle}>{t("profile.settings")}</ThemedText>
+          <LanguageSwitcher />
+        </View>
+
+        {/* Support Section */}
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>{t("profile.support")}</ThemedText>
           <TouchableOpacity
             style={styles.helpButton}
             onPress={() => router.push('/help')}
@@ -489,7 +498,7 @@ export default function ProfileScreen() {
           >
             <View style={styles.helpButtonContent}>
               <Ionicons name="help-buoy-outline" size={24} color={Colors.light.brandBlue} />
-              <ThemedText style={styles.helpButtonText}>Centro de Ayuda</ThemedText>
+              <ThemedText style={styles.helpButtonText}>{t("profile.help_center")}</ThemedText>
             </View>
             <Ionicons name="chevron-forward" size={20} color={Colors.light.placeholderGray} />
           </TouchableOpacity>
@@ -506,7 +515,7 @@ export default function ProfileScreen() {
             size={16}
             color={Colors.light.error}
           />
-          <ThemedText style={styles.logoutButtonText}>Cerrar Sesión</ThemedText>
+          <ThemedText style={styles.logoutButtonText}>{t("profile.logout")}</ThemedText>
         </TouchableOpacity>
       </ScrollView>
 
@@ -520,7 +529,7 @@ export default function ProfileScreen() {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <ThemedText style={styles.modalTitle}>
-              {editingField === 'alergias' ? 'Editar Alérgias' : 'Editar Condiciones Médicas'}
+              {editingField === 'alergias' ? t("profile.edit_allergies") : t("profile.edit_conditions")}
             </ThemedText>
 
             <FlatList
@@ -541,7 +550,7 @@ export default function ProfileScreen() {
               )}
               ListEmptyComponent={
                 <ThemedText style={styles.placeholderText}>
-                  {editingField === 'alergias' ? 'No hay alergias agregadas' : 'No hay condiciones médicas agregadas'}
+                  {editingField === 'alergias' ? t("profile.no_allergies") : t("profile.no_conditions")}
                 </ThemedText>
               }
             />
@@ -551,7 +560,7 @@ export default function ProfileScreen() {
                 style={styles.addItemInput}
                 value={newItem}
                 onChangeText={setNewItem}
-                placeholder={editingField === 'alergias' ? 'Nueva alergia...' : 'Nueva condición médica...'}
+                placeholder={editingField === 'alergias' ? t("profile.new_allergy") : t("profile.new_condition")}
                 placeholderTextColor={Colors.light.placeholderGray}
               />
               <TouchableOpacity
@@ -569,14 +578,14 @@ export default function ProfileScreen() {
                 onPress={cancelItems}
                 activeOpacity={0.7}
               >
-                <ThemedText style={styles.cancelButtonText}>Cancelar</ThemedText>
+                <ThemedText style={styles.cancelButtonText}>{t("common.cancel")}</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.saveButtonModal]}
                 onPress={saveItems}
                 activeOpacity={0.7}
               >
-                <ThemedText style={styles.saveButtonTextModal}>Guardar</ThemedText>
+                <ThemedText style={styles.saveButtonTextModal}>{t("common.save")}</ThemedText>
               </TouchableOpacity>
             </View>
           </View>

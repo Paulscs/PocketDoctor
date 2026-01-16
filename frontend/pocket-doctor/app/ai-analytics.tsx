@@ -18,9 +18,11 @@ import { useAuthStore } from "@/src/store";
 import { useChatStore } from "@/src/store/chatStore";
 import { apiClient } from "@/src/utils/apiClient";
 import { HeartRateLoader } from "@/components/ui/HeartRateLoader";
+import { useTranslation } from "react-i18next";
 
 export default function IAAnalyticsScreen() {
   const params = useLocalSearchParams();
+  const { t } = useTranslation();
   const [loading, setLoading] = React.useState(true);
   const [analysisData, setAnalysisData] = React.useState<any>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -44,8 +46,9 @@ export default function IAAnalyticsScreen() {
             ? JSON.parse(params.historyData)
             : params.historyData;
           setAnalysisData(data);
+          setAnalysisData(data);
         } catch (err: any) {
-          setError("Error cargando datos del historial.");
+          setError(t('analytics.error_loading_history'));
         } finally {
           setLoading(false);
         }
@@ -56,7 +59,7 @@ export default function IAAnalyticsScreen() {
       const fetchNewAnalysis = async () => {
         try {
           if (!params.ocrData) {
-            throw new Error("No se recibieron datos del documento.");
+            throw new Error(t('analytics.error_no_data'));
           }
 
           const ocrResult = typeof params.ocrData === 'string'
@@ -83,14 +86,14 @@ export default function IAAnalyticsScreen() {
 
           if (!response.ok) {
             const errText = await response.text();
-            throw new Error(errText || "Error al analizar con IA");
+            throw new Error(errText || t('analytics.error_analyzing'));
           }
 
           const data = await response.json();
           setAnalysisData(data);
         } catch (err: any) {
           console.error("Analysis Error:", err);
-          setError(err.message || "Error desconocido");
+          setError(err.message || t('analytics.error_unknown'));
         } finally {
           setLoading(false);
         }
@@ -145,7 +148,7 @@ export default function IAAnalyticsScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor, justifyContent: 'center', alignItems: 'center' }]}>
         <HeartRateLoader />
-        <ThemedText style={{ marginTop: 20 }}>Analizando con IA...</ThemedText>
+        <ThemedText style={{ marginTop: 20 }}>{t('analytics.analyzing')}</ThemedText>
       </SafeAreaView>
     );
   }
@@ -156,7 +159,7 @@ export default function IAAnalyticsScreen() {
         <Ionicons name="alert-circle" size={48} color={Colors.light.error} />
         <ThemedText style={{ marginTop: 20, textAlign: 'center', color: Colors.light.error }}>{error}</ThemedText>
         <TouchableOpacity style={styles.actionButton} onPress={handleBack}>
-          <ThemedText style={styles.actionButtonText}>Volver</ThemedText>
+          <ThemedText style={styles.actionButtonText}>{t('common.back')}</ThemedText>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -198,28 +201,28 @@ export default function IAAnalyticsScreen() {
         <View style={styles.mainContent}>
           {/* IA Title */}
           <View style={styles.iconContainer}>
-            <ThemedText style={styles.mainTitle}>Analíticas IA</ThemedText>
+            <ThemedText style={styles.mainTitle}>{t('analytics.title')}</ThemedText>
           </View>
 
           {/* Analysis Overview Card */}
           <View style={styles.overviewCard}>
             <View style={styles.overviewHeader}>
               <View style={styles.overviewIcon}>
-                <ThemedText style={styles.overviewIconText}>IA</ThemedText>
+                <ThemedText style={styles.overviewIconText}>{t('home.ia')}</ThemedText>
               </View>
               <ThemedText style={styles.overviewTitle}>
-                Análisis Completo
+                {t('analytics.complete_analysis')}
               </ThemedText>
             </View>
             <ThemedText style={styles.overviewText}>
-              {analysisData?.summary || "No hay resumen disponible."}
+              {analysisData?.summary || t('analytics.no_summary')}
             </ThemedText>
           </View>
 
           {/* Medical Details Section */}
           <View style={styles.sectionContainer}>
             <ThemedText style={styles.sectionTitle}>
-              Detalles médicos
+              {t('analytics.medical_details')}
             </ThemedText>
 
             {analysisData?.analysis_input?.lab_results?.map((item: any, index: number) => (
@@ -240,18 +243,18 @@ export default function IAAnalyticsScreen() {
                         item.status === 'bajo' ? { color: Colors.light.warning } :
                           { color: Colors.light.success }
                     ]}>
-                      {item.status ? item.status.toUpperCase() : "NORMAL"}
+                      {item.status ? (t(`history.status.${item.status}`) || item.status.toUpperCase()) : t('analytics.normal')}
                     </ThemedText>
                   </View>
                 </View>
 
                 {/* Value Section */}
                 <View style={styles.analysisSection}>
-                  <ThemedText style={styles.analysisTitle}>Resultado</ThemedText>
+                  <ThemedText style={styles.analysisTitle}>{t('analytics.result')}</ThemedText>
                   <ThemedText style={styles.analysisText}>
                     {item.value !== null && item.value !== undefined
-                      ? `${item.value} ${item.unit || ""} ${(item.ref_low !== null && item.ref_high !== null) ? `(Ref: ${item.ref_low} - ${item.ref_high})` : ""}`
-                      : (item.value_as_string || "Sin resultado numérico")}
+                      ? `${item.value} ${item.unit || ""} ${(item.ref_low !== null && item.ref_high !== null) ? t('analytics.ref_range', { low: item.ref_low, high: item.ref_high }) : ""}`
+                      : (item.value_as_string || t('analytics.no_numeric_result'))}
                   </ThemedText>
                 </View>
               </View>
@@ -270,7 +273,7 @@ export default function IAAnalyticsScreen() {
                   />
                 </View>
                 <ThemedText style={styles.risksTitle}>
-                  Posibles Riesgos
+                  {t('analytics.possible_risks')}
                 </ThemedText>
               </View>
 
@@ -295,7 +298,7 @@ export default function IAAnalyticsScreen() {
           >
             <IconSymbol name="doc.fill" size={20} color={Colors.light.white} />
             <ThemedText style={styles.actionButtonText}>
-              Ver recomendaciones detalladas
+              {t('analytics.view_recommendations')}
             </ThemedText>
           </TouchableOpacity>
         </View>
@@ -321,7 +324,7 @@ export default function IAAnalyticsScreen() {
         >
           <Ionicons name="chatbubbles-outline" size={24} color={Colors.light.brandBlue} />
           <ThemedText style={styles.downloadButtonText}>
-            Chat con Asistente
+            {t('analytics.chat_assistant')}
           </ThemedText>
         </TouchableOpacity>
       </View>

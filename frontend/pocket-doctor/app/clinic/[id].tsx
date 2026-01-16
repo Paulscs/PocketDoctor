@@ -10,10 +10,12 @@ import { useAuthStore } from '@/src/store/authStore';
 import { getClinicById, Centro, EspecialistaCentro } from '@/src/services/clinics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 export default function ClinicDetailScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
+    const { t } = useTranslation();
     const [clinic, setClinic] = useState<Centro | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -33,7 +35,7 @@ export default function ClinicDetailScreen() {
                 setClinic(data);
             } catch (err) {
                 console.error(err);
-                setError('No se pudo cargar la información de la clínica.');
+                setError(t('clinics.detail.error_loading'));
             } finally {
                 setLoading(false);
             }
@@ -69,9 +71,9 @@ export default function ClinicDetailScreen() {
         return (
             <View style={[styles.container, { backgroundColor: bgColor, justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
                 <IconSymbol name="exclamationmark.triangle.fill" size={48} color={Colors.light.warning} />
-                <ThemedText style={{ marginTop: 16, textAlign: 'center' }}>{error || 'Clínica no encontrada'}</ThemedText>
+                <ThemedText style={{ marginTop: 16, textAlign: 'center' }}>{error || t('clinics.detail.not_found')}</ThemedText>
                 <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
-                    <ThemedText style={{ color: Colors.light.brandBlue }}>Volver</ThemedText>
+                    <ThemedText style={{ color: Colors.light.brandBlue }}>{t('common.back')}</ThemedText>
                 </TouchableOpacity>
             </View>
         );
@@ -79,7 +81,7 @@ export default function ClinicDetailScreen() {
 
     return (
         <>
-            <Stack.Screen options={{ title: clinic.nombre, headerBackTitle: 'Atrás' }} />
+            <Stack.Screen options={{ title: clinic.nombre, headerBackTitle: t('common.back') }} />
             <ScrollView style={[styles.container, { backgroundColor: bgColor }]} contentContainerStyle={{ paddingBottom: 40 }}>
 
                 {/* Header Image Placeholder */}
@@ -110,18 +112,18 @@ export default function ClinicDetailScreen() {
                     <View style={styles.actions}>
                         <TouchableOpacity style={[styles.actionButton, styles.primaryBtn]} onPress={handleCall}>
                             <Ionicons name="call" size={20} color="white" />
-                            <ThemedText style={styles.btnText}>Llamar</ThemedText>
+                            <ThemedText style={styles.btnText}>{t('clinics.detail.call')}</ThemedText>
                         </TouchableOpacity>
                         <TouchableOpacity style={[styles.actionButton, styles.secondaryBtn]} onPress={handleMap}>
                             <Ionicons name="map" size={20} color={Colors.light.brandBlue} />
-                            <ThemedText style={[styles.btnText, { color: Colors.light.brandBlue }]}>Cómo llegar</ThemedText>
+                            <ThemedText style={[styles.btnText, { color: Colors.light.brandBlue }]}>{t('clinics.detail.directions')}</ThemedText>
                         </TouchableOpacity>
                     </View>
 
                     <View style={styles.divider} />
 
                     {/* Specialists Section */}
-                    <ThemedText type="subtitle" style={{ marginBottom: 12 }}>Especialistas Disponibles</ThemedText>
+                    <ThemedText type="subtitle" style={{ marginBottom: 12 }}>{t('clinics.detail.available_specialists')}</ThemedText>
 
                     {clinic.especialistas && clinic.especialistas.length > 0 ? (
                         <View style={styles.specialistList}>
@@ -135,7 +137,7 @@ export default function ClinicDetailScreen() {
                                             {esp.nombre} {esp.apellido}
                                         </ThemedText>
                                         <ThemedText style={styles.specialistRole}>
-                                            {esp.especialidad?.join(', ') || 'Especialista'}
+                                            {esp.especialidad?.join(', ') || t('clinics.detail.default_specialist')}
                                         </ThemedText>
                                     </View>
                                 </View>
@@ -143,7 +145,7 @@ export default function ClinicDetailScreen() {
                         </View>
                     ) : (
                         <ThemedText style={{ color: Colors.light.textGray, fontStyle: 'italic' }}>
-                            No hay información detallada de especialistas.
+                            {t('clinics.detail.no_specialists')}
                         </ThemedText>
                     )}
 

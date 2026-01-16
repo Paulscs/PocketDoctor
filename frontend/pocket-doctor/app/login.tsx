@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { Colors } from "@/constants/theme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useAuthStore } from "@/src/store";
@@ -261,6 +262,7 @@ export default function LoginScreen() {
 
   // Global state
   const { login, isLoading, error, clearError, session } = useAuthStore();
+  const { t } = useTranslation();
 
   // Theme colors... (omitted for brevity, assume existing context hooks are fine)
   // Re-declare theme hooks since I am replacing the whole block
@@ -380,6 +382,7 @@ export default function LoginScreen() {
   };
 
   // ------------ EMAIL + PASSWORD LOGIN ------------
+  /* replace manually in next chunk to include t */
   const handleOpenLink = () => {
     const url = 'https://www.cdc.gov/phlp/php/resources/health-insurance-portability-and-accountability-act-of-1996-hipaa.html';
 
@@ -388,12 +391,12 @@ export default function LoginScreen() {
   };
   const validate = useCallback(() => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Error", "Por favor, completa todos los campos");
+      Alert.alert(t("common.error"), t("auth.login.error_incomplete"));
       return false;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      Alert.alert("Error", "Por favor, ingresa un correo electrónico válido");
+      Alert.alert(t("common.error"), t("auth.login.error_invalid_email"));
       return false;
     }
     return true;
@@ -480,8 +483,8 @@ export default function LoginScreen() {
       if (error || !data?.url) {
         console.error("Error signInWithOAuth Microsoft:", error);
         Alert.alert(
-          "Error",
-          error?.message ?? "No se pudo iniciar sesión con Microsoft"
+          t("common.error"),
+          error?.message ?? t("auth.login.microsoft_error")
         );
         return;
       }
@@ -499,7 +502,7 @@ export default function LoginScreen() {
       // 4. Extraer token/code manualmente
       const { url } = result;
       if (!url) {
-        Alert.alert("Error", "No se recibió respuesta del navegador");
+        Alert.alert(t("common.error"), t("auth.login.browser_error"));
         return;
       }
 
@@ -601,8 +604,8 @@ export default function LoginScreen() {
     } catch (err) {
       console.error(err);
       Alert.alert(
-        "Error",
-        "Ocurrió un problema al iniciar sesión con Microsoft."
+        t("common.error"),
+        t("auth.login.microsoft_error")
       );
     }
   }, [router]);
@@ -628,7 +631,7 @@ export default function LoginScreen() {
 
       if (error || !data?.url) {
         console.error("[GOOGLE] signInWithOAuth error:", error);
-        Alert.alert("Error", error?.message ?? "No se pudo iniciar con Google");
+        Alert.alert(t("common.error"), error?.message ?? t("auth.login.google_error"));
         return;
       }
 
@@ -653,7 +656,7 @@ export default function LoginScreen() {
       // 4. Extraer token/code de la URL de retorno
       const { url } = result;
       if (!url) {
-        Alert.alert("Error", "No se recibió respuesta del navegador");
+        Alert.alert(t("common.error"), t("auth.login.browser_error"));
         return;
       }
 
@@ -685,7 +688,7 @@ export default function LoginScreen() {
           session = existingSession;
           user = session.user;
         } else {
-          Alert.alert("Error", "No se pudo verificar la sesión.");
+          Alert.alert(t("common.error"), t("auth.login.session_error"));
           return; // Stop here
         }
       }
@@ -727,11 +730,11 @@ export default function LoginScreen() {
         }
 
         useAuthStore.setState({ user, session });
-        Alert.alert("Bienvenido", "Inicio de sesión correcto con Google ✅");
+        Alert.alert(t("common.welcome"), t("auth.login.google_success"));
       }
     } catch (err) {
       console.error("[GOOGLE] error inesperado:", err);
-      Alert.alert("Error", "Problema iniciando sesión con Google.");
+      Alert.alert(t("common.error"), t("auth.login.google_error"));
     }
   }, []);
 
@@ -762,21 +765,21 @@ export default function LoginScreen() {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.title}>Iniciar Sesión</Text>
+          <Text style={styles.title}>{t("auth.login.title")}</Text>
           <Text style={styles.subtitle}>
-            Ingresa para descubrir lo que tus análisis dicen de ti.
+            {t("auth.login.subtitle")}
           </Text>
         </View>
 
         {/* Inputs */}
         <View style={styles.form}>
           {/* Email */}
-          <Text style={styles.label}>Correo electrónico</Text>
+          <Text style={styles.label}>{t("auth.login.email_label")}</Text>
           <View style={styles.inputRow}>
             <Ionicons name="mail-outline" size={SIZES.ICON} color={muted} />
             <TextInput
               style={styles.input}
-              placeholder="ejemplo@gmail.com"
+              placeholder={t("auth.login.email_placeholder")}
               placeholderTextColor={placeholder}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -788,7 +791,7 @@ export default function LoginScreen() {
           </View>
 
           {/* Password */}
-          <Text style={styles.label}>Contraseña</Text>
+          <Text style={styles.label}>{t("auth.login.password_label")}</Text>
           <View style={styles.inputRow}>
             <Ionicons
               name="lock-closed-outline"
@@ -801,7 +804,7 @@ export default function LoginScreen() {
             */}
             <TextInput
               style={styles.input}
-              placeholder="Introduzca su contraseña"
+              placeholder={t("auth.login.password_placeholder")}
               placeholderTextColor={placeholder}
               secureTextEntry={!showPassword}
               autoComplete="password"
@@ -822,7 +825,7 @@ export default function LoginScreen() {
           <View style={styles.optionsRow}>
 
             <TouchableOpacity onPress={navigateToForgotPassword}>
-              <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
+              <Text style={styles.forgotText}>{t("auth.login.forgot_password")}</Text>
             </TouchableOpacity>
           </View>
 
@@ -830,10 +833,10 @@ export default function LoginScreen() {
           {lockoutTime !== null && (
             <View style={{ marginBottom: 12, alignItems: "center", paddingHorizontal: 20 }}>
               <Text style={{ color: "#EF4444", fontWeight: "600", textAlign: "center", marginBottom: 4 }}>
-                Cuenta bloqueada temporalmente
+                {t("auth.login.locked_title")}
               </Text>
               <Text style={{ color: "#EF4444", fontSize: 13, textAlign: "center" }}>
-                Has superado el límite de intentos. Por favor espera {formatTime(lockoutTime)} antes de intentar de nuevo.
+                {t("auth.login.locked_message", { time: formatTime(lockoutTime) })}
               </Text>
             </View>
           )}
@@ -849,8 +852,8 @@ export default function LoginScreen() {
           >
             <Text style={styles.buttonText}>
               {lockoutTime !== null
-                ? `Bloqueado (${formatTime(lockoutTime)})`
-                : (isLoading ? "Iniciando..." : "Iniciar Sesión")}
+                ? t("auth.login.locked_button", { time: formatTime(lockoutTime) })
+                : (isLoading ? t("auth.login.submitting") : t("auth.login.submit_button"))}
             </Text>
           </TouchableOpacity>
 
@@ -866,7 +869,7 @@ export default function LoginScreen() {
           {/* Divider */}
           <View style={styles.divider}>
             <View style={styles.line} />
-            <Text style={styles.dividerText}>o continúa con</Text>
+            <Text style={styles.dividerText}>{t("auth.login.or_continue_with")}</Text>
             <View style={styles.line} />
           </View>
 
@@ -900,9 +903,9 @@ export default function LoginScreen() {
 
           {/* Register */}
           <View style={styles.signUpRow}>
-            <Text style={styles.signUpText}>¿No tienes una cuenta? </Text>
+            <Text style={styles.signUpText}>{t("auth.login.no_account")}</Text>
             <TouchableOpacity onPress={navigateToRegister}>
-              <Text style={styles.signUpLink}>Crear cuenta</Text>
+              <Text style={styles.signUpLink}>{t("auth.login.create_account")}</Text>
             </TouchableOpacity>
           </View>
 
@@ -914,10 +917,10 @@ export default function LoginScreen() {
               </View>
               <View style={styles.warningContent}>
                 <Text style={[styles.warningTitle, styles.medicalTitle]}>
-                  Solo informativo
+                  {t("auth.login.warning_info_title")}
                 </Text>
                 <Text style={[styles.warningText, styles.medicalText]}>
-                  No reemplaza diagnóstico médico
+                  {t("auth.login.warning_info_text")}
                 </Text>
               </View>
             </View>
@@ -931,10 +934,10 @@ export default function LoginScreen() {
                 {/* Tu código original */}
                 <View style={styles.warningContent}>
                   <Text style={[styles.warningTitle, styles.securityTitle]}>
-                    HIPAA
+                    {t("auth.login.warning_security_title")}
                   </Text>
                   <Text style={[styles.warningText, styles.securityText]}>
-                    Datos encriptados y seguros
+                    {t("auth.login.warning_security_text")}
                   </Text>
                 </View>
 

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import i18n from '@/src/i18n';
 
 // Basic types
 export interface FollowUpOption {
@@ -76,51 +77,58 @@ export interface ChatActions {
 
 export type ChatStore = ChatState & ChatActions;
 
-export const DEFAULT_FOLLOW_UP_OPTIONS: FollowUpOption[] = [
-  {
-    id: "simple_explanation",
-    text: "Explícame qué significan estos resultados",
-    icon: "chatbubble-ellipses-outline",
-  },
-  {
-    id: "lifestyle_changes",
-    text: "¿Qué cambios de estilo de vida recomiendas?",
-    icon: "nutrition-outline",
-  },
-  {
-    id: "causes",
-    text: "¿Cuáles podrían ser las causas?",
-    icon: "search-outline",
-  },
-  {
-    id: "warning_signs",
-    text: "¿Hay señales de alerta urgentes?",
-    icon: "warning-outline",
-  },
-  {
-    id: "doctor_questions",
-    text: "¿Qué preguntas hacerle a mi médico?",
-    icon: "medical-outline",
-  },
-];
+export const getDefaultFollowUpOptions = (t?: any): FollowUpOption[] => {
+  const translate = t || i18n.t;
+  return [
+    {
+      id: "simple_explanation",
+      text: translate('chat.options.simple_explanation'),
+      icon: "chatbubble-ellipses-outline",
+    },
+    {
+      id: "lifestyle_changes",
+      text: translate('chat.options.lifestyle_changes'),
+      icon: "nutrition-outline",
+    },
+    {
+      id: "causes",
+      text: translate('chat.options.causes'),
+      icon: "search-outline",
+    },
+    {
+      id: "warning_signs",
+      text: translate('chat.options.warning_signs'),
+      icon: "warning-outline",
+    },
+    {
+      id: "doctor_questions",
+      text: translate('chat.options.doctor_questions'),
+      icon: "medical-outline",
+    },
+  ];
+};
 
-const initialMessages: Message[] = [
+export const DEFAULT_FOLLOW_UP_OPTIONS = getDefaultFollowUpOptions(i18n.t); // Backwards compatibility if needed, but better to use function
+
+const getInitialMessages = (): Message[] => [
   {
     id: "1",
-    text: "¡Hola! 👋 Soy tu asistente médico con IA. He revisado tus resultados. ¿Qué te gustaría saber primero?",
+    text: i18n.t('chat.initial_message'),
     isUser: false,
     timestamp: new Date(),
-    followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS,
+    followUpOptions: getDefaultFollowUpOptions(i18n.t),
   },
 ];
 
-const initialSession: ChatSession = {
+const createInitialSession = (): ChatSession => ({
   id: "initial-session",
-  title: "Conversación inicial",
-  messages: initialMessages,
+  title: i18n.t('chat.initial_title'),
+  messages: getInitialMessages(),
   createdAt: new Date(),
   updatedAt: new Date(),
-};
+});
+
+const initialSession = createInitialSession();
 
 export const useChatStore = create<ChatStore>()(
   persist(
@@ -172,7 +180,7 @@ export const useChatStore = create<ChatStore>()(
 
         // Custom Initial Messages Logic
         // Deep copy converts Date to string, so we must restore it.
-        let customMessages = JSON.parse(JSON.stringify(initialMessages)).map((m: any) => ({
+        let customMessages = JSON.parse(JSON.stringify(getInitialMessages())).map((m: any) => ({
           ...m,
           timestamp: new Date(m.timestamp)
         }));
@@ -180,7 +188,7 @@ export const useChatStore = create<ChatStore>()(
         if (recommended_specialist) {
           const specialistOption: FollowUpOption = {
             id: "find_specialists_nearby",
-            text: `Buscar ${recommended_specialist} cercanos`,
+            text: i18n.t('chat.find_nearby_specialist', { specialist: recommended_specialist }),
             icon: "map-outline",
           };
           // Add to first message options
@@ -192,7 +200,7 @@ export const useChatStore = create<ChatStore>()(
         // Start with the standard initial message, but we will use the QA context for answers
         const newSession: ChatSession = {
           id: sessionId,
-          title: `Análisis ${new Date().toLocaleDateString()}`,
+          title: `${i18n.t('history.analysis')} ${new Date().toLocaleDateString()}`,
           messages: customMessages, // Use dynamic messages
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -310,7 +318,7 @@ export const useChatStore = create<ChatStore>()(
 
       clearAllSessions: () => {
         set({
-          sessions: [initialSession],
+          sessions: [createInitialSession()],
           activeSessionId: "initial-session",
           isLoading: false,
           error: null,

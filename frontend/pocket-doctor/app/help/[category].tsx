@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, FlatList, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -14,13 +15,14 @@ export default function HelpCategoryScreen() {
     const router = useRouter();
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
+    const { t } = useTranslation();
 
     const category = helpCategories.find(c => c.id === categoryId);
 
     if (!category) {
         return (
             <ThemedView style={styles.container}>
-                <ThemedText>Categoría no encontrada.</ThemedText>
+                <ThemedText>{t('help.ui.category_not_found')}</ThemedText>
             </ThemedView>
         );
     }
@@ -31,7 +33,7 @@ export default function HelpCategoryScreen() {
             onPress={() => router.push(`/help/article/${item.id}`)}
         >
             <View style={styles.itemContent}>
-                <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
+                <ThemedText type="defaultSemiBold">{t(`help.categories.${categoryId}.articles.${item.id}.title`)}</ThemedText>
                 {/* Preview of content could go here if desired */}
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.text} style={{ opacity: 0.5 }} />
@@ -40,13 +42,13 @@ export default function HelpCategoryScreen() {
 
     return (
         <ThemedView style={styles.container}>
-            <Stack.Screen options={{ title: category.title }} />
+            <Stack.Screen options={{ title: t(`help.categories.${categoryId}.title`) }} />
 
             <View style={styles.header}>
                 <View style={[styles.iconContainer, { backgroundColor: colors.tint + '20' }]}>
                     <Ionicons name={category.icon as any} size={40} color={colors.tint} />
                 </View>
-                <ThemedText type="subtitle" style={styles.description}>{category.description}</ThemedText>
+                <ThemedText type="subtitle" style={styles.description}>{t(`help.categories.${categoryId}.description`)}</ThemedText>
             </View>
 
             <FlatList

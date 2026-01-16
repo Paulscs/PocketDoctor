@@ -21,8 +21,9 @@ import {
   useActiveSession,
   useActiveSessionMessages,
   FollowUpOption,
-  DEFAULT_FOLLOW_UP_OPTIONS,
+  getDefaultFollowUpOptions,
 } from "@/src/store/chatStore";
+import { useTranslation } from "react-i18next";
 import { SideMenu } from "@/components/layout/SideMenu";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import * as Location from 'expo-location';
@@ -30,6 +31,7 @@ import { getNearestClinics, EspecialistaCentro } from "@/src/services/clinics";
 import { Alert } from "react-native";
 
 export default function ChatScreen() {
+  const { t } = useTranslation();
   const containerBg = useThemeColor({ light: Colors.light.background, dark: Colors.dark.background }, "background");
   const headerBg = useThemeColor({ light: Colors.light.white, dark: Colors.dark.surface }, "surface");
 
@@ -82,7 +84,7 @@ export default function ChatScreen() {
       // 1. Request Permissions
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        addAIMessage(sessionId, "Necesito acceso a tu ubicación para encontrar clínicas cercanas. Por favor habilita los permisos en la configuración.");
+        addAIMessage(sessionId, t('chat.location_needed'));
         return;
       }
 
@@ -103,8 +105,8 @@ export default function ChatScreen() {
       console.log("[FindNearby] Token being used:", accessToken ? accessToken.substring(0, 10) + "..." : "NULL/EMPTY");
 
       const messageText = specialty
-        ? `Encontré ${clinics.length} centros de ${specialty} cercanos a tu ubicación:`
-        : `Encontré ${clinics.length} centros médicos cercanos a tu ubicación:`;
+        ? t('chat.specialists_found', { count: clinics.length, specialty })
+        : t('chat.clinics_found', { count: clinics.length });
 
       addAIMessage(
         sessionId,
@@ -115,7 +117,7 @@ export default function ChatScreen() {
 
     } catch (error) {
       console.error(error);
-      addAIMessage(sessionId, "Lo siento, tuve problemas al buscar clínicas cercanas. Intenta nuevamente.");
+      addAIMessage(sessionId, t('chat.error_finding_clinics'));
     }
   }, [accessToken, addAIMessage]);
 
@@ -167,7 +169,7 @@ export default function ChatScreen() {
       if (qaKey && qaContext[qaKey]) {
         return {
           text: qaContext[qaKey],
-          followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS, // Use default options for re-engagement
+          followUpOptions: getDefaultFollowUpOptions(t), // Use default options for re-engagement
         };
       }
     }
@@ -176,34 +178,34 @@ export default function ChatScreen() {
     switch (optionId) {
       case "simple_explanation":
         return {
-          text: "No tengo el contexto específico de un análisis para explicarte. Por favor, sube un documento primero para analizarlo.",
-          followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS,
+          text: t('chat.responses.simple_explanation'),
+          followUpOptions: getDefaultFollowUpOptions(t),
         };
       case "lifestyle_changes":
         return {
-          text: "Para recomendaciones precisas, necesito que analicemos tus resultados de laboratorio primero.",
-          followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS,
+          text: t('chat.responses.lifestyle_changes'),
+          followUpOptions: getDefaultFollowUpOptions(t),
         };
       case "causes":
         return {
-          text: "Necesito ver tus resultados para identificar posibles causas. ¿Te gustaría subir un análisis?",
-          followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS,
+          text: t('chat.responses.causes'),
+          followUpOptions: getDefaultFollowUpOptions(t),
         };
       case "warning_signs":
         return {
-          text: "Sin datos recientes es difícil alertarte. En general, dolor torácico o dificultad respiratoria son urgencias.",
-          followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS,
+          text: t('chat.responses.warning_signs'),
+          followUpOptions: getDefaultFollowUpOptions(t),
         };
       case "doctor_questions":
         return {
-          text: "Lo ideal es preguntar basado en tus números. Sube un PDF para generarte las preguntas exactas.",
-          followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS,
+          text: t('chat.responses.doctor_questions'),
+          followUpOptions: getDefaultFollowUpOptions(t),
         };
 
       default:
         return {
-          text: "Entiendo. Estoy procesando esa solicitud.",
-          followUpOptions: DEFAULT_FOLLOW_UP_OPTIONS,
+          text: t('chat.responses.default'),
+          followUpOptions: getDefaultFollowUpOptions(t),
         };
     }
   };
@@ -213,7 +215,7 @@ export default function ChatScreen() {
   const injectFindNearby = (response: { text: string; followUpOptions: FollowUpOption[] }) => {
     response.followUpOptions = [
       ...response.followUpOptions,
-      { id: 'find_specialists_nearby', text: 'Buscar clínicas cercanas', icon: 'map-outline' }
+      { id: 'find_specialists_nearby', text: t('chat.find_nearby'), icon: 'map-outline' }
     ];
     return response;
   };
@@ -250,7 +252,7 @@ export default function ChatScreen() {
           </View>
         </View>
         <View style={styles.headerRight}>
-          <ThemedText style={styles.pageTitle}>Chat</ThemedText>
+          <ThemedText style={styles.pageTitle}>{t('chat.title')}</ThemedText>
           <UserAvatar />
         </View>
       </View>
@@ -265,16 +267,16 @@ export default function ChatScreen() {
             <View style={styles.emptyIconContainer}>
               <IconSymbol name="doc.fill" size={64} color={Colors.light.brandBlue} />
             </View>
-            <ThemedText style={styles.emptyTitle}>No hay conversaciones</ThemedText>
+            <ThemedText style={styles.emptyTitle}>{t('chat.no_conversations')}</ThemedText>
             <ThemedText style={styles.emptyDescription}>
-              Para chatear con el asistente médico, primero necesitas analizar un resultado de laboratorio.
+              {t('chat.no_conversations_desc')}
             </ThemedText>
             <TouchableOpacity
               style={styles.uploadButton}
               onPress={() => router.push("/upload")}
               activeOpacity={0.8}
             >
-              <ThemedText style={styles.uploadButtonText}>Subir Análisis</ThemedText>
+              <ThemedText style={styles.uploadButtonText}>{t('chat.upload_analysis')}</ThemedText>
               <IconSymbol name="chevron.right" size={20} color={Colors.light.white} />
             </TouchableOpacity>
           </View>
@@ -356,7 +358,7 @@ export default function ChatScreen() {
                         {/* Show specialists if available */}
                         {clinic.especialistas && clinic.especialistas.length > 0 && (
                           <ThemedText style={{ fontSize: 12, color: Colors.light.brandBlue, marginTop: 2 }}>
-                            {clinic.especialistas.length} {clinic.especialistas.length === 1 ? 'Especialista' : 'Especialistas'}: {clinic.especialistas.map((e: any) => e.apellido || e.nombre).slice(0, 2).join(", ")}
+                            {clinic.especialistas.length} {clinic.especialistas.length === 1 ? t('chat.specialist') : t('chat.specialists')}: {clinic.especialistas.map((e: any) => e.apellido || e.nombre).slice(0, 2).join(", ")}
                             {clinic.especialistas.length > 2 ? "..." : ""}
                           </ThemedText>
                         )}
@@ -381,11 +383,9 @@ export default function ChatScreen() {
             <Ionicons name="warning" size={20} color={Colors.light.white} />
           </View>
           <View style={styles.warningContent}>
-            <ThemedText style={styles.warningTitle}>Advertencia</ThemedText>
+            <ThemedText style={styles.warningTitle}>{t('chat.warning_title')}</ThemedText>
             <ThemedText style={styles.warningText}>
-              Esta aplicación es solo para fines informativos y no reemplaza
-              el diagnóstico médico profesional. Siempre consulte con un
-              médico calificado para obtener asesoramiento médico adecuado.
+              {t('chat.warning_text')}
             </ThemedText>
           </View>
         </View>

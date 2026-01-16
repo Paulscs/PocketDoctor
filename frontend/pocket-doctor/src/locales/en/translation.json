@@ -1,0 +1,578 @@
+{
+    "common": {
+        "loading": "Loading...",
+        "error": "Error",
+        "save": "Save",
+        "cancel": "Cancel",
+        "back": "Back",
+        "next": "Next",
+        "welcome": "Welcome",
+        "required": "Required",
+        "delete": "Delete",
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "days_ago": "{{count}} days ago",
+        "messages": "messages",
+        "close": "Close"
+    },
+    "language": {
+        "select": "Select your language",
+        "english": "English",
+        "spanish": "Spanish"
+    },
+    "auth": {
+        "login": {
+            "title": "Log In",
+            "subtitle": "Log in to discover what your analysis says about you.",
+            "email_label": "Email",
+            "email_placeholder": "example@gmail.com",
+            "password_label": "Password",
+            "password_placeholder": "Enter your password",
+            "forgot_password": "Forgot your password?",
+            "submit_button": "Log In",
+            "submitting": "Logging in...",
+            "or_continue_with": "or continue with",
+            "no_account": "Don't have an account? ",
+            "create_account": "Sign up",
+            "warning_info_title": "Informational Only",
+            "warning_info_text": "Not a medical diagnosis",
+            "warning_security_title": "HIPAA",
+            "warning_security_text": "Data encrypted and secure",
+            "error_incomplete": "Please fill in all fields",
+            "error_invalid_email": "Please enter a valid email",
+            "locked_title": "Account Temporarily Locked",
+            "locked_message": "Too many attempts. Please wait {{time}} before trying again.",
+            "locked_button": "Locked ({{time}})",
+            "microsoft_error": "There was a problem logging in with Microsoft.",
+            "google_success": "Logged in successfully with Google ✅",
+            "google_error": "Problem logging in with Google.",
+            "browser_error": "No response from browser",
+            "session_error": "Could not verify session.",
+            "error_invalid_email_message": "Please enter a valid email."
+        },
+        "forgot_password": {
+            "title": "Recover Password",
+            "subtitle": "Enter your email and we'll send you a code to reset it.",
+            "email_label": "EMAIL ADDRESS",
+            "submit_email": "Send",
+            "sending": "Sending...",
+            "back_to_login": "Back to Log In",
+            "code_title": "Enter Code",
+            "code_subtitle": "Check your email and enter the code we sent you.",
+            "verify_code": "Verify Code",
+            "verifying": "Verifying...",
+            "resend_code": "Didn't receive the code? Resend",
+            "new_password_title": "Create New Password",
+            "new_password_subtitle": "Enter your new password and confirm it to continue.",
+            "new_password_label": "New Password",
+            "new_password_placeholder": "Minimum 8 characters",
+            "confirm_password_label": "Confirm Password",
+            "confirm_password_placeholder": "Confirm your password",
+            "update_password": "Update Password",
+            "updating": "Updating...",
+            "success_title": "Success!",
+            "success_message": "Your password has been updated successfully.",
+            "go_to_login": "Go to Log In",
+            "error_email_required": "Please enter your email",
+            "error_code_required": "Please enter the 6-digit code",
+            "error_password_required": "Please enter your new password",
+            "error_password_length": "Password must be at least 8 characters",
+            "error_password_mismatch": "Passwords do not match",
+            "error_password_mismatch_message": "Check that both passwords are the same.",
+            "code_resent_title": "Code Resent",
+            "code_resent_message": "A new code has been sent to your email"
+        },
+        "register": {
+            "title": "Create Account",
+            "subtitle": "A few steps and you'll be ready to start.",
+            "names": "Given Names",
+            "surnames": "Surnames",
+            "email": "Email",
+            "password": "Password",
+            "confirm_password": "Confirm Password",
+            "health_info": "Health Information",
+            "height": "Height (cm)",
+            "weight": "Weight (kg)",
+            "blood_type": "Blood Type",
+            "birth_date": "Date of Birth",
+            "gender": "Gender",
+            "allergies": "Allergies (optional)",
+            "conditions": "Medical Conditions (optional)",
+            "register_button": "Sign Up",
+            "registering": "Signing up...",
+            "or_register_with": "Or sign up with",
+            "already_have_account": "Already have an account? ",
+            "login_link": "Log In",
+            "terms_text": "By signing up, I confirm I have read and agree to our ",
+            "terms_link": "Terms and Conditions",
+            "privacy_text": " and our ",
+            "privacy_link": "Privacy Policy",
+            "error_accept_terms": "You must accept the terms",
+            "error_missing_fields": "Missing fields. Please fill in all required fields.",
+            "password_policy": "Minimum 8 characters: uppercase, lowercase, number, special character",
+            "password_weak": "Very weak",
+            "password_fair": "Weak",
+            "password_good": "Fair",
+            "password_strong": "Strong",
+            "names_placeholder": "Enter your given names",
+            "surnames_placeholder": "Enter your surnames",
+            "height_placeholder": "Ex: 175",
+            "weight_placeholder": "Ex: 70",
+            "blood_type_placeholder": "Select your blood type",
+            "gender_placeholder": "Select your gender",
+            "other_allergies_placeholder": "Specify other allergies",
+            "other_conditions_placeholder": "Specify other medical conditions",
+            "missing_fields_title": "Missing fields",
+            "missing_fields_message": "Please complete the following fields",
+            "accept_terms": "Accept terms",
+            "weak_password_title": "Weak password",
+            "weak_password_message": "Password must be at least 8 characters and include uppercase, lowercase, and a special character.",
+            "email_already_registered_title": "Email already registered",
+            "email_already_registered_message": "The email is already in use. Try logging in or recovering your password.",
+            "error_microsoft_login": "Could not log in with Microsoft",
+            "error_no_browser_response": "No response from browser",
+            "error_no_active_session": "No active session found.",
+            "error_microsoft_login_unexpected": "Expected OAuth result.",
+            "password_strength_very_weak": "Very weak",
+            "password_strength_weak": "Weak",
+            "password_strength_medium": "Medium",
+            "password_strength_strong": "Strong",
+            "options": {
+                "gender": {
+                    "male": "Male",
+                    "female": "Female",
+                    "other": "Other"
+                },
+                "allergies": {
+                    "penicillin": "Penicillin",
+                    "shellfish": "Shellfish",
+                    "pollen": "Pollen",
+                    "dairy": "Dairy",
+                    "nuts": "Nuts",
+                    "eggs": "Eggs",
+                    "other": "Other"
+                },
+                "conditions": {
+                    "diabetes": "Diabetes",
+                    "hypertension": "Hypertension",
+                    "asthma": "Asthma",
+                    "arthritis": "Arthritis",
+                    "heart_disease": "Heart Disease",
+                    "other": "Other"
+                }
+            }
+        }
+    },
+    "profile": {
+        "title": "Profile",
+        "personal_info": "Personal Information",
+        "names": "Given Names",
+        "surnames": "Surnames",
+        "email": "Email",
+        "birth_date": "Date of Birth",
+        "medical_info": "Medical Information",
+        "height": "Height (cm)",
+        "height_placeholder": "Height in cm",
+        "weight": "Weight (kg)",
+        "weight_placeholder": "Weight in kg",
+        "allergies": "Allergies",
+        "medical_conditions": "Medical Conditions",
+        "save_changes": "Save Changes",
+        "saving": "Saving...",
+        "support": "Support",
+        "help_center": "Help Center",
+        "logout": "Log Out",
+        "settings": "Settings",
+        "loading": "Loading profile...",
+        "edit_allergies": "Edit Allergies",
+        "edit_conditions": "Edit Medical Conditions",
+        "add_allergy": "Add allergy",
+        "add_condition": "Add medical condition",
+        "no_allergies": "No allergies registered",
+        "no_conditions": "No medical conditions registered",
+        "new_allergy": "New allergy...",
+        "new_condition": "New medical condition...",
+        "success_update": "Profile updated successfully",
+        "error_update": "Could not save profile",
+        "error_load": "Could not load profile",
+        "error_logout": "Could not log out"
+    },
+    "home": {
+        "title": "Home",
+        "hello": "Hello",
+        "help_question": "How can I help you today?",
+        "quick_actions": "Quick Actions",
+        "upload_results": "Upload Results",
+        "ia": "AI",
+        "instant": "Instant",
+        "ia_powered": "AI Powered",
+        "tap_to_start": "Tap to start",
+        "ai_consultation": "AI Consultation",
+        "24_7": "24/7",
+        "medical": "Medical",
+        "recent_activities": "Recent Activities",
+        "view_all": "View All",
+        "no_activities": "No recent activities",
+        "no_activities_desc": "Upload your medical analysis to keep detailed track of your health with AI.",
+        "analyze_first_doc": "Analyze my first document",
+        "warning_title": "Warning",
+        "warning_text": "This application is for informational purposes only and does not replace professional medical diagnosis. Always consult with a qualified doctor for proper medical advice.",
+        "analysis": "Analysis",
+        "status": {
+            "normal": "Normal",
+            "elevated": "Elevated",
+            "critical": "Critical",
+            "info": "Info"
+        },
+        "time_ago": {
+            "moment": "Just now",
+            "minutes": "{{count}} min ago",
+            "hours": "{{count}} hours ago",
+            "days": "{{count}} days ago"
+        }
+    },
+    "chat": {
+        "title": "Chat",
+        "no_conversations": "No conversations",
+        "no_conversations_desc": "To chat with the medical assistant, you first need to analyze a laboratory result.",
+        "upload_analysis": "Upload Analysis",
+        "warning_title": "Warning",
+        "warning_text": "This application is for informational purposes only and does not replace professional medical diagnosis. Always consult with a qualified doctor for proper medical advice.",
+        "location_needed": "I need access to your location to find nearby clinics. Please enable permissions in settings.",
+        "specialists_found": "Found {{count}} {{specialty}} centers near your location:",
+        "clinics_found": "Found {{count}} medical centers near your location:",
+        "error_finding_clinics": "Sorry, I had trouble finding nearby clinics. Please try again.",
+        "find_nearby": "Find nearby clinics",
+        "find_nearby_specialist": "Find nearby {{specialist}}",
+        "initial_message": "Hello! 👋 I am your AI medical assistant. I have reviewed your results. What would you like to know first?",
+        "initial_title": "Initial Conversation",
+        "responses": {
+            "simple_explanation": "I don't have the specific context of an analysis to explain to you. Please upload a document first to analyze it.",
+            "lifestyle_changes": "For precise recommendations, I need to analyze your laboratory results first.",
+            "causes": "I need to see your results to identify possible causes. Would you like to upload an analysis?",
+            "warning_signs": "Without recent data it is difficult to alert you. In general, chest pain or shortness of breath are emergencies.",
+            "doctor_questions": "It is best to ask based on your numbers. Upload a PDF to generate the exact questions for you.",
+            "default": "I understand. I am processing that request."
+        },
+        "options": {
+            "simple_explanation": "Explain what these results mean",
+            "lifestyle_changes": "What lifestyle changes do you recommend?",
+            "causes": "What could be the causes?",
+            "warning_signs": "Are there any urgent warning signs?",
+            "doctor_questions": "What questions should I ask my doctor?"
+        },
+        "specialist": "Specialist",
+        "specialists": "Specialists",
+        "sidemenu": {
+            "chats": "Chats",
+            "empty": "No chats available",
+            "empty_desc": "Upload a medical analysis to start a conversation with the AI assistant."
+        }
+    },
+    "clinics": {
+        "title": "Clinics and",
+        "title_specialists": "Specialists",
+        "search_placeholder": "Search clinics and specialists...",
+        "view_list": "List",
+        "view_map": "Map",
+        "found_specialists": "Specialists found",
+        "clinics": "Clinics",
+        "no_results": "No results found",
+        "error_timeout_title": "Timeout",
+        "error_timeout_message": "We could not load the information in time. Please check your connection and try again.",
+        "error_connection_title": "Connection Error",
+        "error_connection_message": "Something went wrong while loading clinics.",
+        "retry": "Retry",
+        "detail": {
+            "error_loading": "Could not load clinic information.",
+            "not_found": "Clinic not found",
+            "available_specialists": "Available Specialists",
+            "no_specialists": "No detailed specialist information available.",
+            "call": "Call",
+            "directions": "Get Directions",
+            "default_specialist": "Specialist"
+        }
+    },
+    "history": {
+        "title": "History",
+        "medical_history": "Medical History",
+        "loading": "Loading history...",
+        "empty": "More results will appear here as you add them",
+        "analysis": "Analysis",
+        "date_unknown": "Date unknown",
+        "no_summary": "No summary available",
+        "delete_title": "Delete analysis",
+        "delete_confirmation": "Are you sure you want to delete this result permanently?",
+        "delete_error": "Could not delete analysis",
+        "status": {
+            "normal": "Normal",
+            "elevated": "Elevated",
+            "low": "Low",
+            "critical": "Critical",
+            "pending": "Pending"
+        }
+    },
+    "upload": {
+        "title": "Upload medical results",
+        "select_file": "Select a file",
+        "camera": "Camera",
+        "file": "File",
+        "files_selected": "{{count}} file(s) selected",
+        "files_ready": "Files ready to send:",
+        "add": "Add",
+        "process": "Process Documents",
+        "accept_prefix": "I have read and accept the",
+        "accept_terms": "Legal Notice",
+        "error_size_title": "File too large",
+        "error_size_message": "The file exceeds the allowed limit of 20MB.",
+        "error_select_title": "Error",
+        "error_select_message": "Could not select the file",
+        "permission_title": "Permission required",
+        "permission_message": "Access to the camera is required to take photos of documents.",
+        "error_camera_title": "Error",
+        "error_camera_message": "Could not open camera",
+        "add_more_title": "Add another document",
+        "add_more_message": "Do you want to take a photo or select from the gallery?",
+        "gallery": "Gallery",
+        "error_empty": "Please select at least one file",
+        "error_terms": "You must accept the legal notice to continue."
+    },
+    "legal": {
+        "terms_notice": "Legal Notice",
+        "accept_continue": "Accept and Continue",
+        "terms_conditions": "Terms and Conditions",
+        "terms_conditions_full": "Full Terms and Conditions...",
+        "terms_conditions_modal": {
+            "intro": "Welcome to Pocket Doctor. By accessing or using this application, you agree to these Terms and Conditions. If you do not agree with any part, we recommend that you do not use the service. Pocket Doctor provides medical information analysis and organization features for informational and support purposes, and it does not replace the care of a healthcare professional.",
+            "sections": {
+                "1": {
+                    "title": "1. Use of the Service",
+                    "body": "Pocket Doctor allows you to upload medical documents (for example, PDF results or images) to extract and organize clinical data using technologies such as OCR, and to present guidance-oriented interpretations. You agree to use the service responsibly, lawfully, and in accordance with these terms, avoiding fraudulent or malicious use or any use that may affect the platform’s operation. The information presented is for informational purposes and should not be considered a diagnosis or a definitive medical recommendation."
+                },
+                "2": {
+                    "title": "2. Account Registration and Security",
+                    "body": "To access service features, you must create an account. You are responsible for keeping your credentials confidential, as well as for activities performed from your account. Pocket Doctor may apply protective measures such as temporary lockout after multiple failed attempts, and may record relevant security events (for example, logins, changes, or deletions) for auditing and system protection purposes. You must provide truthful information and keep it up to date."
+                },
+                "3": {
+                    "title": "3. Intellectual Property",
+                    "body": "The application, its design, brand, features, interfaces, and components are the property of Pocket Doctor or its licensors and are protected by applicable intellectual property laws. Reproduction, modification, distribution, reverse engineering, or unauthorized exploitation of content or software is prohibited. The user retains ownership of their personal and medical data in accordance with the Privacy Policy."
+                },
+                "4": {
+                    "title": "4. Limitation of Liability",
+                    "body": "Pocket Doctor does not guarantee that the results displayed are fully accurate, complete, or suitable for medical decisions, as they depend on the quality of the uploaded document and automated processing. The user acknowledges and agrees that the application does not replace consultation with healthcare professionals. To the extent permitted by law, Pocket Doctor will not be liable for indirect, incidental, or consequential damages arising from use of the service, nor for how third parties may use reports exported or shared by the user."
+                },
+                "5": {
+                    "title": "5. Modifications and Termination",
+                    "body": "Pocket Doctor may update these terms to reflect legal changes, security improvements, or new features. Modifications will take effect once published in the application. Continued use of the service after changes implies acceptance. Pocket Doctor may suspend or limit access when it detects misuse, security risks, or non-compliance with these terms. The user may stop using the application at any time."
+                }
+            }
+        },
+        "privacy_policy": "Privacy Policy",
+        "privacy_policy_modal": {
+            "intro": "At Pocket Doctor, protecting your privacy is a priority. This Privacy Policy clearly describes how we collect, use, store, and protect your personal and medical information, ensuring its confidentiality, integrity, and security.",
+            "sections": {
+                "1": {
+                    "title": "1. Information Collection",
+                    "body": "We collect only the information you voluntarily provide when using the application, such as name, email address, date of birth, and medical data associated with clinical results. Uploaded medical documents are used exclusively for analysis and are not retained after processing, unless expressly authorized by the user."
+                },
+                "2": {
+                    "title": "2. Use of Information",
+                    "body": "The collected information is used exclusively to provide Pocket Doctor services, enable guidance-oriented analysis of medical results, personalize the user experience, improve the application, and communicate relevant information related to the service or platform security."
+                },
+                "3": {
+                    "title": "3. Data Protection and Security",
+                    "body": "We implement advanced technical and organizational measures to protect your information against unauthorized access, loss, or alteration. Medical data is stored encrypted, and communications between the application and our servers are carried out through secure connections, complying with recognized information security standards."
+                },
+                "4": {
+                    "title": "4. Information Sharing",
+                    "body": "Pocket Doctor does not sell, rent, or share your personal or medical information with third parties. Information will only be shared when there is a legal obligation, the user's explicit consent, or when it is strictly necessary to ensure system security."
+                },
+                "5": {
+                    "title": "5. User Rights",
+                    "body": "You have the right to access, correct, or delete your personal and medical information, as well as to withdraw your consent at any time. These actions can be performed from the application or by contacting our support team, in accordance with Law 172-13 on Personal Data Protection of the Dominican Republic."
+                }
+            }
+        },
+        "modal": {
+            "intro": "By uploading documents to Pocket Doctor, you acknowledge and accept the following terms of use and privacy policies:",
+            "sections": {
+                "1": {
+                    "title": "1. Authenticity and Ownership of Information",
+                    "body": "You declare under penalty of perjury that the information and documents provided are authentic, truthful, and that you possess the full legal right, ownership, or express authorization of the holder to use and upload them to this platform."
+                },
+                "2": {
+                    "title": "2. Processing Authorization",
+                    "body": "You explicitly authorize Pocket Doctor and its automated systems to process, analyze, and extract text and clinical information contained in the uploaded files using optical character recognition (OCR) and artificial intelligence technologies."
+                },
+                "3": {
+                    "title": "3. Storage and Deletion of Originals",
+                    "body": "You understand and accept that the original files (PDFs, images) uploaded will not be permanently stored on our servers once the extraction process is completed, unless there is additional express authorization from you or a legal requirement that so demands."
+                },
+                "4": {
+                    "title": "4. Data Protection and Confidentiality",
+                    "body": "You agree that the clinical data derived from the processing will be stored in an encrypted and secure manner to ensure its strict confidentiality. Pocket Doctor implements technical and organizational security measures aligned with Law No. 172-13 on the Protection of Personal Data of the Dominican Republic and international standards for privacy and health information security."
+                },
+                "5": {
+                    "title": "5. Limitation of Liability and Accuracy",
+                    "body": "You acknowledge that Pocket Doctor is an assistance tool and does not guarantee the absolute accuracy, completeness, or currency of the automatically extracted results. Pocket Doctor is not responsible for medical decisions, diagnoses, or treatments made based on the information processed by the application. Final data verification is always the responsibility of the user and the healthcare professional."
+                },
+                "6": {
+                    "title": "6. Informed Consent",
+                    "body": "By continuing and clicking \"Accept\", you give your informed, free, and specific consent for the processing of your medical and personal information as established in these terms."
+                }
+            },
+            "warning": "If you do not agree with any of the above points, please refrain from uploading documents and close this window."
+        }
+    },
+    "help": {
+        "ui": {
+            "title": "Help Center",
+            "subtitle": "How can we help you?",
+            "description": "Find guides, answers, and tips for using Pocket Doctor.",
+            "category_not_found": "Category not found.",
+            "article_not_found": "Article not found.",
+            "steps_title": "Steps to follow:",
+            "tip_title": "Helpful tip",
+            "feedback_question": "Was this article helpful?"
+        },
+        "categories": {
+            "getting-started": {
+                "title": "Getting Started",
+                "description": "Everything you need to know to start using Pocket Doctor.",
+                "articles": {
+                    "create-account": {
+                        "title": "How to create an account",
+                        "content": "Welcome to Pocket Doctor. Creating an account is the first step to managing your health intelligently.",
+                        "steps": [
+                            "Open the app and tap \"Sign Up\".",
+                            "Enter your email, password, and full name.",
+                            "Select your date of birth (it is important for your medical profile).",
+                            "Accept the Terms and Conditions.",
+                            "Tap the \"Sign Up\" button."
+                        ],
+                        "tips": [
+                            "Make sure to use an email address you will always have access to."
+                        ]
+                    },
+                    "complete-profile": {
+                        "title": "Complete your medical profile",
+                        "content": "A complete profile helps the AI provide better recommendations.",
+                        "steps": [
+                            "Go to the \"Profile\" tab.",
+                            "Tap \"Edit Profile\" or \"Medical Information\".",
+                            "Fill in your blood type, allergies, and pre-existing conditions.",
+                            "Save your changes."
+                        ]
+                    }
+                }
+            },
+            "health-management": {
+                "title": "Health Management",
+                "description": "Learn how to upload tests, manage prescriptions, and validate them.",
+                "articles": {
+                    "upload-documents": {
+                        "title": "Upload medical documents",
+                        "content": "You can upload photos of your prescriptions or lab results so the AI can analyze them.",
+                        "steps": [
+                            "Tap the \"+\" button on the home screen or go to the \"Upload\" section.",
+                            "Choose \"Take photo\" or \"Choose from gallery\".",
+                            "Make sure the image is clear and readable.",
+                            "Confirm the upload and wait for the AI to process the information."
+                        ],
+                        "tips": [
+                            "Try to use good lighting when taking the photo for better results."
+                        ]
+                    },
+                    "validate-data": {
+                        "title": "Validate extracted information",
+                        "content": "Sometimes the AI needs your confirmation to ensure the data is 100% correct.",
+                        "steps": [
+                            "After uploading a document, you will see a validation screen.",
+                            "Review the fields (medication name, date, results).",
+                            "If something is incorrect, tap it to edit.",
+                            "Tap \"Save\" or \"Validate\" to confirm."
+                        ]
+                    }
+                }
+            },
+            "ai-features": {
+                "title": "AI Features",
+                "description": "Discover how our Artificial Intelligence helps you.",
+                "articles": {
+                    "ai-chat": {
+                        "title": "Chat with Pocket Doctor",
+                        "content": "You can ask questions about health, symptoms, or your medical documents.",
+                        "steps": [
+                            "Go to the \"Chat\" tab.",
+                            "Type your question in the text field.",
+                            "You will receive a response based on reliable medical information and your data."
+                        ],
+                        "tips": [
+                            "The chat does not replace a real doctor. In an emergency, go to a healthcare facility."
+                        ]
+                    },
+                    "recommendations": {
+                        "title": "Personalized recommendations",
+                        "content": "Receive health tips based on your profile and analyses.",
+                        "steps": [
+                            "Check the \"Recommendations\" section on Home or Profile.",
+                            "Follow the hydration, exercise, or specific care tips."
+                        ]
+                    }
+                }
+            },
+            "account-security": {
+                "title": "Account and Security",
+                "description": "Keep your account safe and manage your privacy.",
+                "articles": {
+                    "privacy": {
+                        "title": "Your data privacy",
+                        "content": "Your medical data is encrypted and confidential. Only you can access it unless you decide to share it."
+                    },
+                    "change-password": {
+                        "title": "Change password",
+                        "content": "If you need to update your password for security.",
+                        "steps": [
+                            "Go to Profile > Settings > Security.",
+                            "Select \"Change password\".",
+                            "Enter your current password and the new one."
+                        ]
+                    }
+                }
+            },
+            "troubleshooting": {
+                "title": "Troubleshooting",
+                "description": "Answers to common issues.",
+                "articles": {
+                    "upload-error": {
+                        "title": "Error uploading images",
+                        "content": "If you get an error when uploading a document, try the following:",
+                        "steps": [
+                            "Check your internet connection.",
+                            "Make sure the image is not too large (less than 5MB).",
+                            "Try closing and reopening the app."
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "analytics": {
+        "title": "AI Analytics",
+        "analyzing": "Analyzing with AI...",
+        "error_loading_history": "Error loading history data.",
+        "error_no_data": "No document data received.",
+        "error_analyzing": "Error analyzing with AI",
+        "error_unknown": "Unknown error",
+        "complete_analysis": "Complete Analysis",
+        "no_summary": "No summary available.",
+        "medical_details": "Medical Details",
+        "normal": "NORMAL",
+        "result": "Result",
+        "ref_range": "(Ref: {{low}} - {{high}})",
+        "no_numeric_result": "No numeric result",
+        "possible_risks": "Possible Risks",
+        "view_recommendations": "View detailed recommendations",
+        "chat_assistant": "Chat with Assistant"
+    }
+}

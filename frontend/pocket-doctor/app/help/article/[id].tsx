@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -13,13 +14,17 @@ export default function HelpArticleScreen() {
     const { id } = useLocalSearchParams();
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
+    const { t } = useTranslation();
 
-    // Find article across all categories
-    let article;
+    // Find article across all categories to get the category ID
+    let article: any;
+    let categoryId: string = "";
+
     for (const cat of helpCategories) {
         const found = cat.articles.find(a => a.id === id);
         if (found) {
             article = found;
+            categoryId = cat.id;
             break;
         }
     }
@@ -27,49 +32,63 @@ export default function HelpArticleScreen() {
     if (!article) {
         return (
             <ThemedView style={styles.container}>
-                <ThemedText>Artículo no encontrado.</ThemedText>
+                <ThemedText>{t('help.ui.article_not_found')}</ThemedText>
             </ThemedView>
         );
     }
 
     return (
         <ThemedView style={styles.container}>
-            <Stack.Screen options={{ title: 'Ayuda', headerBackTitle: 'Atrás' }} />
+            <Stack.Screen options={{ title: t('help.ui.title'), headerBackTitle: t('common.back') }} />
 
             <ScrollView contentContainerStyle={styles.content}>
-                <ThemedText type="title" style={styles.title}>{article.title}</ThemedText>
+                <ThemedText type="title" style={styles.title}>{t(`help.categories.${categoryId}.articles.${article.id}.title`)}</ThemedText>
 
-                <ThemedText style={styles.body}>{article.content}</ThemedText>
+                <ThemedText style={styles.body}>{t(`help.categories.${categoryId}.articles.${article.id}.content`)}</ThemedText>
 
-                {article.steps && article.steps.length > 0 && (
-                    <View style={styles.section}>
-                        <ThemedText type="subtitle" style={styles.sectionTitle}>Pasos a seguir:</ThemedText>
-                        {article.steps.map((step, index) => (
-                            <View key={index} style={styles.stepRow}>
-                                <View style={[styles.stepNumber, { backgroundColor: colors.tint }]}>
-                                    <ThemedText style={styles.stepNumberText}>{index + 1}</ThemedText>
-                                </View>
-                                <ThemedText style={styles.stepText}>{step}</ThemedText>
+                {/* Dynamic Steps */}
+                {(() => {
+                    const steps = t(`help.categories.${categoryId}.articles.${article.id}.steps`, { returnObjects: true }) as string[];
+                    if (steps && Array.isArray(steps) && steps.length > 0) {
+                        return (
+                            <View style={styles.section}>
+                                <ThemedText type="subtitle" style={styles.sectionTitle}>{t('help.ui.steps_title')}</ThemedText>
+                                {steps.map((step, index) => (
+                                    <View key={index} style={styles.stepRow}>
+                                        <View style={[styles.stepNumber, { backgroundColor: colors.tint }]}>
+                                            <ThemedText style={styles.stepNumberText}>{index + 1}</ThemedText>
+                                        </View>
+                                        <ThemedText style={styles.stepText}>{step}</ThemedText>
+                                    </View>
+                                ))}
                             </View>
-                        ))}
-                    </View>
-                )}
+                        );
+                    }
+                    return null;
+                })()}
 
-                {article.tips && article.tips.length > 0 && (
-                    <View style={[styles.tipContainer, { backgroundColor: colors.tint + '15', borderColor: colors.tint }]}>
-                        <View style={styles.tipHeader}>
-                            <Ionicons name="bulb" size={20} color={colors.tint} />
-                            <ThemedText type="defaultSemiBold" style={[styles.tipTitle, { color: colors.tint }]}>Consejo útil</ThemedText>
-                        </View>
-                        {article.tips.map((tip, index) => (
-                            <ThemedText key={index} style={styles.tipText}>{tip}</ThemedText>
-                        ))}
-                    </View>
-                )}
+                {/* Dynamic Tips */}
+                {(() => {
+                    const tips = t(`help.categories.${categoryId}.articles.${article.id}.tips`, { returnObjects: true }) as string[];
+                    if (tips && Array.isArray(tips) && tips.length > 0) {
+                        return (
+                            <View style={[styles.tipContainer, { backgroundColor: colors.tint + '15', borderColor: colors.tint }]}>
+                                <View style={styles.tipHeader}>
+                                    <Ionicons name="bulb" size={20} color={colors.tint} />
+                                    <ThemedText type="defaultSemiBold" style={[styles.tipTitle, { color: colors.tint }]}>{t('help.ui.tip_title')}</ThemedText>
+                                </View>
+                                {tips.map((tip, index) => (
+                                    <ThemedText key={index} style={styles.tipText}>{tip}</ThemedText>
+                                ))}
+                            </View>
+                        );
+                    }
+                    return null;
+                })()}
 
                 {/* Feedback Section Placeholder */}
                 <View style={styles.feedbackContainer}>
-                    <ThemedText style={styles.feedbackLabel}>¿Fue útil este artículo?</ThemedText>
+                    <ThemedText style={styles.feedbackLabel}>{t('help.ui.feedback_question')}</ThemedText>
                     <View style={styles.feedbackButtons}>
                         <View style={[styles.feedbackBtn, { borderColor: colors.icon }]}>
                             <Ionicons name="thumbs-up-outline" size={20} color={colors.text} />

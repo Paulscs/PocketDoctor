@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, FlatList, TouchableOpacity, View } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -13,6 +14,7 @@ export default function HelpCenterScreen() {
     const router = useRouter();
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
+    const { t } = useTranslation();
 
     const renderCategory = ({ item }: { item: HelpCategory }) => (
         <TouchableOpacity
@@ -22,19 +24,19 @@ export default function HelpCenterScreen() {
             <View style={[styles.iconContainer, { backgroundColor: colors.tint + '20' }]}>
                 <Ionicons name={item.icon as any} size={32} color={colors.tint} />
             </View>
-            <ThemedText type="subtitle" style={styles.cardTitle}>{item.title}</ThemedText>
-            <ThemedText style={styles.cardDesc} numberOfLines={2}>{item.description}</ThemedText>
+            <ThemedText type="subtitle" style={styles.cardTitle}>{t(`help.categories.${item.id}.title`)}</ThemedText>
+            <ThemedText style={styles.cardDesc} numberOfLines={2}>{t(`help.categories.${item.id}.description`)}</ThemedText>
         </TouchableOpacity>
     );
 
     return (
         <ThemedView style={styles.container}>
-            <Stack.Screen options={{ title: 'Centro de Ayuda', headerBackTitle: 'Atrás' }} />
+            <Stack.Screen options={{ title: t('help.ui.title'), headerBackTitle: t('common.back') }} />
 
             <View style={styles.header}>
-                <ThemedText type="title">¿Cómo podemos ayudarte?</ThemedText>
+                <ThemedText type="title">{t('help.ui.subtitle')}</ThemedText>
                 <ThemedText style={styles.subtitle}>
-                    Encuentra guías, respuestas y consejos para usar Pocket Doctor.
+                    {t('help.ui.description')}
                 </ThemedText>
             </View>
 

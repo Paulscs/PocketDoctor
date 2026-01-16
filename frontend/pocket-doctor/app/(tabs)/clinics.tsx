@@ -21,6 +21,7 @@ import { ClinicsMap } from "@/components/ClinicsMap";
 
 // Clinic interface imported from component to ensure compatibility
 import { Clinic } from "@/components/ClinicsMap";
+import { useTranslation } from "react-i18next";
 
 interface MedicalData {
   id: string;
@@ -122,6 +123,7 @@ const getRecommendedSpecialties = (userProfile: UserProfile): string[] => {
 };
 
 export default function ClinicsScreen() {
+  const { t } = useTranslation();
   const backgroundColor = useThemeColor(
     { light: Colors.light.white, dark: Colors.dark.background },
     "background"
@@ -263,8 +265,8 @@ export default function ClinicsScreen() {
         </View>
         <View style={styles.headerRight}>
           <View style={styles.titleContainer}>
-            <ThemedText style={styles.pageTitle}>Clínicas y</ThemedText>
-            <ThemedText style={styles.pageTitle}>Especialistas</ThemedText>
+            <ThemedText style={styles.pageTitle}>{t('clinics.title')}</ThemedText>
+            <ThemedText style={styles.pageTitle}>{t('clinics.title_specialists')}</ThemedText>
           </View>
           <View style={styles.profileIcon}>
             <UserAvatar size={32} />
@@ -283,7 +285,7 @@ export default function ClinicsScreen() {
               />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Buscar clínicas y especialistas..."
+                placeholder={t('clinics.search_placeholder')}
                 placeholderTextColor={Colors.light.placeholderGray}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -306,7 +308,7 @@ export default function ClinicsScreen() {
               >
                 <Ionicons name="list" size={18} color={viewMode === 'list' ? Colors.light.white : Colors.light.gray} />
                 <ThemedText style={[styles.toggleButtonText, viewMode === 'list' && styles.toggleButtonTextActive]}>
-                  Lista
+                  {t('clinics.view_list')}
                 </ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
@@ -316,7 +318,7 @@ export default function ClinicsScreen() {
               >
                 <Ionicons name="map" size={18} color={viewMode === 'map' ? Colors.light.white : Colors.light.gray} />
                 <ThemedText style={[styles.toggleButtonText, viewMode === 'map' && styles.toggleButtonTextActive]}>
-                  Mapa
+                  {t('clinics.view_map')}
                 </ThemedText>
               </TouchableOpacity>
             </View>
@@ -332,7 +334,7 @@ export default function ClinicsScreen() {
               {searchQuery.length > 0 && searchedSpecialists.length > 0 && (
                 <View style={{ marginBottom: 20 }}>
                   <ThemedText style={{ fontSize: 16, fontWeight: '600', color: Colors.light.brandBlue, marginBottom: 12, marginLeft: 4 }}>
-                    Especialistas encontrados ({searchedSpecialists.length})
+                    {t('clinics.found_specialists')} ({searchedSpecialists.length})
                   </ThemedText>
                   {searchedSpecialists.map((spec) => (
                     <View key={spec.especialista_id} style={[styles.clinicCard, { flexDirection: 'column', alignItems: 'flex-start', padding: 12 }]}>
@@ -357,7 +359,7 @@ export default function ClinicsScreen() {
                 <View>
                   {searchQuery.length > 0 && (
                     <ThemedText style={{ fontSize: 16, fontWeight: '600', color: Colors.light.brandBlue, marginBottom: 12, marginLeft: 4 }}>
-                      Clínicas
+                      {t('clinics.clinics')}
                     </ThemedText>
                   )}
                   {filteredClinics.map(renderClinicCard)}
@@ -368,7 +370,7 @@ export default function ClinicsScreen() {
               {searchQuery.length > 0 && filteredClinics.length === 0 && searchedSpecialists.length === 0 && (
                 <View style={{ alignItems: 'center', marginTop: 40, opacity: 0.6 }}>
                   <Ionicons name="search" size={48} color={Colors.light.gray} />
-                  <ThemedText style={{ marginTop: 12, color: Colors.light.gray }}>No se encontraron resultados</ThemedText>
+                  <ThemedText style={{ marginTop: 12, color: Colors.light.gray }}>{t('clinics.no_results')}</ThemedText>
                 </View>
               )}
 
@@ -384,16 +386,16 @@ export default function ClinicsScreen() {
           />
           <ThemedText style={styles.errorTitle}>
             {errorState === 'timeout'
-              ? "Tiempo de espera agotado"
-              : "Error de conexión"}
+              ? t('clinics.error_timeout_title')
+              : t('clinics.error_connection_title')}
           </ThemedText>
           <ThemedText style={styles.errorMessage}>
             {errorState === 'timeout'
-              ? "No pudimos cargar la información a tiempo. Por favor verifica tu conexión e intenta nuevamente."
-              : "Algo salió mal al cargar las clínicas."}
+              ? t('clinics.error_timeout_message')
+              : t('clinics.error_connection_message')}
           </ThemedText>
           <TouchableOpacity style={styles.retryButton} onPress={loadData}>
-            <ThemedText style={styles.retryButtonText}>Reintentar</ThemedText>
+            <ThemedText style={styles.retryButtonText}>{t('clinics.retry')}</ThemedText>
             <Ionicons name="refresh" size={18} color={Colors.light.white} />
           </TouchableOpacity>
         </View>
