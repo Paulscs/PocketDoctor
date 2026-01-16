@@ -304,13 +304,66 @@
         "error_empty": "Please select at least one file",
         "error_terms": "You must accept the legal notice to continue."
     },
-    "legal": {
-        "terms_notice": "Legal Notice",
-        "accept_continue": "Accept and Continue",
-        "terms_conditions": "Terms and Conditions",
-        "terms_conditions_full": "Full Terms and Conditions...",
-        "privacy_policy": "Privacy Policy",
-        "modal": {
+  "legal": {
+    "terms_notice": "Legal Notice",
+    "accept_continue": "Accept and Continue",
+
+    "terms_conditions": "Terms and Conditions",
+    "terms_conditions_full": "Full Terms and Conditions...",
+    "terms_conditions_modal": {
+      "intro": "Welcome to Pocket Doctor. By accessing or using this application, you agree to these Terms and Conditions. If you do not agree with any part, we recommend that you do not use the service. Pocket Doctor provides medical information analysis and organization features for informational and support purposes, and it does not replace the care of a healthcare professional.",
+      "sections": {
+        "1": {
+          "title": "1. Use of the Service",
+          "body": "Pocket Doctor allows you to upload medical documents (for example, PDF results or images) to extract and organize clinical data using technologies such as OCR, and to present guidance-oriented interpretations. You agree to use the service responsibly, lawfully, and in accordance with these terms, avoiding fraudulent or malicious use or any use that may affect the platform’s operation. The information presented is for informational purposes and should not be considered a diagnosis or a definitive medical recommendation."
+        },
+        "2": {
+          "title": "2. Account Registration and Security",
+          "body": "To access service features, you must create an account. You are responsible for keeping your credentials confidential, as well as for activities performed from your account. Pocket Doctor may apply protective measures such as temporary lockout after multiple failed attempts, and may record relevant security events (for example, logins, changes, or deletions) for auditing and system protection purposes. You must provide truthful information and keep it up to date."
+        },
+        "3": {
+          "title": "3. Intellectual Property",
+          "body": "The application, its design, brand, features, interfaces, and components are the property of Pocket Doctor or its licensors and are protected by applicable intellectual property laws. Reproduction, modification, distribution, reverse engineering, or unauthorized exploitation of content or software is prohibited. The user retains ownership of their personal and medical data in accordance with the Privacy Policy."
+        },
+        "4": {
+          "title": "4. Limitation of Liability",
+          "body": "Pocket Doctor does not guarantee that the results displayed are fully accurate, complete, or suitable for medical decisions, as they depend on the quality of the uploaded document and automated processing. The user acknowledges and agrees that the application does not replace consultation with healthcare professionals. To the extent permitted by law, Pocket Doctor will not be liable for indirect, incidental, or consequential damages arising from use of the service, nor for how third parties may use reports exported or shared by the user."
+        },
+        "5": {
+          "title": "5. Modifications and Termination",
+          "body": "Pocket Doctor may update these terms to reflect legal changes, security improvements, or new features. Modifications will take effect once published in the application. Continued use of the service after changes implies acceptance. Pocket Doctor may suspend or limit access when it detects misuse, security risks, or non-compliance with these terms. The user may stop using the application at any time."
+        }
+      }
+    },
+
+    "privacy_policy": "Privacy Policy",
+    "privacy_policy_modal": {
+      "intro": "At Pocket Doctor, protecting your privacy is a priority. This Privacy Policy clearly describes how we collect, use, store, and protect your personal and medical information, ensuring its confidentiality, integrity, and security.",
+      "sections": {
+        "1": {
+          "title": "1. Information Collection",
+          "body": "We collect only the information you voluntarily provide when using the application, such as name, email address, date of birth, and medical data associated with clinical results. Uploaded medical documents are used exclusively for analysis and are not retained after processing, unless expressly authorized by the user."
+        },
+        "2": {
+          "title": "2. Use of Information",
+          "body": "The collected information is used exclusively to provide Pocket Doctor services, enable guidance-oriented analysis of medical results, personalize the user experience, improve the application, and communicate relevant information related to the service or platform security."
+        },
+        "3": {
+          "title": "3. Data Protection and Security",
+          "body": "We implement advanced technical and organizational measures to protect your information against unauthorized access, loss, or alteration. Medical data is stored encrypted, and communications between the application and our servers are carried out through secure connections, complying with recognized information security standards."
+        },
+        "4": {
+          "title": "4. Information Sharing",
+          "body": "Pocket Doctor does not sell, rent, or share your personal or medical information with third parties. Information will only be shared when there is a legal obligation, the user's explicit consent, or when it is strictly necessary to ensure system security."
+        },
+        "5": {
+          "title": "5. User Rights",
+          "body": "You have the right to access, correct, or delete your personal and medical information, as well as to withdraw your consent at any time. These actions can be performed from the application or by contacting our support team, in accordance with Law 172-13 on Personal Data Protection of the Dominican Republic."
+        }
+      }
+    },
+
+    "modal": {
       "intro": "By uploading documents to Pocket Doctor, you acknowledge and accept the following terms of use and privacy policies:",
       "sections": {
         "1": {
@@ -340,5 +393,5 @@
       },
       "warning": "If you do not agree with any of the above points, please refrain from uploading documents and close this window."
     }
-    }
+  }
 }
