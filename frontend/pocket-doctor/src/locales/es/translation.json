@@ -304,94 +304,224 @@
         "error_empty": "Por favor selecciona al menos un archivo",
         "error_terms": "Debe aceptar el aviso legal para continuar."
     },
-  "legal": {
-    "terms_notice": "Aviso Legal",
-    "accept_continue": "Aceptar y Continuar",
-
-    "terms_conditions": "Términos y Condiciones",
-    "terms_conditions_full": "Términos y Condiciones completos...",
-    "terms_conditions_modal": {
-      "intro": "Bienvenido a Pocket Doctor. Al acceder o utilizar esta aplicación, usted acepta estos Términos y Condiciones. Si no está de acuerdo con alguna parte, le recomendamos no utilizar el servicio. Pocket Doctor ofrece funcionalidades de análisis y organización de información médica con fines informativos y de apoyo, y no sustituye la atención de un profesional de la salud.",
-      "sections": {
-        "1": {
-          "title": "1. Uso del Servicio",
-          "body": "Pocket Doctor permite cargar documentos médicos (por ejemplo, resultados en PDF o imágenes) para extraer y organizar datos clínicos mediante tecnologías como OCR, y presentar interpretaciones orientativas. Usted se compromete a usar el servicio de forma responsable, lícita y conforme a estos términos, evitando el uso fraudulento, malicioso o que afecte el funcionamiento de la plataforma. La información presentada es de carácter informativo y no debe considerarse un diagnóstico ni una recomendación médica definitiva."
+    "legal": {
+        "terms_notice": "Aviso Legal",
+        "accept_continue": "Aceptar y Continuar",
+        "terms_conditions": "Términos y Condiciones",
+        "terms_conditions_full": "Términos y Condiciones completos...",
+        "terms_conditions_modal": {
+            "intro": "Bienvenido a Pocket Doctor. Al acceder o utilizar esta aplicación, usted acepta estos Términos y Condiciones. Si no está de acuerdo con alguna parte, le recomendamos no utilizar el servicio. Pocket Doctor ofrece funcionalidades de análisis y organización de información médica con fines informativos y de apoyo, y no sustituye la atención de un profesional de la salud.",
+            "sections": {
+                "1": {
+                    "title": "1. Uso del Servicio",
+                    "body": "Pocket Doctor permite cargar documentos médicos (por ejemplo, resultados en PDF o imágenes) para extraer y organizar datos clínicos mediante tecnologías como OCR, y presentar interpretaciones orientativas. Usted se compromete a usar el servicio de forma responsable, lícita y conforme a estos términos, evitando el uso fraudulento, malicioso o que afecte el funcionamiento de la plataforma. La información presentada es de carácter informativo y no debe considerarse un diagnóstico ni una recomendación médica definitiva."
+                },
+                "2": {
+                    "title": "2. Registro y Seguridad de la Cuenta",
+                    "body": "Para acceder a funciones del servicio, es necesario crear una cuenta. Usted es responsable de mantener la confidencialidad de sus credenciales, así como de las actividades realizadas desde su cuenta. Pocket Doctor podrá aplicar medidas de protección como bloqueo temporal ante múltiples intentos fallidos, y registrar eventos relevantes de seguridad (por ejemplo, accesos, cambios o eliminaciones) para fines de auditoría y protección del sistema. Usted debe proporcionar información veraz y mantenerla actualizada."
+                },
+                "3": {
+                    "title": "3. Propiedad Intelectual",
+                    "body": "La aplicación, su diseño, marca, funcionalidades, interfaces y componentes son propiedad de Pocket Doctor o de sus licenciantes, y están protegidos por las leyes aplicables de propiedad intelectual. Queda prohibida la reproducción, modificación, distribución, ingeniería inversa o explotación no autorizada del contenido o del software. El usuario conserva la titularidad de sus datos personales y médicos, conforme a la Política de Privacidad."
+                },
+                "4": {
+                    "title": "4. Limitación de Responsabilidad",
+                    "body": "Pocket Doctor no garantiza que los resultados mostrados sean completamente exactos, completos o adecuados para decisiones médicas, ya que dependen de la calidad del documento cargado y del procesamiento automatizado. El usuario reconoce y acepta que la aplicación no sustituye la consulta con profesionales de la salud. En la medida permitida por la ley, Pocket Doctor no será responsable por daños indirectos, incidentales o consecuentes derivados del uso del servicio, ni por el uso que terceros puedan dar a reportes exportados o compartidos por el usuario."
+                },
+                "5": {
+                    "title": "5. Modificaciones y Terminación",
+                    "body": "Pocket Doctor podrá actualizar estos términos para reflejar cambios legales, mejoras de seguridad o nuevas funcionalidades. Las modificaciones entrarán en vigor al publicarse en la aplicación. El uso continuado del servicio después de los cambios implica su aceptación. Pocket Doctor podrá suspender o limitar el acceso cuando detecte uso indebido, riesgos de seguridad o incumplimiento de estos términos. El usuario puede dejar de utilizar la aplicación en cualquier momento."
+                }
+            }
         },
-        "2": {
-          "title": "2. Registro y Seguridad de la Cuenta",
-          "body": "Para acceder a funciones del servicio, es necesario crear una cuenta. Usted es responsable de mantener la confidencialidad de sus credenciales, así como de las actividades realizadas desde su cuenta. Pocket Doctor podrá aplicar medidas de protección como bloqueo temporal ante múltiples intentos fallidos, y registrar eventos relevantes de seguridad (por ejemplo, accesos, cambios o eliminaciones) para fines de auditoría y protección del sistema. Usted debe proporcionar información veraz y mantenerla actualizada."
+        "privacy_policy": "Política de Privacidad",
+        "privacy_policy_modal": {
+            "intro": "En Pocket Doctor, la protección de su privacidad es una prioridad. Esta Política de Privacidad describe de manera clara cómo recopilamos, utilizamos, almacenamos y protegemos su información personal y médica, garantizando su confidencialidad, integridad y seguridad.",
+            "sections": {
+                "1": {
+                    "title": "1. Recopilación de Información",
+                    "body": "Recopilamos únicamente la información que usted proporciona de forma voluntaria al utilizar la aplicación, como nombre, correo electrónico, fecha de nacimiento y datos médicos asociados a resultados clínicos. Los documentos médicos cargados se utilizan exclusivamente para su análisis y no se conservan después del procesamiento, salvo autorización expresa del usuario."
+                },
+                "2": {
+                    "title": "2. Uso de la Información",
+                    "body": "La información recopilada se utiliza exclusivamente para brindar los servicios de Pocket Doctor, permitir el análisis orientativo de resultados médicos, personalizar la experiencia del usuario, mejorar la aplicación y comunicar información relevante relacionada con el servicio o la seguridad de la plataforma."
+                },
+                "3": {
+                    "title": "3. Protección y Seguridad de los Datos",
+                    "body": "Implementamos medidas técnicas y organizativas avanzadas para proteger su información contra accesos no autorizados, pérdida o alteración. Los datos médicos se almacenan cifrados y las comunicaciones entre la aplicación y nuestros servidores se realizan mediante conexiones seguras, cumpliendo con estándares reconocidos de seguridad de la información."
+                },
+                "4": {
+                    "title": "4. Compartición de Información",
+                    "body": "Pocket Doctor no vende, alquila ni comparte su información personal o médica con terceros. Únicamente se compartirá información cuando exista una obligación legal, consentimiento explícito del usuario o sea estrictamente necesario para garantizar la seguridad del sistema."
+                },
+                "5": {
+                    "title": "5. Derechos del Usuario",
+                    "body": "Usted tiene derecho a acceder, rectificar o eliminar su información personal y médica, así como a retirar su consentimiento en cualquier momento. Estas acciones pueden realizarse desde la aplicación o contactando con nuestro equipo de soporte, conforme a la Ley 172-13 sobre Protección de Datos Personales de la República Dominicana."
+                }
+            }
         },
-        "3": {
-          "title": "3. Propiedad Intelectual",
-          "body": "La aplicación, su diseño, marca, funcionalidades, interfaces y componentes son propiedad de Pocket Doctor o de sus licenciantes, y están protegidos por las leyes aplicables de propiedad intelectual. Queda prohibida la reproducción, modificación, distribución, ingeniería inversa o explotación no autorizada del contenido o del software. El usuario conserva la titularidad de sus datos personales y médicos, conforme a la Política de Privacidad."
-        },
-        "4": {
-          "title": "4. Limitación de Responsabilidad",
-          "body": "Pocket Doctor no garantiza que los resultados mostrados sean completamente exactos, completos o adecuados para decisiones médicas, ya que dependen de la calidad del documento cargado y del procesamiento automatizado. El usuario reconoce y acepta que la aplicación no sustituye la consulta con profesionales de la salud. En la medida permitida por la ley, Pocket Doctor no será responsable por daños indirectos, incidentales o consecuentes derivados del uso del servicio, ni por el uso que terceros puedan dar a reportes exportados o compartidos por el usuario."
-        },
-        "5": {
-          "title": "5. Modificaciones y Terminación",
-          "body": "Pocket Doctor podrá actualizar estos términos para reflejar cambios legales, mejoras de seguridad o nuevas funcionalidades. Las modificaciones entrarán en vigor al publicarse en la aplicación. El uso continuado del servicio después de los cambios implica su aceptación. Pocket Doctor podrá suspender o limitar el acceso cuando detecte uso indebido, riesgos de seguridad o incumplimiento de estos términos. El usuario puede dejar de utilizar la aplicación en cualquier momento."
+        "modal": {
+            "intro": "Al cargar documentos en Pocket Doctor, usted reconoce y acepta las siguientes condiciones de uso y políticas de privacidad:",
+            "sections": {
+                "1": {
+                    "title": "1. Autenticidad y Propiedad de la Información",
+                    "body": "Usted declara bajo protesta de decir verdad que la información y los documentos proporcionados son auténticos, veraces y que posee el pleno derecho legal, propiedad o autorización expresa de su titular para utilizarlos y cargarlos en esta plataforma."
+                },
+                "2": {
+                    "title": "2. Autorización de Procesamiento",
+                    "body": "Usted autoriza explícitamente a Pocket Doctor y a sus sistemas automatizados a procesar, analizar y extraer texto e información clínica contenida en los archivos cargados mediante tecnologías de reconocimiento óptico de caracteres (OCR) e inteligencia artificial."
+                },
+                "3": {
+                    "title": "3. Almacenamiento y Eliminación de Originales",
+                    "body": "Entiende y acepta que los archivos originales (PDFs, imágenes) cargados no serán almacenados permanentemente en nuestros servidores una vez finalizado el proceso de extracción, salvo que exista una autorización explícita adicional por su parte o un requerimiento legal que así lo exija."
+                },
+                "4": {
+                    "title": "4. Protección de Datos y Confidencialidad",
+                    "body": "Acepta que los datos clínicos derivados del procesamiento serán almacenados de forma encriptada y segura para garantizar su estricta confidencialidad. Pocket Doctor implementa medidas de seguridad técnicas y organizativas alineadas con la Ley No. 172-13 sobre Protección de Datos de Carácter Personal de la República Dominicana y normas internacionales de privacidad y seguridad de la información sanitaria."
+                },
+                "5": {
+                    "title": "5. Limitación de Responsabilidad y Exactitud",
+                    "body": "Reconoce que Pocket Doctor es una herramienta de asistencia y no garantiza la exactitud absoluta, integridad o actualidad de los resultados extraídos automáticamente. Pocket Doctor no se responsabiliza por decisiones médicas, diagnósticos o tratamientos tomados con base en la información procesada por la aplicación. La verificación final de los datos siempre es responsabilidad del usuario y del profesional de la salud."
+                },
+                "6": {
+                    "title": "6. Consentimiento Informado",
+                    "body": "Al continuar y pulsar \"Aceptar\", usted otorga su consentimiento informado, libre y específico para el tratamiento de su información médica y personal conforme a lo establecido en estos términos."
+                }
+            },
+            "warning": "Si no está de acuerdo con alguno de los puntos anteriores, por favor absténgase de cargar documentos y cierre esta ventana."
         }
-      }
     },
-
-    "privacy_policy": "Política de Privacidad",
-    "privacy_policy_modal": {
-      "intro": "En Pocket Doctor, la protección de su privacidad es una prioridad. Esta Política de Privacidad describe de manera clara cómo recopilamos, utilizamos, almacenamos y protegemos su información personal y médica, garantizando su confidencialidad, integridad y seguridad.",
-      "sections": {
-        "1": {
-          "title": "1. Recopilación de Información",
-          "body": "Recopilamos únicamente la información que usted proporciona de forma voluntaria al utilizar la aplicación, como nombre, correo electrónico, fecha de nacimiento y datos médicos asociados a resultados clínicos. Los documentos médicos cargados se utilizan exclusivamente para su análisis y no se conservan después del procesamiento, salvo autorización expresa del usuario."
+    "help": {
+        "ui": {
+            "title": "Centro de Ayuda",
+            "subtitle": "¿Cómo podemos ayudarte?",
+            "description": "Encuentra guías, respuestas y consejos para usar Pocket Doctor.",
+            "category_not_found": "Categoría no encontrada.",
+            "article_not_found": "Artículo no encontrado.",
+            "steps_title": "Pasos a seguir:",
+            "tip_title": "Consejo útil",
+            "feedback_question": "¿Fue útil este artículo?"
         },
-        "2": {
-          "title": "2. Uso de la Información",
-          "body": "La información recopilada se utiliza exclusivamente para brindar los servicios de Pocket Doctor, permitir el análisis orientativo de resultados médicos, personalizar la experiencia del usuario, mejorar la aplicación y comunicar información relevante relacionada con el servicio o la seguridad de la plataforma."
-        },
-        "3": {
-          "title": "3. Protección y Seguridad de los Datos",
-          "body": "Implementamos medidas técnicas y organizativas avanzadas para proteger su información contra accesos no autorizados, pérdida o alteración. Los datos médicos se almacenan cifrados y las comunicaciones entre la aplicación y nuestros servidores se realizan mediante conexiones seguras, cumpliendo con estándares reconocidos de seguridad de la información."
-        },
-        "4": {
-          "title": "4. Compartición de Información",
-          "body": "Pocket Doctor no vende, alquila ni comparte su información personal o médica con terceros. Únicamente se compartirá información cuando exista una obligación legal, consentimiento explícito del usuario o sea estrictamente necesario para garantizar la seguridad del sistema."
-        },
-        "5": {
-          "title": "5. Derechos del Usuario",
-          "body": "Usted tiene derecho a acceder, rectificar o eliminar su información personal y médica, así como a retirar su consentimiento en cualquier momento. Estas acciones pueden realizarse desde la aplicación o contactando con nuestro equipo de soporte, conforme a la Ley 172-13 sobre Protección de Datos Personales de la República Dominicana."
+        "categories": {
+            "getting-started": {
+                "title": "Primeros Pasos",
+                "description": "Todo lo que necesitas saber para empezar a usar Pocket Doctor.",
+                "articles": {
+                    "create-account": {
+                        "title": "Cómo crear una cuenta",
+                        "content": "Bienvenido a Pocket Doctor. Crear una cuenta es el primer paso para gestionar tu salud de manera inteligente.",
+                        "steps": [
+                            "Abre la aplicación y toca \"Registrarse\".",
+                            "Ingresa tu correo electrónico, contraseña y nombre completo.",
+                            "Selecciona tu fecha de nacimiento (es importante para tu perfil médico).",
+                            "Acepta los Términos y Condiciones.",
+                            "Toca el botón \"Registrarse\"."
+                        ],
+                        "tips": [
+                            "Asegúrate de usar un correo electrónico al que tengas acceso permanente."
+                        ]
+                    },
+                    "complete-profile": {
+                        "title": "Completar tu perfil médico",
+                        "content": "Un perfil completo ayuda a la IA a darte mejores recomendaciones.",
+                        "steps": [
+                            "Ve a la pestaña \"Perfil\".",
+                            "Toca en \"Editar Perfil\" o \"Información Médica\".",
+                            "Completa tu tipo de sangre, alergias y condiciones preexistentes.",
+                            "Guarda los cambios."
+                        ]
+                    }
+                }
+            },
+            "health-management": {
+                "title": "Gestión de Salud",
+                "description": "Aprende a subir análisis, gestionar recetas y validarlos.",
+                "articles": {
+                    "upload-documents": {
+                        "title": "Subir documentos médicos",
+                        "content": "Puedes subir fotos de tus recetas o resultados de laboratorio para que la IA los analice.",
+                        "steps": [
+                            "Toca el botón \"+\" en la pantalla de inicio o ve a la sección \"Subir\".",
+                            "Selecciona \"Tomar foto\" o \"Elegir de galería\".",
+                            "Asegúrate de que la imagen sea clara y legible.",
+                            "Confirma la subida y espera a que la IA procese la información."
+                        ],
+                        "tips": [
+                            "Intenta tener buena iluminación al tomar la foto para mejores resultados."
+                        ]
+                    },
+                    "validate-data": {
+                        "title": "Validar información extraída",
+                        "content": "A veces la IA necesita tu confirmación para asegurar que los datos sean 100% correctos.",
+                        "steps": [
+                            "Después de subir un documento, verás una pantalla de validación.",
+                            "Revisa los campos (nombre del medicamento, fecha, resultados).",
+                            "Si algo es incorrecto, tócalo para editarlo.",
+                            "Toca \"Guardar\" o \"Validar\" para confirmar."
+                        ]
+                    }
+                }
+            },
+            "ai-features": {
+                "title": "Funciones IA",
+                "description": "Descubre cómo nuestra Inteligencia Artificial te ayuda.",
+                "articles": {
+                    "ai-chat": {
+                        "title": "Chat con Pocket Doctor",
+                        "content": "Puedes hacer preguntas sobre salud, síntomas o tus documentos médicos.",
+                        "steps": [
+                            "Ve a la pestaña \"Chat\".",
+                            "Escribe tu pregunta en el campo de texto.",
+                            "Recibirás una respuesta basada en información médica confiable y tus datos."
+                        ],
+                        "tips": [
+                            "El chat no reemplaza a un médico real. En caso de emergencia, acude a un centro de salud."
+                        ]
+                    },
+                    "recommendations": {
+                        "title": "Recomendaciones personalizadas",
+                        "content": "Recibe consejos de salud basados en tu perfil y análisis.",
+                        "steps": [
+                            "Revisa la sección de \"Recomendaciones\" en el Inicio o Perfil.",
+                            "Sigue los consejos de hidratación, ejercicio o cuidados específicos."
+                        ]
+                    }
+                }
+            },
+            "account-security": {
+                "title": "Cuenta y Seguridad",
+                "description": "Mantén tu cuenta segura y gestiona tu privacidad.",
+                "articles": {
+                    "privacy": {
+                        "title": "Privacidad de tus datos",
+                        "content": "Tus datos médicos son encriptados y confidenciales. Solo tú tienes acceso a ellos, a menos que decidas compartirlos."
+                    },
+                    "change-password": {
+                        "title": "Cambiar contraseña",
+                        "content": "Si necesitas actualizar tu contraseña por seguridad.",
+                        "steps": [
+                            "Ve a Perfil > Configuración > Seguridad.",
+                            "Selecciona \"Cambiar contraseña\".",
+                            "Ingresa tu contraseña actual y la nueva."
+                        ]
+                    }
+                }
+            },
+            "troubleshooting": {
+                "title": "Solución de Problemas",
+                "description": "Respuestas a problemas comunes.",
+                "articles": {
+                    "upload-error": {
+                        "title": "Error al subir imágenes",
+                        "content": "Si recibes un error al subir un documento, intenta lo siguiente:",
+                        "steps": [
+                            "Verifica tu conexión a internet.",
+                            "Asegúrate de que la imagen no sea demasiado pesada (menos de 5MB).",
+                            "Intenta cerrar y volver a abrir la aplicación."
+                        ]
+                    }
+                }
+            }
         }
-      }
-    },
-
-    "modal": {
-      "intro": "Al cargar documentos en Pocket Doctor, usted reconoce y acepta las siguientes condiciones de uso y políticas de privacidad:",
-      "sections": {
-        "1": {
-          "title": "1. Autenticidad y Propiedad de la Información",
-          "body": "Usted declara bajo protesta de decir verdad que la información y los documentos proporcionados son auténticos, veraces y que posee el pleno derecho legal, propiedad o autorización expresa de su titular para utilizarlos y cargarlos en esta plataforma."
-        },
-        "2": {
-          "title": "2. Autorización de Procesamiento",
-          "body": "Usted autoriza explícitamente a Pocket Doctor y a sus sistemas automatizados a procesar, analizar y extraer texto e información clínica contenida en los archivos cargados mediante tecnologías de reconocimiento óptico de caracteres (OCR) e inteligencia artificial."
-        },
-        "3": {
-          "title": "3. Almacenamiento y Eliminación de Originales",
-          "body": "Entiende y acepta que los archivos originales (PDFs, imágenes) cargados no serán almacenados permanentemente en nuestros servidores una vez finalizado el proceso de extracción, salvo que exista una autorización explícita adicional por su parte o un requerimiento legal que así lo exija."
-        },
-        "4": {
-          "title": "4. Protección de Datos y Confidencialidad",
-          "body": "Acepta que los datos clínicos derivados del procesamiento serán almacenados de forma encriptada y segura para garantizar su estricta confidencialidad. Pocket Doctor implementa medidas de seguridad técnicas y organizativas alineadas con la Ley No. 172-13 sobre Protección de Datos de Carácter Personal de la República Dominicana y normas internacionales de privacidad y seguridad de la información sanitaria."
-        },
-        "5": {
-          "title": "5. Limitación de Responsabilidad y Exactitud",
-          "body": "Reconoce que Pocket Doctor es una herramienta de asistencia y no garantiza la exactitud absoluta, integridad o actualidad de los resultados extraídos automáticamente. Pocket Doctor no se responsabiliza por decisiones médicas, diagnósticos o tratamientos tomados con base en la información procesada por la aplicación. La verificación final de los datos siempre es responsabilidad del usuario y del profesional de la salud."
-        },
-        "6": {
-          "title": "6. Consentimiento Informado",
-          "body": "Al continuar y pulsar \"Aceptar\", usted otorga su consentimiento informado, libre y específico para el tratamiento de su información médica y personal conforme a lo establecido en estos términos."
-        }
-      },
-      "warning": "Si no está de acuerdo con alguno de los puntos anteriores, por favor absténgase de cargar documentos y cierre esta ventana."
     }
-  }
 }
