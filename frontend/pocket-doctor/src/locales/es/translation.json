@@ -309,6 +309,37 @@
         "accept_continue": "Aceptar y Continuar",
         "terms_conditions": "Términos y Condiciones",
         "terms_conditions_full": "Términos y Condiciones completos...",
-        "privacy_policy": "Política de Privacidad"
+        "privacy_policy": "Política de Privacidad",
+        
+    "modal": {
+      "intro": "Al cargar documentos en Pocket Doctor, usted reconoce y acepta las siguientes condiciones de uso y políticas de privacidad:",
+      "sections": {
+        "1": {
+          "title": "1. Autenticidad y Propiedad de la Información",
+          "body": "Usted declara bajo protesta de decir verdad que la información y los documentos proporcionados son auténticos, veraces y que posee el pleno derecho legal, propiedad o autorización expresa de su titular para utilizarlos y cargarlos en esta plataforma."
+        },
+        "2": {
+          "title": "2. Autorización de Procesamiento",
+          "body": "Usted autoriza explícitamente a Pocket Doctor y a sus sistemas automatizados a procesar, analizar y extraer texto e información clínica contenida en los archivos cargados mediante tecnologías de reconocimiento óptico de caracteres (OCR) e inteligencia artificial."
+        },
+        "3": {
+          "title": "3. Almacenamiento y Eliminación de Originales",
+          "body": "Entiende y acepta que los archivos originales (PDFs, imágenes) cargados no serán almacenados permanentemente en nuestros servidores una vez finalizado el proceso de extracción, salvo que exista una autorización explícita adicional por su parte o un requerimiento legal que así lo exija."
+        },
+        "4": {
+          "title": "4. Protección de Datos y Confidencialidad",
+          "body": "Acepta que los datos clínicos derivados del procesamiento serán almacenados de forma encriptada y segura para garantizar su estricta confidencialidad. Pocket Doctor implementa medidas de seguridad técnicas y organizativas alineadas con la Ley No. 172-13 sobre Protección de Datos de Carácter Personal de la República Dominicana y normas internacionales de privacidad y seguridad de la información sanitaria."
+        },
+        "5": {
+          "title": "5. Limitación de Responsabilidad y Exactitud",
+          "body": "Reconoce que Pocket Doctor es una herramienta de asistencia y no garantiza la exactitud absoluta, integridad o actualidad de los resultados extraídos automáticamente. Pocket Doctor no se responsabiliza por decisiones médicas, diagnósticos o tratamientos tomados con base en la información procesada por la aplicación. La verificación final de los datos siempre es responsabilidad del usuario y del profesional de la salud."
+        },
+        "6": {
+          "title": "6. Consentimiento Informado",
+          "body": "Al continuar y pulsar \"Aceptar\", usted otorga su consentimiento informado, libre y específico para el tratamiento de su información médica y personal conforme a lo establecido en estos términos."
+        }
+      },
+      "warning": "Si no está de acuerdo con alguno de los puntos anteriores, por favor absténgase de cargar documentos y cierre esta ventana."
+    }
     }
 }

@@ -309,6 +309,36 @@
         "accept_continue": "Accept and Continue",
         "terms_conditions": "Terms and Conditions",
         "terms_conditions_full": "Full Terms and Conditions...",
-        "privacy_policy": "Privacy Policy"
+        "privacy_policy": "Privacy Policy",
+        "modal": {
+      "intro": "By uploading documents to Pocket Doctor, you acknowledge and accept the following terms of use and privacy policies:",
+      "sections": {
+        "1": {
+          "title": "1. Authenticity and Ownership of Information",
+          "body": "You declare under penalty of perjury that the information and documents provided are authentic, truthful, and that you possess the full legal right, ownership, or express authorization of the holder to use and upload them to this platform."
+        },
+        "2": {
+          "title": "2. Processing Authorization",
+          "body": "You explicitly authorize Pocket Doctor and its automated systems to process, analyze, and extract text and clinical information contained in the uploaded files using optical character recognition (OCR) and artificial intelligence technologies."
+        },
+        "3": {
+          "title": "3. Storage and Deletion of Originals",
+          "body": "You understand and accept that the original files (PDFs, images) uploaded will not be permanently stored on our servers once the extraction process is completed, unless there is additional express authorization from you or a legal requirement that so demands."
+        },
+        "4": {
+          "title": "4. Data Protection and Confidentiality",
+          "body": "You agree that the clinical data derived from the processing will be stored in an encrypted and secure manner to ensure its strict confidentiality. Pocket Doctor implements technical and organizational security measures aligned with Law No. 172-13 on the Protection of Personal Data of the Dominican Republic and international standards for privacy and health information security."
+        },
+        "5": {
+          "title": "5. Limitation of Liability and Accuracy",
+          "body": "You acknowledge that Pocket Doctor is an assistance tool and does not guarantee the absolute accuracy, completeness, or currency of the automatically extracted results. Pocket Doctor is not responsible for medical decisions, diagnoses, or treatments made based on the information processed by the application. Final data verification is always the responsibility of the user and the healthcare professional."
+        },
+        "6": {
+          "title": "6. Informed Consent",
+          "body": "By continuing and clicking \"Accept\", you give your informed, free, and specific consent for the processing of your medical and personal information as established in these terms."
+        }
+      },
+      "warning": "If you do not agree with any of the above points, please refrain from uploading documents and close this window."
+    }
     }
 }
