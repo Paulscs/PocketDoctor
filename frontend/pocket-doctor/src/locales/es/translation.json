@@ -258,7 +258,16 @@
         "error_timeout_message": "No pudimos cargar la información a tiempo. Por favor verifica tu conexión e intenta nuevamente.",
         "error_connection_title": "Error de conexión",
         "error_connection_message": "Algo salió mal al cargar las clínicas.",
-        "retry": "Reintentar"
+        "retry": "Reintentar",
+        "detail": {
+            "error_loading": "No se pudo cargar la información de la clínica.",
+            "not_found": "Clínica no encontrada",
+            "available_specialists": "Especialistas Disponibles",
+            "no_specialists": "No hay información detallada de especialistas.",
+            "call": "Llamar",
+            "directions": "Cómo llegar",
+            "default_specialist": "Especialista"
+        }
     },
     "history": {
         "title": "Historial",

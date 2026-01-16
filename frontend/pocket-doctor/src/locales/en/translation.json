@@ -258,7 +258,16 @@
         "error_timeout_message": "We could not load the information in time. Please check your connection and try again.",
         "error_connection_title": "Connection Error",
         "error_connection_message": "Something went wrong while loading clinics.",
-        "retry": "Retry"
+        "retry": "Retry",
+        "detail": {
+            "error_loading": "Could not load clinic information.",
+            "not_found": "Clinic not found",
+            "available_specialists": "Available Specialists",
+            "no_specialists": "No detailed specialist information available.",
+            "call": "Call",
+            "directions": "Get Directions",
+            "default_specialist": "Specialist"
+        }
     },
     "history": {
         "title": "History",
