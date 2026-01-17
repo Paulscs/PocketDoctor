@@ -287,19 +287,7 @@ export default function HistoryScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("@/assets/images/logoBlue.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <ThemedText style={styles.logoText}>POCKET DOCTOR</ThemedText>
-          </View>
-        </View>
-        <View style={styles.headerRight}>
-          <UserAvatar />
-        </View>
+        <ThemedText style={styles.pageTitle}>{t('history.title')}</ThemedText>
       </View>
 
       {isLoading && !refreshing ? (
@@ -336,7 +324,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
@@ -344,27 +332,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.borderGray,
   },
-  headerLeft: {
-    flex: 1,
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-  },
-  logo: {
-    width: 28,
-    height: 28,
-  },
-  logoText: {
-    fontSize: 12,
-    fontWeight: "700",
+
+  pageTitle: {
+    fontSize: 18,
+    fontWeight: "600",
     color: Colors.light.brandBlue,
-    letterSpacing: 0.5,
   },
   listContent: {
     padding: Spacing.lg,
