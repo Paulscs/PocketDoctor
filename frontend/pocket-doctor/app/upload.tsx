@@ -284,7 +284,7 @@ export default function UploadScreen() {
             color={Colors.light.brandBlue}
           />
         </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>{t('upload.title')}</ThemedText>
+        <ThemedText style={styles.headerTitle}></ThemedText>
       </View>
 
       <ScrollView

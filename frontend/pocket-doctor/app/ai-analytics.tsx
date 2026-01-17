@@ -177,7 +177,7 @@ export default function IAAnalyticsScreen() {
           <Ionicons name="arrow-back" size={24} color={Colors.light.brandBlue} />
         </TouchableOpacity>
 
-        <ThemedText style={styles.headerTitle}>{t('analytics.title')}</ThemedText>
+        <ThemedText style={styles.headerTitle}></ThemedText>
       </View>
 
       <ScrollView

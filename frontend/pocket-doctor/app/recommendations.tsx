@@ -61,7 +61,7 @@ export default function RecommendationsScreen() {
           <Ionicons name="arrow-back" size={24} color={Colors.light.brandBlue} />
         </TouchableOpacity>
 
-        <ThemedText style={styles.headerTitle}>{t('recommendations.title')}</ThemedText>
+        <ThemedText style={styles.headerTitle}></ThemedText>
       </View>
 
       <ScrollView
