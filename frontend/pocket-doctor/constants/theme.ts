@@ -59,10 +59,10 @@ export const Colors = {
     background: "#fff",
     tint: tintColorLight,
     icon: "#687076",
-    tabIconDefault: "#687076",
+    tabIconDefault: "#9b9b9b",
     tabIconSelected: tintColorLight,
     // Medical app specific colors
-    primary: "#007AFF",
+    primary: "#025CA7",
     secondary: "#34C759",
     danger: "#FF3B30",
     warning: "#FF9500",
