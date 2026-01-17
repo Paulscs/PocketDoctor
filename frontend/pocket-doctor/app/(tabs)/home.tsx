@@ -365,7 +365,7 @@ export default function HomeScreen() {
                     <Ionicons
                       name="document-text"
                       size={20}
-                      color={Colors.light.brandBlue}
+                      color={Colors.light.healthGreen}
                     />
                   </View>
                   <View style={styles.activityContent}>
