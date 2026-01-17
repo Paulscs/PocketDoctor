@@ -140,7 +140,7 @@ export default function HomeScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "normal": return Colors.light.success;
+      case "normal": return Colors.light.healthGreen;
       case "elevated": return Colors.light.warning;
       case "critical": return Colors.light.error;
       default: return Colors.light.gray;
@@ -489,7 +489,6 @@ const styles = StyleSheet.create({
   greetingSection: {
     paddingTop: Spacing.xl,
     paddingBottom: Spacing.md,
-    paddingHorizontal: Spacing.sm,
   },
   greeting: {
     fontSize: 24,
