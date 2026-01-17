@@ -228,33 +228,20 @@ export default function ChatScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: containerBg }]}>
       <View style={[styles.header, { backgroundColor: headerBg }]}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity
-            style={styles.menuButton}
-            onPress={handleMenuPress}
-            activeOpacity={0.7}
-            accessibilityLabel="Abrir menú de conversaciones"
-            accessibilityRole="button"
-          >
-            <IconSymbol
-              name="line.3.horizontal"
-              size={20}
-              color={Colors.light.brandBlue}
-            />
-          </TouchableOpacity>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("@/assets/images/logoBlue.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <ThemedText style={styles.logoText}>POCKET DOCTOR</ThemedText>
-          </View>
-        </View>
-        <View style={styles.headerRight}>
-          <ThemedText style={styles.pageTitle}>{t('chat.title')}</ThemedText>
-          <UserAvatar />
-        </View>
+        <TouchableOpacity
+          style={styles.menuButtonAbsolute}
+          onPress={handleMenuPress}
+          activeOpacity={0.7}
+          accessibilityLabel="Abrir menú de conversaciones"
+          accessibilityRole="button"
+        >
+          <IconSymbol
+            name="line.3.horizontal"
+            size={20}
+            color={Colors.light.brandBlue}
+          />
+        </TouchableOpacity>
+        <ThemedText style={styles.pageTitle}>{t('chat.title')}</ThemedText>
       </View>
 
       <ScrollView
@@ -415,65 +402,30 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.borderGray,
   },
-  headerLeft: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  menuButton: {
+  menuButtonAbsolute: {
+    position: "absolute",
+    left: Spacing.lg,
     width: 32,
     height: 32,
     borderRadius: BorderRadius.sm,
     backgroundColor: Colors.light.lightGray,
     justifyContent: "center",
     alignItems: "center",
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-  },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  logo: {
-    width: 32,
-    height: 32,
-  },
-  logoText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: Colors.light.brandBlue,
-    letterSpacing: 0.5,
+    zIndex: 10,
   },
   pageTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
     color: Colors.light.brandBlue,
   },
-  profileIcon: {
-    width: 32,
-    height: 32,
-    backgroundColor: Colors.light.brandBlue,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profileIconText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.light.white,
-  },
+
 
   chatContainer: {
     flex: 1,
