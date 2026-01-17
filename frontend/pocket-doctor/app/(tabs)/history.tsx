@@ -1,26 +1,28 @@
-import React from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
   Image,
   TouchableOpacity,
   Alert,
+  FlatList,
+  TextInput,
+  RefreshControl,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { Colors } from "@/constants/theme";
+import { router, useFocusEffect } from "expo-router";
+import { Colors, Spacing, BorderRadius } from "@/constants/theme";
 import { useAuthStore } from "@/src/store";
-import { useState, useCallback } from "react";
-import { useFocusEffect } from "expo-router";
 import { apiClient } from "@/src/utils/apiClient";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { CustomLoader } from "@/components/ui/CustomLoader";
 import { useTranslation } from "react-i18next";
+import { Card } from "@/components/ui/Card";
 
 interface MedicalResult {
   id: string;
@@ -31,11 +33,6 @@ interface MedicalResult {
   description: string;
   raw_data: any;
 }
-
-// API_BASE_URL removed
-
-// Mock removed
-
 
 const getResultIcon = (type: MedicalResult["type"]) => {
   switch (type) {
@@ -82,15 +79,16 @@ const getStatusText = (status: MedicalResult["status"], t: any) => {
 export default function HistoryScreen() {
   const { t } = useTranslation();
   const backgroundColor = useThemeColor(
-    { light: Colors.light.white, dark: Colors.dark.background },
+    { light: Colors.light.lightGray, dark: Colors.dark.background },
     "background"
   );
 
   const { session } = useAuthStore();
   const [results, setResults] = useState<MedicalResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch history when screen is focused
   useFocusEffect(
     useCallback(() => {
       fetchHistory();
@@ -101,7 +99,7 @@ export default function HistoryScreen() {
     if (!session?.access_token) return;
 
     try {
-      setIsLoading(true);
+      if (!refreshing) setIsLoading(true);
       const response = await apiClient("ocr-local/history", {
         token: session.access_token,
       });
@@ -110,27 +108,34 @@ export default function HistoryScreen() {
 
       const data = await response.json();
 
-      // Map DB to UI model
       const mappedResults: MedicalResult[] = data.map((item: any) => ({
         id: item.id.toString(),
         title: item.titulo || t('history.analysis'),
         date: item.created_at ? item.created_at.split("T")[0] : t('history.date_unknown'),
         type: item.tipo || "other",
-        status: item.estado === "alert" ? "elevated" : "normal", // simple mapping
+        status: item.estado === "alert" ? "elevated" : "normal",
         description: item.resumen || t('history.no_summary'),
         raw_data: item.datos_completos
       }));
+
+      // Sort by date descending (newest first)
+      mappedResults.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       setResults(mappedResults);
     } catch (error) {
       console.error("History fetch error:", error);
     } finally {
       setIsLoading(false);
+      setRefreshing(false);
     }
   };
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchHistory();
+  }, []);
+
   const handleResultPress = (result: MedicalResult) => {
-    console.log("Viewing result:", result.title);
     if (result.raw_data) {
       router.push({
         pathname: "/ai-analytics",
@@ -141,11 +146,8 @@ export default function HistoryScreen() {
     }
   };
 
-  const handleProfilePress = () => {
-    router.push("/(tabs)/profile");
-  };
-
-  const handleDeletePress = (id: string) => {
+  const handleDeletePress = (id: string, e: any) => {
+    e.stopPropagation(); // Prevent triggering item press
     Alert.alert(
       t('history.delete_title'),
       t('history.delete_confirmation'),
@@ -157,20 +159,16 @@ export default function HistoryScreen() {
           onPress: async () => {
             try {
               if (!session?.access_token) return;
-              // Optimistic update
               setResults(prev => prev.filter(item => item.id !== id));
-
               const res = await apiClient(`ocr-local/history/${id}`, {
                 method: "DELETE",
                 token: session.access_token
               });
-
               if (!res.ok) throw new Error("Failed to delete");
-
+              // verify deletion?
             } catch (error) {
               console.error("Delete error:", error);
               Alert.alert(t('common.error'), t('history.delete_error'));
-              // Revert if needed, but for MVP simple console log is ok or refetch
               fetchHistory();
             }
           }
@@ -179,55 +177,115 @@ export default function HistoryScreen() {
     );
   };
 
-  const renderResultItem = (result: MedicalResult) => (
-    <TouchableOpacity
-      key={result.id}
-      style={styles.resultItem}
-      onPress={() => handleResultPress(result)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.resultIcon}>
-        <Ionicons
-          name={getResultIcon(result.type) as keyof typeof Ionicons.glyphMap}
-          size={20}
-          color={Colors.light.brandBlue}
-        />
-      </View>
-      <View style={styles.resultContent}>
-        <ThemedText style={styles.resultTitle}>{result.title}</ThemedText>
-        <ThemedText style={styles.resultDescription} numberOfLines={3}>
-          {result.description}
-        </ThemedText>
-      </View>
-      <View style={styles.resultActions}>
-        <TouchableOpacity
-          onPress={() => handleDeletePress(result.id)}
-          style={{ padding: 4, marginRight: 8 }}
-        >
-          <Ionicons name="trash-outline" size={20} color={Colors.light.error} />
-        </TouchableOpacity>
+  const filteredResults = useMemo(() => {
+    if (!searchQuery) return results;
+    const query = searchQuery.toLowerCase();
+    return results.filter(
+      item =>
+        item.title.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query) ||
+        item.date.includes(query)
+    );
+  }, [results, searchQuery]);
 
-        <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: getStatusColor(result.status) },
-          ]}
-        >
-          <ThemedText style={styles.statusText}>
-            {getStatusText(result.status, t)}
-          </ThemedText>
-        </View>
-        <IconSymbol
-          name="chevron.right"
-          size={16}
-          color={Colors.light.placeholderGray}
+  const renderHeader = () => (
+    <View style={styles.listHeader}>
+      <View style={styles.titleSection}>
+        <ThemedText style={styles.title}>{t('history.medical_history')}</ThemedText>
+        <ThemedText style={styles.subtitle}>{t('history.subtitle', { count: results.length })}</ThemedText>
+      </View>
+
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color={Colors.light.placeholderGray} style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder={t('history.search_placeholder', 'Search history...')}
+          placeholderTextColor={Colors.light.placeholderGray}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          clearButtonMode="while-editing"
         />
       </View>
-    </TouchableOpacity>
+    </View>
+  );
+
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      {!isLoading && (
+        <>
+          <View style={styles.emptyIconContainer}>
+            <Ionicons name="document-text-outline" size={48} color={Colors.light.placeholderGray} />
+          </View>
+          <ThemedText style={styles.emptyText}>
+            {searchQuery ? t('history.no_results') : t('history.empty')}
+          </ThemedText>
+          {searchQuery ? (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <ThemedText style={styles.clearFilterText}>{t('common.clear_filters', 'Clear filters')}</ThemedText>
+            </TouchableOpacity>
+          ) : (
+            <ThemedText style={styles.emptySubtext}>
+              {t('history.empty_hint', 'Scan your first medical document to see it here.')}
+            </ThemedText>
+          )}
+        </>
+      )}
+    </View>
+  );
+
+  const renderItem = ({ item }: { item: MedicalResult }) => (
+    <Card
+      style={styles.cardResult}
+      variant="elevated"
+    >
+      <TouchableOpacity
+        onPress={() => handleResultPress(item)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.dateBadge}>
+            <Ionicons name="calendar-outline" size={12} color={Colors.light.brandBlue} />
+            <ThemedText style={styles.dateText}>{item.date}</ThemedText>
+          </View>
+          <TouchableOpacity onPress={(e) => handleDeletePress(item.id, e)} hitSlop={10}>
+            <Ionicons name="trash-outline" size={18} color={Colors.light.placeholderGray} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.cardContent}>
+          <View style={[styles.iconContainer, { backgroundColor: Colors.light.friendlyBlueBg }]}>
+            <Ionicons
+              name={getResultIcon(item.type) as keyof typeof Ionicons.glyphMap}
+              size={24}
+              color={Colors.light.brandBlue}
+            />
+          </View>
+          <View style={styles.textContainer}>
+            <ThemedText style={styles.resultTitle}>{item.title}</ThemedText>
+            <ThemedText style={styles.resultDescription} numberOfLines={2}>
+              {item.description}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.cardFooter}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
+            <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
+            <ThemedText style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+              {getStatusText(item.status, t)}
+            </ThemedText>
+          </View>
+          <View style={styles.viewDetails}>
+            <ThemedText style={styles.viewDetailsText}>{t('common.view', 'View Details')}</ThemedText>
+            <Ionicons name="chevron-forward" size={14} color={Colors.light.brandBlue} />
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Card>
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.logoContainer}>
@@ -240,39 +298,34 @@ export default function HistoryScreen() {
           </View>
         </View>
         <View style={styles.headerRight}>
-          <ThemedText style={styles.pageTitle}>{t('history.title')}</ThemedText>
           <UserAvatar />
         </View>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.titleSection}>
-          <ThemedText style={styles.title}>{t('history.medical_history')}</ThemedText>
+      {isLoading && !refreshing ? (
+        <View style={styles.loadingContainer}>
+          <CustomLoader />
+          <ThemedText style={styles.loadingText}>{t('history.loading')}</ThemedText>
         </View>
-
-        <View style={styles.resultsList}>
-          {isLoading ? (
-            <View style={{ alignItems: 'center', marginTop: 40 }}>
-              <CustomLoader />
-              <ThemedText style={{ textAlign: 'center', marginTop: 20 }}>{t('history.loading')}</ThemedText>
-            </View>
-          ) : results.length > 0 ? (
-            results.map(renderResultItem)
-          ) : (
-            null
-          )}
-        </View>
-
-        <View style={styles.emptySpace}>
-          <ThemedText style={styles.emptyText}>
-            {t('history.empty')}
-          </ThemedText>
-        </View>
-      </ScrollView>
+      ) : (
+        <FlatList
+          data={filteredResults}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={renderEmpty}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[Colors.light.brandBlue]}
+              tintColor={Colors.light.brandBlue}
+            />
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -285,8 +338,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.light.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.borderGray,
   },
@@ -296,16 +350,15 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
   },
   logoContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: Spacing.xs,
   },
   logo: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
   },
   logoText: {
     fontSize: 12,
@@ -313,103 +366,174 @@ const styles = StyleSheet.create({
     color: Colors.light.brandBlue,
     letterSpacing: 0.5,
   },
-  pageTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.brandBlue,
+  listContent: {
+    padding: Spacing.lg,
+    paddingBottom: Spacing.xxl,
   },
-  profileIcon: {
-    width: 32,
-    height: 32,
-    backgroundColor: Colors.light.brandBlue,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profileIconText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.light.white,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+  listHeader: {
+    marginBottom: Spacing.lg,
   },
   titleSection: {
-    paddingTop: 24,
-    paddingBottom: 16,
+    marginBottom: Spacing.md,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "700",
+    fontSize: 28,
+    fontWeight: "800",
     color: Colors.light.brandBlue,
+    letterSpacing: -0.5,
   },
-  resultsList: {
-    gap: 12,
+  subtitle: {
+    fontSize: 14,
+    color: Colors.light.placeholderGray,
+    marginTop: 4,
   },
-  resultItem: {
-    backgroundColor: Colors.light.lightBlue,
-    borderRadius: 12,
-    padding: 16,
+  searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    shadowColor: Colors.light.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  resultIcon: {
-    width: 40,
-    height: 40,
     backgroundColor: Colors.light.white,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.md,
+    height: 48,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  resultContent: {
+  searchIcon: {
+    marginRight: Spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    height: '100%',
+    fontSize: 16,
+    color: Colors.light.text,
+  },
+  cardResult: {
+    marginBottom: Spacing.md,
+    padding: Spacing.md,
+    backgroundColor: Colors.light.white,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.sm,
+  },
+  dateBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.light.lightGray,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.sm,
+    gap: 4,
+  },
+  dateText: {
+    fontSize: 12,
+    color: Colors.light.gray,
+    fontWeight: '500',
+  },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.circle,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  textContainer: {
     flex: 1,
   },
   resultTitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.white,
-    marginBottom: 4,
+    fontWeight: '700',
+    color: Colors.light.text,
+    marginBottom: 2,
   },
   resultDescription: {
     fontSize: 14,
-    color: Colors.light.white,
-    opacity: 0.9,
+    color: Colors.light.gray,
+    lineHeight: 20,
   },
-  resultActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.borderGray,
+    paddingTop: Spacing.sm,
   },
   statusBadge: {
-    paddingHorizontal: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.sm,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: BorderRadius.circle,
+    gap: 6,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: Colors.light.white,
+    fontWeight: '600',
   },
-  emptySpace: {
+  viewDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  viewDetailsText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.light.brandBlue,
+  },
+  loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingTop: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: Spacing.md,
+    color: Colors.light.gray,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingTop: Spacing.xxl,
+  },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.light.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 18,
+    fontWeight: '600',
     color: Colors.light.gray,
-    textAlign: "center",
-    fontStyle: "italic",
+    marginBottom: Spacing.xs,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: Colors.light.placeholderGray,
+    textAlign: 'center',
+  },
+  clearFilterText: {
+    fontSize: 14,
+    color: Colors.light.brandBlue,
+    fontWeight: '600',
+    marginTop: Spacing.sm,
   },
 });
