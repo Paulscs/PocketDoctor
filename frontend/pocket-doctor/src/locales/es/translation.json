@@ -574,5 +574,12 @@
         "possible_risks": "Posibles Riesgos",
         "view_recommendations": "Ver recomendaciones detalladas",
         "chat_assistant": "Chat con Asistente"
+    },
+    "recommendations": {
+        "title": "Recomendaciones"
+    },
+    "validate": {
+        "title": "Validar Datos",
+        "subtitle": "Validar datos extraídos"
     }
 }

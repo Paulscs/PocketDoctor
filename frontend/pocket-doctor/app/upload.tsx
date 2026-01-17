@@ -284,17 +284,7 @@ export default function UploadScreen() {
             color={Colors.light.brandBlue}
           />
         </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("@/assets/images/logoBlue.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <ThemedText style={styles.logoText}>POCKET DOCTOR</ThemedText>
-          </View>
-        </View>
-        <UserAvatar />
+        <ThemedText style={styles.headerTitle}>{t('upload.title')}</ThemedText>
       </View>
 
       <ScrollView
@@ -456,6 +446,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
@@ -463,39 +454,15 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
-    marginRight: 12,
+    position: "absolute",
+    left: 20,
+    zIndex: 10,
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  logo: {
-    width: 32,
-    height: 32,
-    marginRight: 12,
-  },
-  logoText: {
+  headerTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: Colors.light.brandBlue,
-    lineHeight: 22,
-  },
-  profileIcon: {
-    width: 32,
-    height: 32,
-    backgroundColor: Colors.light.brandBlue,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profileIconText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.light.white,
+    textAlign: "center",
   },
   scrollView: {
     flex: 1,
