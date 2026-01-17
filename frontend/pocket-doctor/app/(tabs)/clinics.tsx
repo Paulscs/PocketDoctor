@@ -253,24 +253,8 @@ export default function ClinicsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("@/assets/images/logoBlue.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <ThemedText style={styles.logoText}>POCKET DOCTOR</ThemedText>
-          </View>
-        </View>
-        <View style={styles.headerRight}>
-          <View style={styles.titleContainer}>
-            <ThemedText style={styles.pageTitle}>{t('clinics.title')}</ThemedText>
-            <ThemedText style={styles.pageTitle}>{t('clinics.title_specialists')}</ThemedText>
-          </View>
-          <View style={styles.profileIcon}>
-            <UserAvatar size={32} />
-          </View>
+        <View style={styles.titleContainer}>
+          <ThemedText style={styles.pageTitle}>{t('clinics.title')} {t('clinics.title_specialists')}</ThemedText>
         </View>
       </View>
 
@@ -415,64 +399,22 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.borderGray,
   },
-  headerLeft: {
-    flex: 1,
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
   titleContainer: {
     alignItems: "center",
   },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  logo: {
-    width: 32,
-    height: 32,
-  },
-  logoText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: Colors.light.brandBlue,
-    letterSpacing: 0.5,
-  },
   pageTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
     color: Colors.light.brandBlue,
   },
-  profileIcon: {
-    width: 32,
-    height: 32,
-    backgroundColor: Colors.light.brandBlue,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profileIconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profileIconText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.light.white,
-  },
+
 
   content: {
     backgroundColor: Colors.light.lightGray,
