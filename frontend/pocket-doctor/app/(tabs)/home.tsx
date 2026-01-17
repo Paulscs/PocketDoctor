@@ -183,19 +183,8 @@ export default function HomeScreen() {
     <SafeAreaView style={containerStyle}>
       {/* Custom Header */}
       <View style={headerStyle}>
-        <View style={styles.headerLeft}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("@/assets/images/logoBlue.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <ThemedText style={styles.logoText}>POCKET DOCTOR</ThemedText>
-          </View>
-        </View>
         <View style={styles.headerRight}>
           <ThemedText style={styles.pageTitle}>{t('home.title')}</ThemedText>
-          <UserAvatar />
         </View>
       </View>
 
@@ -440,10 +429,11 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
+    backgroundColor: Colors.light.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.borderGray,
   },
@@ -471,7 +461,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   pageTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
     color: Colors.light.brandBlue,
   },
