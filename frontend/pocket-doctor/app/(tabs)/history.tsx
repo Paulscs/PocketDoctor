@@ -286,9 +286,7 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-      <View style={styles.header}>
-        <ThemedText style={styles.pageTitle}>{t('history.title')}</ThemedText>
-      </View>
+
 
       {isLoading && !refreshing ? (
         <View style={styles.loadingContainer}>
@@ -322,22 +320,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.light.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.borderGray,
-  },
 
-  pageTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.light.brandBlue,
-  },
   listContent: {
     padding: Spacing.lg,
     paddingBottom: Spacing.xxl,

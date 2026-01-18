@@ -252,11 +252,7 @@ export default function ClinicsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
-      <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <ThemedText style={styles.pageTitle}>{t('clinics.title')} {t('clinics.title_specialists')}</ThemedText>
-        </View>
-      </View>
+
 
       {!errorState ? (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -397,23 +393,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  header: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.borderGray,
-  },
-  titleContainer: {
-    alignItems: "center",
-  },
-  pageTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.light.brandBlue,
-  },
+
 
 
   content: {

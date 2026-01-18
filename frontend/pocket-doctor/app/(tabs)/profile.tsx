@@ -204,11 +204,9 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
-      <View style={styles.header}>
-        <View style={styles.headerSpacer} />
-        <ThemedText style={styles.pageTitle}>{t("profile.title")}</ThemedText>
+      <View style={{ flex: 1 }}> {/* Wrapper to ensure relative positioning context if needed, though SafeAreaView handles flex:1 */}
         <TouchableOpacity
-          style={styles.editHeaderBtn}
+          style={styles.floatingEditBtn}
           onPress={() => isEditing ? handleSaveChanges() : setIsEditing(true)}
           disabled={isSaving}
         >
@@ -220,204 +218,204 @@ export default function ProfileScreen() {
             </ThemedText>
           )}
         </TouchableOpacity>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Profile Card */}
+          <View style={styles.profileHeaderCard}>
+            <UserAvatar size={80} />
+            <ThemedText style={styles.fullName}>
+              {profile.nombre || t('profile.names')} {profile.apellido || t('profile.surnames')}
+            </ThemedText>
+            <ThemedText style={styles.emailText}>{profile.email}</ThemedText>
+          </View>
+
+          {/* Vital Stats Row */}
+          <View style={styles.statsRow}>
+            <Card style={styles.statCard} variant="elevated">
+              <ThemedText style={styles.statLabel}>{t('profile.height')}</ThemedText>
+              {isEditing ? (
+                <View style={styles.editStatRow}>
+                  <TextInput
+                    value={profile.altura_cm?.toString()}
+                    onChangeText={t => updateProfile("altura_cm", t ? Number(t) : undefined)}
+                    keyboardType="numeric"
+                    style={styles.statInput}
+                    placeholder="0"
+                  />
+                  <ThemedText style={styles.statUnit}>cm</ThemedText>
+                </View>
+              ) : (
+                <ThemedText style={styles.statValue}>{profile.altura_cm || '--'} <ThemedText style={styles.statUnit}>cm</ThemedText></ThemedText>
+              )}
+            </Card>
+            <Card style={styles.statCard} variant="elevated">
+              <ThemedText style={styles.statLabel}>{t('profile.weight')}</ThemedText>
+              {isEditing ? (
+                <View style={styles.editStatRow}>
+                  <TextInput
+                    value={profile.peso_kg?.toString()}
+                    onChangeText={t => updateProfile("peso_kg", t ? Number(t) : undefined)}
+                    keyboardType="numeric"
+                    style={styles.statInput}
+                    placeholder="0"
+                  />
+                  <ThemedText style={styles.statUnit}>kg</ThemedText>
+                </View>
+              ) : (
+                <ThemedText style={styles.statValue}>{profile.peso_kg || '--'} <ThemedText style={styles.statUnit}>kg</ThemedText></ThemedText>
+              )}
+            </Card>
+          </View>
+
+          {/* Personal Info */}
+          <SectionHeader title={t("profile.personal_info")} />
+          <Card variant="elevated" style={styles.sectionCard}>
+            {isEditing ? (
+              <View style={styles.formGroup}>
+                <ThemedText style={styles.inputLabel}>{t("profile.names")}</ThemedText>
+                <TextInput
+                  style={styles.input}
+                  value={profile.nombre}
+                  onChangeText={t => updateProfile('nombre', t)}
+                  placeholder={t("profile.names")}
+                />
+                <View style={styles.divider} />
+
+                <ThemedText style={styles.inputLabel}>{t("profile.surnames")}</ThemedText>
+                <TextInput
+                  style={styles.input}
+                  value={profile.apellido}
+                  onChangeText={t => updateProfile('apellido', t)}
+                  placeholder={t("profile.surnames")}
+                />
+                <View style={styles.divider} />
+
+                <ThemedText style={styles.inputLabel}>{t("profile.birth_date")}</ThemedText>
+                <TouchableOpacity onPress={showDatePicker} style={styles.dateInputBtn}>
+                  <ThemedText style={profile.fecha_nacimiento ? styles.inputText : styles.placeholderText}>
+                    {profile.fecha_nacimiento || "YYYY-MM-DD"}
+                  </ThemedText>
+                  <Ionicons name="calendar-outline" size={20} color={Colors.light.brandBlue} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                <ListItem
+                  title={t("profile.names")}
+                  subtitle={`${profile.nombre || ''} ${profile.apellido || ''}`}
+                  leftIcon="person-outline"
+                  showChevron={false}
+                  style={styles.cleanListItem}
+                />
+                <View style={styles.separator} />
+                <ListItem
+                  title={t("profile.birth_date")}
+                  subtitle={profile.fecha_nacimiento || t('common.not_set', 'Not Set')}
+                  leftIcon="calendar-outline"
+                  showChevron={false}
+                  style={styles.cleanListItem}
+                />
+              </>
+            )}
+          </Card>
+
+          {/* Medical History */}
+          <SectionHeader title={t("profile.medical_info")} />
+          <Card variant="elevated" style={styles.sectionCard}>
+            <View style={styles.medicalSectionPart}>
+              <View style={styles.medicalHeaderRow}>
+                <ThemedText style={styles.medicalLabel}>{t("profile.allergies")}</ThemedText>
+                {isEditing && (
+                  <TouchableOpacity onPress={() => openItemModal('alergias')}>
+                    <Ionicons name="add-circle" size={24} color={Colors.light.brandBlue} />
+                  </TouchableOpacity>
+                )}
+              </View>
+              <View style={styles.chipContainer}>
+                {profile.alergias && profile.alergias.length > 0 ? (
+                  profile.alergias.map((item, idx) => (
+                    <View key={idx} style={styles.chip}>
+                      <ThemedText style={styles.chipText}>{item}</ThemedText>
+                      {isEditing && (
+                        <TouchableOpacity onPress={() => {
+                          const newItems = profile.alergias?.filter((_, i) => i !== idx);
+                          updateProfile('alergias', newItems);
+                        }} style={styles.chipRemove}>
+                          <Ionicons name="close" size={12} color={Colors.light.white} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  ))
+                ) : (
+                  <ThemedText style={styles.emptyText}>{t("profile.no_allergies")}</ThemedText>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.separator} />
+
+            <View style={styles.medicalSectionPart}>
+              <View style={styles.medicalHeaderRow}>
+                <ThemedText style={styles.medicalLabel}>{t("profile.medical_conditions")}</ThemedText>
+                {isEditing && (
+                  <TouchableOpacity onPress={() => openItemModal('condiciones_medicas')}>
+                    <Ionicons name="add-circle" size={24} color={Colors.light.brandBlue} />
+                  </TouchableOpacity>
+                )}
+              </View>
+              <View style={styles.chipContainer}>
+                {profile.condiciones_medicas && profile.condiciones_medicas.length > 0 ? (
+                  profile.condiciones_medicas.map((item, idx) => (
+                    <View key={idx} style={styles.chip}>
+                      <ThemedText style={styles.chipText}>{item}</ThemedText>
+                      {isEditing && (
+                        <TouchableOpacity onPress={() => {
+                          const newItems = profile.condiciones_medicas?.filter((_, i) => i !== idx);
+                          updateProfile('condiciones_medicas', newItems);
+                        }} style={styles.chipRemove}>
+                          <Ionicons name="close" size={12} color={Colors.light.white} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  ))
+                ) : (
+                  <ThemedText style={styles.emptyText}>{t("profile.no_conditions")}</ThemedText>
+                )}
+              </View>
+            </View>
+          </Card>
+
+          {/* Preferences */}
+          <SectionHeader title={t("profile.settings")} />
+          <Card variant="elevated" style={styles.sectionCard}>
+            <View style={{ padding: Spacing.sm }}>
+              <LanguageSwitcher />
+            </View>
+          </Card>
+
+          {/* Account Actions */}
+          <SectionHeader title={t("profile.support")} />
+          <ListItem
+            title={t("profile.help_center")}
+            leftIcon="help-buoy-outline"
+            onPress={() => router.push('/help')}
+            style={styles.menuItem}
+          />
+          <ListItem
+            title={t("profile.logout")}
+            leftIcon="log-out-outline"
+            variant="danger"
+            onPress={handleLogout}
+            style={styles.menuItem}
+          />
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
       </View>
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Profile Card */}
-        <View style={styles.profileHeaderCard}>
-          <UserAvatar size={80} />
-          <ThemedText style={styles.fullName}>
-            {profile.nombre || t('profile.names')} {profile.apellido || t('profile.surnames')}
-          </ThemedText>
-          <ThemedText style={styles.emailText}>{profile.email}</ThemedText>
-        </View>
-
-        {/* Vital Stats Row */}
-        <View style={styles.statsRow}>
-          <Card style={styles.statCard} variant="elevated">
-            <ThemedText style={styles.statLabel}>{t('profile.height')}</ThemedText>
-            {isEditing ? (
-              <View style={styles.editStatRow}>
-                <TextInput
-                  value={profile.altura_cm?.toString()}
-                  onChangeText={t => updateProfile("altura_cm", t ? Number(t) : undefined)}
-                  keyboardType="numeric"
-                  style={styles.statInput}
-                  placeholder="0"
-                />
-                <ThemedText style={styles.statUnit}>cm</ThemedText>
-              </View>
-            ) : (
-              <ThemedText style={styles.statValue}>{profile.altura_cm || '--'} <ThemedText style={styles.statUnit}>cm</ThemedText></ThemedText>
-            )}
-          </Card>
-          <Card style={styles.statCard} variant="elevated">
-            <ThemedText style={styles.statLabel}>{t('profile.weight')}</ThemedText>
-            {isEditing ? (
-              <View style={styles.editStatRow}>
-                <TextInput
-                  value={profile.peso_kg?.toString()}
-                  onChangeText={t => updateProfile("peso_kg", t ? Number(t) : undefined)}
-                  keyboardType="numeric"
-                  style={styles.statInput}
-                  placeholder="0"
-                />
-                <ThemedText style={styles.statUnit}>kg</ThemedText>
-              </View>
-            ) : (
-              <ThemedText style={styles.statValue}>{profile.peso_kg || '--'} <ThemedText style={styles.statUnit}>kg</ThemedText></ThemedText>
-            )}
-          </Card>
-        </View>
-
-        {/* Personal Info */}
-        <SectionHeader title={t("profile.personal_info")} />
-        <Card variant="elevated" style={styles.sectionCard}>
-          {isEditing ? (
-            <View style={styles.formGroup}>
-              <ThemedText style={styles.inputLabel}>{t("profile.names")}</ThemedText>
-              <TextInput
-                style={styles.input}
-                value={profile.nombre}
-                onChangeText={t => updateProfile('nombre', t)}
-                placeholder={t("profile.names")}
-              />
-              <View style={styles.divider} />
-
-              <ThemedText style={styles.inputLabel}>{t("profile.surnames")}</ThemedText>
-              <TextInput
-                style={styles.input}
-                value={profile.apellido}
-                onChangeText={t => updateProfile('apellido', t)}
-                placeholder={t("profile.surnames")}
-              />
-              <View style={styles.divider} />
-
-              <ThemedText style={styles.inputLabel}>{t("profile.birth_date")}</ThemedText>
-              <TouchableOpacity onPress={showDatePicker} style={styles.dateInputBtn}>
-                <ThemedText style={profile.fecha_nacimiento ? styles.inputText : styles.placeholderText}>
-                  {profile.fecha_nacimiento || "YYYY-MM-DD"}
-                </ThemedText>
-                <Ionicons name="calendar-outline" size={20} color={Colors.light.brandBlue} />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <>
-              <ListItem
-                title={t("profile.names")}
-                subtitle={`${profile.nombre || ''} ${profile.apellido || ''}`}
-                leftIcon="person-outline"
-                showChevron={false}
-                style={styles.cleanListItem}
-              />
-              <View style={styles.separator} />
-              <ListItem
-                title={t("profile.birth_date")}
-                subtitle={profile.fecha_nacimiento || t('common.not_set', 'Not Set')}
-                leftIcon="calendar-outline"
-                showChevron={false}
-                style={styles.cleanListItem}
-              />
-            </>
-          )}
-        </Card>
-
-        {/* Medical History */}
-        <SectionHeader title={t("profile.medical_info")} />
-        <Card variant="elevated" style={styles.sectionCard}>
-          <View style={styles.medicalSectionPart}>
-            <View style={styles.medicalHeaderRow}>
-              <ThemedText style={styles.medicalLabel}>{t("profile.allergies")}</ThemedText>
-              {isEditing && (
-                <TouchableOpacity onPress={() => openItemModal('alergias')}>
-                  <Ionicons name="add-circle" size={24} color={Colors.light.brandBlue} />
-                </TouchableOpacity>
-              )}
-            </View>
-            <View style={styles.chipContainer}>
-              {profile.alergias && profile.alergias.length > 0 ? (
-                profile.alergias.map((item, idx) => (
-                  <View key={idx} style={styles.chip}>
-                    <ThemedText style={styles.chipText}>{item}</ThemedText>
-                    {isEditing && (
-                      <TouchableOpacity onPress={() => {
-                        const newItems = profile.alergias?.filter((_, i) => i !== idx);
-                        updateProfile('alergias', newItems);
-                      }} style={styles.chipRemove}>
-                        <Ionicons name="close" size={12} color={Colors.light.white} />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                ))
-              ) : (
-                <ThemedText style={styles.emptyText}>{t("profile.no_allergies")}</ThemedText>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.separator} />
-
-          <View style={styles.medicalSectionPart}>
-            <View style={styles.medicalHeaderRow}>
-              <ThemedText style={styles.medicalLabel}>{t("profile.medical_conditions")}</ThemedText>
-              {isEditing && (
-                <TouchableOpacity onPress={() => openItemModal('condiciones_medicas')}>
-                  <Ionicons name="add-circle" size={24} color={Colors.light.brandBlue} />
-                </TouchableOpacity>
-              )}
-            </View>
-            <View style={styles.chipContainer}>
-              {profile.condiciones_medicas && profile.condiciones_medicas.length > 0 ? (
-                profile.condiciones_medicas.map((item, idx) => (
-                  <View key={idx} style={styles.chip}>
-                    <ThemedText style={styles.chipText}>{item}</ThemedText>
-                    {isEditing && (
-                      <TouchableOpacity onPress={() => {
-                        const newItems = profile.condiciones_medicas?.filter((_, i) => i !== idx);
-                        updateProfile('condiciones_medicas', newItems);
-                      }} style={styles.chipRemove}>
-                        <Ionicons name="close" size={12} color={Colors.light.white} />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                ))
-              ) : (
-                <ThemedText style={styles.emptyText}>{t("profile.no_conditions")}</ThemedText>
-              )}
-            </View>
-          </View>
-        </Card>
-
-        {/* Preferences */}
-        <SectionHeader title={t("profile.settings")} />
-        <Card variant="elevated" style={styles.sectionCard}>
-          <View style={{ padding: Spacing.sm }}>
-            <LanguageSwitcher />
-          </View>
-        </Card>
-
-        {/* Account Actions */}
-        <SectionHeader title={t("profile.support")} />
-        <ListItem
-          title={t("profile.help_center")}
-          leftIcon="help-buoy-outline"
-          onPress={() => router.push('/help')}
-          style={styles.menuItem}
-        />
-        <ListItem
-          title={t("profile.logout")}
-          leftIcon="log-out-outline"
-          variant="danger"
-          onPress={handleLogout}
-          style={styles.menuItem}
-        />
-
-        <View style={{ height: 40 }} />
-      </ScrollView>
 
       {/* Modal for adding items */}
       <Modal
@@ -484,25 +482,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.light.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.borderGray,
-  },
-  headerSpacer: { width: 40 },
-  pageTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.light.brandBlue,
-  },
-  editHeaderBtn: {
-    minWidth: 40,
-    alignItems: 'flex-end',
+  floatingEditBtn: {
+    position: 'absolute',
+    top: Spacing.md,
+    right: Spacing.lg,
+    zIndex: 100,
+    backgroundColor: 'rgba(255,255,255,0.9)', // Slight background for visibility
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: Colors.light.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   editHeaderBtnText: {
     fontSize: 16,
