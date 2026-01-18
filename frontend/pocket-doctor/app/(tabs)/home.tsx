@@ -182,12 +182,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={containerStyle}>
       {/* Custom Header */}
-      <View style={headerStyle}>
-        <View style={styles.headerRight}>
-          <ThemedText style={styles.pageTitle}>{t('home.title')}</ThemedText>
-        </View>
-      </View>
-
+     
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
