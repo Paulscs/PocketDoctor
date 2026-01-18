@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   sectionCard: {
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
     padding: 0, // Reset default padding to handle list items better
   },
   cleanListItem: {
