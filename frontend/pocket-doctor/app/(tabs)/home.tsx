@@ -182,7 +182,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={containerStyle}>
       {/* Custom Header */}
-     
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -356,37 +356,35 @@ export default function HomeScreen() {
             {recentActivities.length > 0 ? (
               // 1. Agregamos el segundo parámetro 'index' aquí
               recentActivities.map((activity, index) => (
-                <View 
-                  key={activity.id} 
-                  style={[
-                    styles.activityItem,
-                    // 2. Si es el último elemento, anulamos el borde inferior
-                    index === recentActivities.length - 1 && { borderBottomWidth: 0, borderBottomColor: 'transparent' }
-                  ]}
-                >
-                  <View style={styles.activityIcon}>
-                    <Ionicons
-                      name="document-text"
-                      size={20}
-                      color={Colors.light.healthGreen}
-                    />
-                  </View>
-                  <View style={styles.activityContent}>
-                    <ThemedText style={styles.activityTitle}>
-                      {activity.title || t('home.analysis')}
-                    </ThemedText>
-                    <ThemedText style={styles.activityTime}>
-                      {formatTimeAgo(activity.date)}
-                    </ThemedText>
-                  </View>
+                <View key={activity.id}>
                   <View
-                    style={[
-                      styles.statusPill,
-                      { backgroundColor: getStatusColor(activity.status) },
-                    ]}
+                    style={styles.activityItem}
                   >
-                    <ThemedText style={styles.statusText}>{getStatusText(activity.status)}</ThemedText>
+                    <View style={styles.activityIcon}>
+                      <Ionicons
+                        name="document-text"
+                        size={20}
+                        color={Colors.light.healthGreen}
+                      />
+                    </View>
+                    <View style={styles.activityContent}>
+                      <ThemedText style={styles.activityTitle}>
+                        {activity.title || t('home.analysis')}
+                      </ThemedText>
+                      <ThemedText style={styles.activityTime}>
+                        {formatTimeAgo(activity.date)}
+                      </ThemedText>
+                    </View>
+                    <View
+                      style={[
+                        styles.statusPill,
+                        { backgroundColor: getStatusColor(activity.status) },
+                      ]}
+                    >
+                      <ThemedText style={styles.statusText}>{getStatusText(activity.status)}</ThemedText>
+                    </View>
                   </View>
+                  {index < recentActivities.length - 1 && <View style={styles.separator} />}
                 </View>
               ))
             ) : (
@@ -602,7 +600,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     paddingHorizontal: Spacing.sm,
     paddingBottom: Spacing.xs,
-    
+
   },
   cardFooterText: {
     fontSize: 12,
@@ -610,7 +608,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     flex: 1,
     marginRight: 12,
-    lineHeight: 14,    
+    lineHeight: 14,
   },
 
   activitiesSection: {
@@ -632,19 +630,24 @@ const styles = StyleSheet.create({
   activitiesList: {
     backgroundColor: Colors.light.white,
     borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+    padding: 0, // Similar to profile sectionCard
     shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    overflow: 'hidden', // Ensure children don't bleed out
   },
   activityItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.borderGray,
+    paddingHorizontal: Spacing.md, // Added padding content
+  },
+  separator: {
+    height: 1,
+    backgroundColor: Colors.light.borderGray,
+    marginLeft: Spacing.lg,
   },
   activityIcon: {
     width: 40,
