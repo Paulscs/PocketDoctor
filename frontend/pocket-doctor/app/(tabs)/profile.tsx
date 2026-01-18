@@ -205,25 +205,26 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
       <View style={{ flex: 1 }}> {/* Wrapper to ensure relative positioning context if needed, though SafeAreaView handles flex:1 */}
-        <TouchableOpacity
-          style={styles.floatingEditBtn}
-          onPress={() => isEditing ? handleSaveChanges() : setIsEditing(true)}
-          disabled={isSaving}
-        >
-          {isSaving ? (
-            <ActivityIndicator size="small" color={Colors.light.brandBlue} />
-          ) : (
-            <ThemedText style={styles.editHeaderBtnText}>
-              {isEditing ? t("common.save", "Done") : t("common.edit", "Edit")}
-            </ThemedText>
-          )}
-        </TouchableOpacity>
+
 
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          <TouchableOpacity
+            style={styles.floatingEditBtn}
+            onPress={() => isEditing ? handleSaveChanges() : setIsEditing(true)}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <ActivityIndicator size="small" color={Colors.light.brandBlue} />
+            ) : (
+              <ThemedText style={styles.editHeaderBtnText}>
+                {isEditing ? t("common.save", "Done") : t("common.edit", "Edit")}
+              </ThemedText>
+            )}
+          </TouchableOpacity>
           {/* Profile Card */}
           <View style={styles.profileHeaderCard}>
             <UserAvatar size={80} />
