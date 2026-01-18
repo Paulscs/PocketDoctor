@@ -227,28 +227,29 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: containerBg }]}>
-      <View style={[styles.header, { backgroundColor: headerBg }]}>
-        <TouchableOpacity
-          style={styles.menuButtonAbsolute}
-          onPress={handleMenuPress}
-          activeOpacity={0.7}
-          accessibilityLabel="Abrir menú de conversaciones"
-          accessibilityRole="button"
-        >
-          <IconSymbol
-            name="line.3.horizontal"
-            size={20}
-            color={Colors.light.brandBlue}
-          />
-        </TouchableOpacity>
-        <ThemedText style={styles.pageTitle}>{t('chat.title')}</ThemedText>
-      </View>
+
 
       <ScrollView
         style={styles.chatContainer}
         contentContainerStyle={styles.chatContent}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.headerSection}>
+          <TouchableOpacity
+            style={styles.menuButtonInline}
+            onPress={handleMenuPress}
+            activeOpacity={0.7}
+            accessibilityLabel="Abrir menú de conversaciones"
+            accessibilityRole="button"
+          >
+            <IconSymbol
+              name="line.3.horizontal"
+              size={24}
+              color={Colors.light.brandBlue}
+            />
+          </TouchableOpacity>
+          <ThemedText style={styles.headerTitle}>{t('chat.title')}</ThemedText>
+        </View>
         {messages.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconContainer}>
@@ -400,31 +401,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  header: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.borderGray,
-  },
-  menuButtonAbsolute: {
-    position: "absolute",
-    left: Spacing.lg,
-    width: 32,
-    height: 32,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.light.lightGray,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 10,
-  },
-  pageTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.light.brandBlue,
-  },
+
 
 
   chatContainer: {
@@ -433,9 +410,35 @@ const styles = StyleSheet.create({
   },
   chatContent: {
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
     paddingBottom: Spacing.sm,
     flexGrow: 1,
+  },
+
+  // New Header Styles
+  headerSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.lg,
+    gap: Spacing.md,
+  },
+  menuButtonInline: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.light.white,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: Colors.light.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: Colors.light.brandBlue,
   },
 
   messageContainer: {
@@ -526,6 +529,7 @@ const styles = StyleSheet.create({
   warningSection: {
     marginTop: Spacing.md,
     paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   warningCard: {
     backgroundColor: Colors.light.warningBg,

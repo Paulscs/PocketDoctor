@@ -354,8 +354,16 @@ export default function HomeScreen() {
 
           <View style={styles.activitiesList}>
             {recentActivities.length > 0 ? (
-              recentActivities.map((activity) => (
-                <View key={activity.id} style={styles.activityItem}>
+              // 1. Agregamos el segundo parámetro 'index' aquí
+              recentActivities.map((activity, index) => (
+                <View 
+                  key={activity.id} 
+                  style={[
+                    styles.activityItem,
+                    // 2. Si es el último elemento, anulamos el borde inferior
+                    index === recentActivities.length - 1 && { borderBottomWidth: 0, borderBottomColor: 'transparent' }
+                  ]}
+                >
                   <View style={styles.activityIcon}>
                     <Ionicons
                       name="document-text"
@@ -396,21 +404,6 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
             )}
-          </View>
-        </View>
-
-        {/* Warning */}
-        <View style={styles.warningSection}>
-          <View style={styles.warningCard}>
-            <View style={styles.warningIcon}>
-              <Ionicons name="warning" size={20} color={Colors.light.white} />
-            </View>
-            <View style={styles.warningContent}>
-              <ThemedText style={styles.warningTitle}>{t('home.warning_title')}</ThemedText>
-              <ThemedText style={styles.warningText}>
-                {t('home.warning_text')}
-              </ThemedText>
-            </View>
           </View>
         </View>
       </ScrollView>
@@ -586,6 +579,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: Spacing.sm,
+    marginTop: "auto",
   },
   featureTag: {
     flexDirection: "row",
@@ -608,6 +602,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     paddingHorizontal: Spacing.sm,
     paddingBottom: Spacing.xs,
+    
   },
   cardFooterText: {
     fontSize: 12,
@@ -615,22 +610,24 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     flex: 1,
     marginRight: 12,
+    lineHeight: 14,    
   },
 
   activitiesSection: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.xxl,
   },
   activitiesHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.md,
   },
   seeAllLink: {
     fontSize: 14,
     color: Colors.light.brandBlue,
     fontWeight: "600",
     textDecorationLine: "underline",
+    marginBottom: Spacing.md,
+
   },
   activitiesList: {
     backgroundColor: Colors.light.white,
