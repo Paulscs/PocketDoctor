@@ -328,64 +328,78 @@ export default function ProfileScreen() {
           <SectionHeader title={t("profile.medical_info")} />
           <Card variant="elevated" style={styles.sectionCard}>
             <View style={styles.medicalSectionPart}>
-              <View style={styles.medicalHeaderRow}>
-                <ThemedText style={styles.medicalLabel}>{t("profile.allergies")}</ThemedText>
-                {isEditing && (
-                  <TouchableOpacity onPress={() => openItemModal('alergias')}>
-                    <Ionicons name="add-circle" size={24} color={Colors.light.brandBlue} />
-                  </TouchableOpacity>
-                )}
-              </View>
-              <View style={styles.chipContainer}>
-                {profile.alergias && profile.alergias.length > 0 ? (
-                  profile.alergias.map((item, idx) => (
-                    <View key={idx} style={styles.chip}>
-                      <ThemedText style={styles.chipText}>{item}</ThemedText>
-                      {isEditing && (
-                        <TouchableOpacity onPress={() => {
-                          const newItems = profile.alergias?.filter((_, i) => i !== idx);
-                          updateProfile('alergias', newItems);
-                        }} style={styles.chipRemove}>
-                          <Ionicons name="close" size={12} color={Colors.light.white} />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  ))
-                ) : (
-                  <ThemedText style={styles.emptyText}>{t("profile.no_allergies")}</ThemedText>
-                )}
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={[styles.iconContainer, { backgroundColor: Colors.light.lightGray }]}>
+                  <Ionicons name="pulse-outline" size={20} color={Colors.light.brandBlue} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.medicalHeaderRow}>
+                    <ThemedText style={styles.medicalLabel}>{t("profile.allergies")}</ThemedText>
+                    {isEditing && (
+                      <TouchableOpacity onPress={() => openItemModal('alergias')}>
+                        <Ionicons name="add-circle" size={24} color={Colors.light.brandBlue} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <View style={styles.chipContainer}>
+                    {profile.alergias && profile.alergias.length > 0 ? (
+                      profile.alergias.map((item, idx) => (
+                        <View key={idx} style={styles.chip}>
+                          <ThemedText style={styles.chipText}>{item}</ThemedText>
+                          {isEditing && (
+                            <TouchableOpacity onPress={() => {
+                              const newItems = profile.alergias?.filter((_, i) => i !== idx);
+                              updateProfile('alergias', newItems);
+                            }} style={styles.chipRemove}>
+                              <Ionicons name="close" size={12} color={Colors.light.white} />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      ))
+                    ) : (
+                      <ThemedText style={styles.emptyText}>{t("profile.no_allergies")}</ThemedText>
+                    )}
+                  </View>
+                </View>
               </View>
             </View>
 
             <View style={styles.separator} />
 
             <View style={styles.medicalSectionPart}>
-              <View style={styles.medicalHeaderRow}>
-                <ThemedText style={styles.medicalLabel}>{t("profile.medical_conditions")}</ThemedText>
-                {isEditing && (
-                  <TouchableOpacity onPress={() => openItemModal('condiciones_medicas')}>
-                    <Ionicons name="add-circle" size={24} color={Colors.light.brandBlue} />
-                  </TouchableOpacity>
-                )}
-              </View>
-              <View style={styles.chipContainer}>
-                {profile.condiciones_medicas && profile.condiciones_medicas.length > 0 ? (
-                  profile.condiciones_medicas.map((item, idx) => (
-                    <View key={idx} style={styles.chip}>
-                      <ThemedText style={styles.chipText}>{item}</ThemedText>
-                      {isEditing && (
-                        <TouchableOpacity onPress={() => {
-                          const newItems = profile.condiciones_medicas?.filter((_, i) => i !== idx);
-                          updateProfile('condiciones_medicas', newItems);
-                        }} style={styles.chipRemove}>
-                          <Ionicons name="close" size={12} color={Colors.light.white} />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  ))
-                ) : (
-                  <ThemedText style={styles.emptyText}>{t("profile.no_conditions")}</ThemedText>
-                )}
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={[styles.iconContainer, { backgroundColor: Colors.light.lightGray }]}>
+                  <Ionicons name="medkit-outline" size={20} color={Colors.light.brandBlue} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.medicalHeaderRow}>
+                    <ThemedText style={styles.medicalLabel}>{t("profile.medical_conditions")}</ThemedText>
+                    {isEditing && (
+                      <TouchableOpacity onPress={() => openItemModal('condiciones_medicas')}>
+                        <Ionicons name="add-circle" size={24} color={Colors.light.brandBlue} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <View style={styles.chipContainer}>
+                    {profile.condiciones_medicas && profile.condiciones_medicas.length > 0 ? (
+                      profile.condiciones_medicas.map((item, idx) => (
+                        <View key={idx} style={styles.chip}>
+                          <ThemedText style={styles.chipText}>{item}</ThemedText>
+                          {isEditing && (
+                            <TouchableOpacity onPress={() => {
+                              const newItems = profile.condiciones_medicas?.filter((_, i) => i !== idx);
+                              updateProfile('condiciones_medicas', newItems);
+                            }} style={styles.chipRemove}>
+                              <Ionicons name="close" size={12} color={Colors.light.white} />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      ))
+                    ) : (
+                      <ThemedText style={styles.emptyText}>{t("profile.no_conditions")}</ThemedText>
+                    )}
+                  </View>
+                </View>
               </View>
             </View>
           </Card>
@@ -629,12 +643,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: 2, // Match ListItem subtitle spacing (marginTop: 2)
   },
   medicalLabel: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    color: Colors.light.textGray,
+    marginBottom: Spacing.sm,
+    
+    // color: Colors.light.textGray, // Removed to match ListItem title (inherits default)
   },
   chipContainer: {
     flexDirection: 'row',
@@ -652,7 +668,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     color: Colors.light.brandBlue,
-    fontSize: 14,
+    fontSize: 13, // Match ListItem subtitle fontSize
     fontWeight: '500',
   },
   chipRemove: {
@@ -666,7 +682,7 @@ const styles = StyleSheet.create({
   emptyText: {
     color: Colors.light.placeholderGray,
     fontStyle: 'italic',
-    fontSize: 14,
+    fontSize: 13, // Match ListItem subtitle fontSize
   },
   loadingContainer: {
     flex: 1,
@@ -745,5 +761,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: BorderRadius.md,
     backgroundColor: Colors.light.brandBlue,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20, // Circle
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
   },
 });
