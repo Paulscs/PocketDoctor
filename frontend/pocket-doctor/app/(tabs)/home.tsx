@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: Spacing.md,
     paddingHorizontal: 0,
-    paddingBottom: Spacing.xs,
+    paddingBottom: 1,
 
   },
   cardFooterText: {
