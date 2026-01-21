@@ -140,7 +140,7 @@ export default function HomeScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "normal": return Colors.light.healthGreen;
+      case "normal": return Colors.light.medicalBlue;
       case "elevated": return Colors.light.warning;
       case "critical": return Colors.light.error;
       default: return Colors.light.gray;
@@ -364,7 +364,7 @@ export default function HomeScreen() {
                       <Ionicons
                         name="document-text"
                         size={20}
-                        color={Colors.light.healthGreen}
+                        color={Colors.light.medicalBlue}
                       />
                     </View>
                     <View style={styles.activityContent}>
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
   },
   seeAllLink: {
     fontSize: 14,
-    color: Colors.light.brandBlue,
+    color: Colors.light.healthGreen,
     fontWeight: "600",
     textDecorationLine: "underline",
     marginBottom: Spacing.md,
