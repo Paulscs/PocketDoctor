@@ -324,7 +324,7 @@ export default function HomeScreen() {
                 <ThemedText style={styles.cardFooterText}>
                   {t('home.tap_to_start')}
                 </ThemedText>
-                <IconSymbol
+                  <IconSymbol
                   name="chevron.right"
                   size={16}
                   color={Colors.light.white}
@@ -598,7 +598,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: Spacing.md,
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: 0,
     paddingBottom: Spacing.xs,
 
   },
