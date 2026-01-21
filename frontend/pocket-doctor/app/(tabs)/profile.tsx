@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: Colors.light.borderGray,
-    marginLeft: Spacing.lg,
+    marginHorizontal: Spacing.md,
   },
   formGroup: {
     padding: Spacing.md,
