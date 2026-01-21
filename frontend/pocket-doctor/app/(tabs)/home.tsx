@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
   },
 
   quickActionsSection: {
-    marginBottom: Spacing.xxl,
+    marginBottom: Spacing.lg,
   },
   sectionTitle: {
     fontSize: 18,
