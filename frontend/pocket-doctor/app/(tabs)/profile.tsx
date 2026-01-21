@@ -372,8 +372,8 @@ export default function ProfileScreen() {
                   <Ionicons name="medkit-outline" size={20} color={Colors.light.brandBlue} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <View style={styles.medicalHeaderRow}>
-                    <ThemedText style={styles.medicalLabel}>{t("profile.medical_conditions")}</ThemedText>
+                  <View style={styles.medicalConHeaderRow}>
+                    <ThemedText style={styles.medicalConLabel}>{t("profile.medical_conditions")}</ThemedText>
                     {isEditing && (
                       <TouchableOpacity onPress={() => openItemModal('condiciones_medicas')}>
                         <Ionicons name="add-circle" size={24} color={Colors.light.brandBlue} />
@@ -637,9 +637,16 @@ const styles = StyleSheet.create({
     color: Colors.light.placeholderGray,
   },
   medicalSectionPart: {
-    padding: Spacing.md,
+    paddingVertical: 18,
+    paddingHorizontal: Spacing.md,
   },
   medicalHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2, // Match ListItem subtitle spacing (marginTop: 2)
+  },
+    medicalConHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -652,6 +659,14 @@ const styles = StyleSheet.create({
     
     // color: Colors.light.textGray, // Removed to match ListItem title (inherits default)
   },
+    medicalConLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: Spacing.sm,
+    
+    
+    // color: Colors.light.textGray, // Removed to match ListItem title (inherits default)
+  },
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -661,10 +676,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.friendlyBlueBg,
     borderRadius: 16,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 2,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    marginBottom: 4,
   },
   chipText: {
     color: Colors.light.brandBlue,
