@@ -316,6 +316,7 @@
         "status": {
             "normal": "Normal",
             "elevated": "Elevated",
+            "alto": "High",
             "low": "Low",
             "critical": "Critical",
             "pending": "Pending"
