@@ -9,6 +9,7 @@ import {
   TextInput,
   RefreshControl,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
@@ -88,6 +89,7 @@ export default function HistoryScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -137,10 +139,17 @@ export default function HistoryScreen() {
 
   const handleResultPress = (result: MedicalResult) => {
     if (result.raw_data) {
-      router.push({
-        pathname: "/ai-analytics",
-        params: { historyData: JSON.stringify(result.raw_data) }
-      });
+      setSubmittingId(result.id);
+      // Give UI time to render loader
+      setTimeout(() => {
+        router.push({
+          pathname: "/ai-analytics",
+          params: { historyData: JSON.stringify(result.raw_data) }
+        });
+        // We don't clear submittingId immediately to keep loader while screen transitions
+        // verify focus effect might clear it if needed
+        setTimeout(() => setSubmittingId(null), 1000);
+      }, 50);
     } else {
       console.warn("No raw data for this history item");
     }
@@ -276,8 +285,14 @@ export default function HistoryScreen() {
             </ThemedText>
           </View>
           <View style={styles.viewDetails}>
-            <ThemedText style={styles.viewDetailsText}>{t('common.view', 'View Details')}</ThemedText>
-            <Ionicons name="chevron-forward" size={14} color={Colors.light.brandBlue} />
+            {submittingId === item.id ? (
+              <ActivityIndicator size="small" color={Colors.light.brandBlue} />
+            ) : (
+              <>
+                <ThemedText style={styles.viewDetailsText}>{t('common.view', 'View Details')}</ThemedText>
+                <Ionicons name="chevron-forward" size={14} color={Colors.light.brandBlue} />
+              </>
+            )}
           </View>
         </View>
       </TouchableOpacity>
