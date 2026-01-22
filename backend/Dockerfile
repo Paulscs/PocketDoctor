@@ -11,6 +11,9 @@ ENV PYTHONUNBUFFERED=1
 # gcc: for building some python packages
 RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
+    libgl1 \
+    libxcb1 \
+    libx11-6 \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
