@@ -467,13 +467,14 @@ const styles = StyleSheet.create({
   messageBubble: {
     maxWidth: "80%",
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
+    paddingVertical: 10,
     borderRadius: BorderRadius.xl,
     shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    
   },
   userBubble: {
     backgroundColor: Colors.light.brandBlue,
