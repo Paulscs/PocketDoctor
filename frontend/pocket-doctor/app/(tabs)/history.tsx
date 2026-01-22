@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Alert,
   FlatList,
-  TextInput,
   RefreshControl,
   Platform,
   ActivityIndicator,
@@ -88,7 +87,6 @@ export default function HistoryScreen() {
   const [results, setResults] = useState<MedicalResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [submittingId, setSubmittingId] = useState<string | null>(null);
 
   useFocusEffect(
@@ -186,34 +184,13 @@ export default function HistoryScreen() {
     );
   };
 
-  const filteredResults = useMemo(() => {
-    if (!searchQuery) return results;
-    const query = searchQuery.toLowerCase();
-    return results.filter(
-      item =>
-        item.title.toLowerCase().includes(query) ||
-        item.description.toLowerCase().includes(query) ||
-        item.date.includes(query)
-    );
-  }, [results, searchQuery]);
+
 
   const renderHeader = () => (
     <View style={styles.listHeader}>
       <View style={styles.titleSection}>
         <ThemedText style={styles.title}>{t('history.medical_history')}</ThemedText>
         <ThemedText style={styles.subtitle}>{t('history.subtitle', { count: results.length })}</ThemedText>
-      </View>
-
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color={Colors.light.placeholderGray} style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder={t('history.search_placeholder', 'Search history...')}
-          placeholderTextColor={Colors.light.placeholderGray}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          clearButtonMode="while-editing"
-        />
       </View>
     </View>
   );
@@ -226,17 +203,11 @@ export default function HistoryScreen() {
             <Ionicons name="document-text-outline" size={48} color={Colors.light.placeholderGray} />
           </View>
           <ThemedText style={styles.emptyText}>
-            {searchQuery ? t('history.no_results') : t('history.empty')}
+            {t('history.empty')}
           </ThemedText>
-          {searchQuery ? (
-            <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <ThemedText style={styles.clearFilterText}>{t('common.clear_filters', 'Clear filters')}</ThemedText>
-            </TouchableOpacity>
-          ) : (
-            <ThemedText style={styles.emptySubtext}>
-              {t('history.empty_hint', 'Scan your first medical document to see it here.')}
-            </ThemedText>
-          )}
+          <ThemedText style={styles.emptySubtext}>
+            {t('history.empty_hint', 'Scan your first medical document to see it here.')}
+          </ThemedText>
         </>
       )}
     </View>
@@ -310,7 +281,7 @@ export default function HistoryScreen() {
         </View>
       ) : (
         <FlatList
-          data={filteredResults}
+          data={results}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
@@ -356,28 +327,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.light.placeholderGray,
     marginTop: 4,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.light.white,
-    borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.md,
-    height: 48,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  searchIcon: {
-    marginRight: Spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    height: '100%',
-    fontSize: 16,
-    color: Colors.light.text,
   },
   cardResult: {
     marginBottom: Spacing.md,
@@ -500,10 +449,5 @@ const styles = StyleSheet.create({
     color: Colors.light.placeholderGray,
     textAlign: 'center',
   },
-  clearFilterText: {
-    fontSize: 14,
-    color: Colors.light.brandBlue,
-    fontWeight: '600',
-    marginTop: Spacing.sm,
-  },
+
 });
