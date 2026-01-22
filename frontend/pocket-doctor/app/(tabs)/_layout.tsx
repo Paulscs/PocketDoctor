@@ -11,27 +11,59 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      screenOptions={{
-       
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].primary,
-        tabBarInactiveTintColor: Colors[colorScheme ?? "light"].tabIconDefault,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarStyle: {
-          backgroundColor: Colors[colorScheme ?? "light"].card,
-          borderTopColor: Colors[colorScheme ?? "light"].border,
-        },
-      }}
-    >
+  screenOptions={{
+    tabBarActiveTintColor: Colors[colorScheme ?? "light"].primary,
+    tabBarInactiveTintColor: Colors[colorScheme ?? "light"].tabIconDefault,
+    headerShown: false,
+    tabBarButton: HapticTab,
+
+    // 🔽 Baja todo el item
+    tabBarItemStyle: {
+      paddingTop:  4,
+      paddingBottom: 10,   // <-- sube/baja icono + texto juntos
+    },
+
+    tabBarLabelStyle: {
+      fontSize: 10,
+      marginTop: 2,    // <-- baja SOLO el texto
+    },
+
+    tabBarStyle: {
+      backgroundColor: Colors[colorScheme ?? "light"].card,
+      borderTopColor: Colors[colorScheme ?? "light"].border,
+      position: "absolute",
+      left: 20,
+      right: 20,
+      elevation: 5,
+      borderRadius: 20,
+      height: 60,
+      borderTopWidth: 0,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.5,
+    },
+  }}
+>
+
       <Tabs.Screen
-        name="home"
-        options={{
-          title: "Inicio",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={25} name="house.fill" color={color} />
-          ),
-        }}
-      />
+  name="home"
+  options={{
+    title: "Inicio",
+    
+    // Agrega esto:
+    tabBarLabelStyle: {
+      fontSize: 10,      // Asegúrate de poner el mismo tamaño que en screenOptions
+      fontWeight: '600', 
+      marginLeft: 2,      // <--- AUMENTA este número para bajar el texto
+            // marginBottom: 4 // <--- O usa esto para empujarlo hacia arriba
+    },
+    
+    tabBarIcon: ({ color }) => (
+      <IconSymbol size={25} name="house.fill" color={color} />
+    ),
+  }}
+/>
       <Tabs.Screen
         name="chat"
         options={{
