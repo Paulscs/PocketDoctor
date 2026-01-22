@@ -186,6 +186,7 @@
         "support": "Soporte",
         "help_center": "Centro de Ayuda",
         "logout": "Cerrar Sesión",
+        "logging_out": "Cerrando sesión...",
         "settings": "Configuración",
         "loading": "Cargando perfil...",
         "edit_allergies": "Editar Alérgias",

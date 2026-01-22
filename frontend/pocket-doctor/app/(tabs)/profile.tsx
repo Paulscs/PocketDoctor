@@ -70,6 +70,7 @@ export default function ProfileScreen() {
 
   const { session, userProfile, logout } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile>(INITIAL_PROFILE);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -81,6 +82,9 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     const loadProfile = async () => {
+      // If we are logging out, don't try to load profile
+      if (isLoggingOut) return;
+
       if (userProfile) {
         setProfile(userProfile);
         setIsLoading(false);
@@ -100,7 +104,8 @@ export default function ProfileScreen() {
     };
 
     loadProfile();
-  }, [userProfile, session]);
+  }, [userProfile, session, isLoggingOut]);
+
 
   const handleSaveChanges = async () => {
     if (!session?.access_token) {
@@ -182,21 +187,28 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
+    // Give a small delay for smooth transition and visual feedback
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     try {
       await logout();
-      router.replace("/");
+      // Navigation is handled by global auth guard in _layout.tsx
     } catch (error) {
       console.error("Logout error:", error);
       Alert.alert(t("common.error"), t("profile.error_logout"));
+      setIsLoggingOut(false);
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isLoggingOut) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor }]}>
         <View style={styles.loadingContainer}>
           <CustomLoader />
-          <ThemedText style={styles.loadingText}>{t("profile.loading")}</ThemedText>
+          <ThemedText style={styles.loadingText}>
+            {isLoggingOut ? t("profile.logging_out") : t("profile.loading")}
+          </ThemedText>
         </View>
       </SafeAreaView>
     );
@@ -646,7 +658,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 2, // Match ListItem subtitle spacing (marginTop: 2)
   },
-    medicalConHeaderRow: {
+  medicalConHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -656,15 +668,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: Spacing.sm,
-    
+
     // color: Colors.light.textGray, // Removed to match ListItem title (inherits default)
   },
-    medicalConLabel: {
+  medicalConLabel: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: Spacing.sm,
-    
-    
+
+
     // color: Colors.light.textGray, // Removed to match ListItem title (inherits default)
   },
   chipContainer: {
