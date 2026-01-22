@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     specialistName: {
         fontSize: 16,
         fontWeight: '600',
-        color: Colors.light.text,
+        color: Colors.light.brandBlue,
     },
     specialistRole: {
         fontSize: 14,
