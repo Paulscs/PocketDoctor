@@ -384,6 +384,7 @@ export default function HistoryScreen() {
               name={getResultIcon(item.type) as keyof typeof Ionicons.glyphMap}
               size={24}
               color={Colors.light.medicalBlue}
+              style={{marginRight: 25}}
             />
           </View>
           <View style={styles.textContainer}>
@@ -479,7 +480,7 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: Spacing.sm,
+    marginBottom: 10,
   },
   dateBadge: {
     flexDirection: 'row',
@@ -498,7 +499,7 @@ const styles = StyleSheet.create({
   cardContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   iconContainer: {
     width: 48,
@@ -506,7 +507,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.circle,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: Spacing.md,
+    marginRight: -10,
   },
   textContainer: {
     flex: 1,
@@ -524,10 +525,11 @@ const styles = StyleSheet.create({
   },
   cardFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     borderTopColor: Colors.light.borderGray,
-    paddingTop: 2,
+    marginTop: -10,
+
   },
   statusBadge: {
     flexDirection: 'row',
