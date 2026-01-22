@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { CustomLoader } from '@/components/ui/CustomLoader';
 import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { useAuthStore } from '@/src/store/authStore';
 import { getClinicById, Centro, EspecialistaCentro } from '@/src/services/clinics';
@@ -62,7 +63,7 @@ export default function ClinicDetailScreen() {
     if (loading) {
         return (
             <View style={[styles.container, { backgroundColor: bgColor, justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color={Colors.light.brandBlue} />
+                <CustomLoader />
             </View>
         );
     }
