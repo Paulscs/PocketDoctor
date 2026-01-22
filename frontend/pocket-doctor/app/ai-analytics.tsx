@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   overviewTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.light.textGray,
+    color: Colors.light.brandBlue,
   },
   overviewText: {
     fontSize: 16,
