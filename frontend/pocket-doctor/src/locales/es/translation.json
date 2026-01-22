@@ -13,7 +13,9 @@
         "yesterday": "Ayer",
         "days_ago": "Hace {{count}} días",
         "messages": "mensajes",
-        "close": "Cerrar"
+        "close": "Cerrar",
+        "filter_date": "Filtrar por fecha",
+        "clear_filter": "Borrar filtro"
     },
     "language": {
         "select": "Selecciona tu idioma",

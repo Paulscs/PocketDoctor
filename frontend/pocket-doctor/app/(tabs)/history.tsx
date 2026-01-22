@@ -23,6 +23,7 @@ import { UserAvatar } from "@/components/ui/UserAvatar";
 import { CustomLoader } from "@/components/ui/CustomLoader";
 import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/Card";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 interface MedicalResult {
   id: string;
@@ -88,6 +89,28 @@ export default function HistoryScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [filterDate, setFilterDate] = useState<Date | null>(null);
+
+  const filteredResults = useMemo(() => {
+    if (!filterDate) return results;
+    // Format date to YYYY-MM-DD to match item.date (assuming item.date is YYYY-MM-DD)
+    // Actually item.date might be localized or different format. 
+    // Looking at fetchHistory: date: item.created_at ? item.created_at.split("T")[0] ...
+    // So it is YYYY-MM-DD.
+    const dateStr = filterDate.toISOString().split('T')[0];
+    return results.filter(item => item.date === dateStr);
+  }, [results, filterDate]);
+
+  const showDatePicker = () => setDatePickerVisibility(true);
+  const hideDatePicker = () => setDatePickerVisibility(false);
+
+  const handleConfirmDate = (date: Date) => {
+    setFilterDate(date);
+    hideDatePicker();
+  };
+
+  const clearFilter = () => setFilterDate(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -188,10 +211,56 @@ export default function HistoryScreen() {
 
   const renderHeader = () => (
     <View style={styles.listHeader}>
-      <View style={styles.titleSection}>
-        <ThemedText style={styles.title}>{t('history.medical_history')}</ThemedText>
-        <ThemedText style={styles.subtitle}>{t('history.subtitle', { count: results.length })}</ThemedText>
+      <View style={styles.headerActions}>
+        <View style={styles.titleContainer}>
+          <ThemedText style={styles.title}>{t('history.medical_history')}</ThemedText>
+        </View>
+
+        <View style={styles.filterRow}>
+          <TouchableOpacity
+            style={[
+              styles.filterChip,
+              filterDate && styles.filterChipActive
+            ]}
+            onPress={showDatePicker}
+            activeOpacity={0.8}
+          >
+            <Ionicons
+              name={filterDate ? "calendar" : "calendar-outline"}
+              size={18}
+              color={filterDate ? Colors.light.white : Colors.light.brandBlue}
+            />
+            <ThemedText style={[
+              styles.filterChipText,
+              filterDate && styles.filterChipTextActive
+            ]}>
+              {filterDate ? filterDate.toLocaleDateString() : t('common.filter_date')}
+            </ThemedText>
+            {filterDate && (
+              <View style={styles.activeDot} />
+            )}
+          </TouchableOpacity>
+
+          {filterDate && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={clearFilter}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="close-circle" size={24} color={Colors.light.gray} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
+
+      <DateTimePickerModal
+        isVisible={isDatePickerVisible}
+        mode="date"
+        onConfirm={handleConfirmDate}
+        onCancel={hideDatePicker}
+        maximumDate={new Date()}
+      />
     </View>
   );
 
@@ -281,7 +350,7 @@ export default function HistoryScreen() {
         </View>
       ) : (
         <FlatList
-          data={results}
+          data={filteredResults}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
@@ -450,4 +519,53 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
+  headerActions: {
+    marginBottom: Spacing.sm,
+  },
+  titleContainer: {
+    marginBottom: Spacing.md,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 10,
+    backgroundColor: Colors.light.white,
+    borderRadius: BorderRadius.circle,
+    borderWidth: 1,
+    borderColor: Colors.light.borderGray,
+    gap: Spacing.xs,
+    shadowColor: Colors.light.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  filterChipActive: {
+    backgroundColor: Colors.light.brandBlue,
+    borderColor: Colors.light.brandBlue,
+  },
+  filterChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.light.textGray,
+  },
+  filterChipTextActive: {
+    color: Colors.light.white,
+  },
+  activeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.light.white,
+    marginLeft: 4,
+  },
+  clearButton: {
+    padding: 4,
+  },
 });
