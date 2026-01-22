@@ -260,8 +260,8 @@
             "default": "I understand. I am processing that request."
         },
         "options": {
-            "simple_explanation": "Explain what these results mean",
-            "lifestyle_changes": "What lifestyle changes do you recommend?",
+            "simple_explanation": "What do these results mean?",
+            "lifestyle_changes": "What lifestyle do you recommend?",
             "causes": "What could be the causes?",
             "warning_signs": "Are there any urgent warning signs?",
             "doctor_questions": "What questions should I ask my doctor?"

@@ -260,8 +260,8 @@
             "default": "Entiendo. Estoy procesando esa solicitud."
         },
         "options": {
-            "simple_explanation": "Explícame qué significan estos resultados",
-            "lifestyle_changes": "¿Qué cambios de estilo de vida recomiendas?",
+            "simple_explanation": "¿Qué significan estos resultados?",
+            "lifestyle_changes": "¿Qué estilos de vida me recomiendas?",
             "causes": "¿Cuáles podrían ser las causas?",
             "warning_signs": "¿Hay señales de alerta urgentes?",
             "doctor_questions": "¿Qué preguntas hacerle a mi médico?"

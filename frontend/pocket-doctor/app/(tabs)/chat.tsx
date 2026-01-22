@@ -505,7 +505,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: Colors.light.white,
     borderRadius: BorderRadius.xl,
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     borderWidth: 1,
     borderColor: Colors.light.brandBlue,
