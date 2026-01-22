@@ -315,11 +315,7 @@ export default function ChatScreen() {
                       accessibilityRole="button"
                       accessibilityHint="Selecciona esta opción para continuar la conversación"
                     >
-                      <Ionicons
-                        name={option.icon as keyof typeof Ionicons.glyphMap}
-                        size={16}
-                        color={Colors.light.brandBlue}
-                      />
+                  
                       <ThemedText style={styles.followUpText}>
                         {option.text}
                       </ThemedText>
