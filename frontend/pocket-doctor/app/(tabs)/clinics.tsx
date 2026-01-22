@@ -18,6 +18,7 @@ import { useAuthStore } from "@/src/store/authStore";
 import { getCentros, Centro, getEspecialistasCentro, EspecialistaCentro, searchSpecialists } from "@/src/services/clinics";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ClinicsMap } from "@/components/ClinicsMap";
+import { CustomLoader } from "@/components/ui/CustomLoader";
 
 // Clinic interface imported from component to ensure compatibility
 import { Clinic } from "@/components/ClinicsMap";
@@ -254,7 +255,12 @@ export default function ClinicsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
 
 
-      {!errorState ? (
+
+      {loading ? (
+        <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+          <CustomLoader />
+        </View>
+      ) : !errorState ? (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.searchContainer}>
             <View style={styles.searchBar}>
