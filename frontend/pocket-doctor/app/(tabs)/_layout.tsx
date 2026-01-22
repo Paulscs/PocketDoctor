@@ -31,7 +31,6 @@ export default function TabLayout() {
     tabBarStyle: {
       backgroundColor: Colors[colorScheme ?? "light"].card,
       borderTopColor: Colors[colorScheme ?? "light"].border,
-      position: "absolute",
       left: 20,
       right: 20,
       elevation: 5,
