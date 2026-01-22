@@ -7,34 +7,54 @@ import { useTranslation } from 'react-i18next';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { helpCategories, HelpCategory } from '@/data/helpContent';
-import { Colors } from '@/constants/theme';
+import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function HelpCenterScreen() {
     const router = useRouter();
     const colorScheme = useColorScheme();
-    const colors = Colors[colorScheme ?? 'light'];
     const { t } = useTranslation();
+    const backgroundColor = Colors.light.lightGray;
 
     const renderCategory = ({ item }: { item: HelpCategory }) => (
         <TouchableOpacity
-            style={[styles.card, { backgroundColor: colors.background, borderColor: colors.icon }]}
+            style={styles.card}
+            activeOpacity={0.7}
             onPress={() => router.push(`/help/${item.id}`)}
         >
-            <View style={[styles.iconContainer, { backgroundColor: colors.tint + '20' }]}>
-                <Ionicons name={item.icon as any} size={32} color={colors.tint} />
+            <View style={styles.cardHeader}>
+                <View style={[styles.iconContainer, { backgroundColor: Colors.light.brandBlue + '15' }]}>
+                    <Ionicons name={item.icon as any} size={28} color={Colors.light.brandBlue} />
+                </View>
+                <View style={styles.cardTextContent}>
+                    <ThemedText style={styles.cardTitle}>{t(`help.categories.${item.id}.title`)}</ThemedText>
+                    <ThemedText style={styles.cardDesc} numberOfLines={2}>
+                        {t(`help.categories.${item.id}.description`)}
+                    </ThemedText>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={Colors.light.placeholderGray} style={styles.chevron} />
             </View>
-            <ThemedText type="subtitle" style={styles.cardTitle}>{t(`help.categories.${item.id}.title`)}</ThemedText>
-            <ThemedText style={styles.cardDesc} numberOfLines={2}>{t(`help.categories.${item.id}.description`)}</ThemedText>
         </TouchableOpacity>
     );
 
     return (
-        <ThemedView style={styles.container}>
-            <Stack.Screen options={{ title: t('help.ui.title'), headerBackTitle: t('common.back') }} />
+        <ThemedView style={[styles.container, { backgroundColor }]}>
+            <Stack.Screen
+                options={{
+                    title: t('help.ui.title'),
+                    headerBackTitle: t('common.back'),
+                    headerStyle: { backgroundColor: Colors.light.white },
+                    headerShadowVisible: false,
+                    headerTintColor: Colors.light.brandBlue,
+                    headerTitleStyle: {
+                        color: Colors.light.brandBlue,
+                        fontWeight: '700',
+                    }
+                }}
+            />
 
             <View style={styles.header}>
-                <ThemedText type="title">{t('help.ui.subtitle')}</ThemedText>
+                <ThemedText style={styles.title}>{t('help.ui.subtitle')}</ThemedText>
                 <ThemedText style={styles.subtitle}>
                     {t('help.ui.description')}
                 </ThemedText>
@@ -45,8 +65,8 @@ export default function HelpCenterScreen() {
                 renderItem={renderCategory}
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.listContent}
-                numColumns={1}
-                ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+                ItemSeparatorComponent={() => <View style={{ height: Spacing.md }} />}
+                showsVerticalScrollIndicator={false}
             />
         </ThemedView>
     );
@@ -55,44 +75,69 @@ export default function HelpCenterScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
     },
     header: {
-        marginBottom: 24,
+        paddingHorizontal: Spacing.lg,
+        paddingTop: Spacing.md,
+        paddingBottom: Spacing.lg,
+        backgroundColor: Colors.light.white,
+        marginBottom: Spacing.md,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: "800",
+        color: Colors.light.brandBlue,
+        letterSpacing: -0.5,
+        marginBottom: 8,
     },
     subtitle: {
-        marginTop: 8,
-        opacity: 0.7,
+        fontSize: 16,
+        color: Colors.light.gray,
+        lineHeight: 22,
     },
     listContent: {
-        paddingBottom: 32,
+        padding: Spacing.lg,
     },
     card: {
-        padding: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-        opacity: 0.9,
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        shadowColor: '#000',
+        backgroundColor: Colors.light.white,
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.md,
+        shadowColor: Colors.light.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
-        shadowRadius: 4,
+        shadowRadius: 8,
         elevation: 2,
+        borderWidth: 1,
+        borderColor: Colors.light.borderGray,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     iconContainer: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 12,
+        marginRight: Spacing.md,
+    },
+    cardTextContent: {
+        flex: 1,
+        marginRight: Spacing.sm,
     },
     cardTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: Colors.light.brandBlue,
         marginBottom: 4,
     },
     cardDesc: {
         fontSize: 14,
-        opacity: 0.7,
+        color: Colors.light.gray,
+        lineHeight: 20,
     },
+    chevron: {
+        marginLeft: 4,
+    }
 });

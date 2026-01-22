@@ -7,15 +7,15 @@ import { useTranslation } from 'react-i18next';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { helpCategories, HelpArticle } from '@/data/helpContent';
-import { Colors } from '@/constants/theme';
+import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function HelpCategoryScreen() {
     const { category: categoryId } = useLocalSearchParams();
     const router = useRouter();
     const colorScheme = useColorScheme();
-    const colors = Colors[colorScheme ?? 'light'];
     const { t } = useTranslation();
+    const backgroundColor = Colors.light.lightGray;
 
     const category = helpCategories.find(c => c.id === categoryId);
 
@@ -29,34 +29,46 @@ export default function HelpCategoryScreen() {
 
     const renderArticleItem = ({ item }: { item: HelpArticle }) => (
         <TouchableOpacity
-            style={[styles.item, { borderBottomColor: colors.icon + '20' }]}
+            style={styles.item}
+            activeOpacity={0.7}
             onPress={() => router.push(`/help/article/${item.id}`)}
         >
-            <View style={styles.itemContent}>
-                <ThemedText type="defaultSemiBold">{t(`help.categories.${categoryId}.articles.${item.id}.title`)}</ThemedText>
-                {/* Preview of content could go here if desired */}
+            <View style={[styles.itemIcon, { backgroundColor: Colors.light.white }]}>
+                <Ionicons name="document-text-outline" size={20} color={Colors.light.brandBlue} />
             </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.text} style={{ opacity: 0.5 }} />
+            <View style={styles.itemContent}>
+                <ThemedText style={styles.itemTitle}>{t(`help.categories.${categoryId}.articles.${item.id}.title`)}</ThemedText>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.light.placeholderGray} />
         </TouchableOpacity>
     );
 
     return (
-        <ThemedView style={styles.container}>
-            <Stack.Screen options={{ title: t(`help.categories.${categoryId}.title`) }} />
+        <ThemedView style={[styles.container, { backgroundColor }]}>
+            <Stack.Screen
+                options={{
+                    title: t(`help.categories.${categoryId}.title`),
+                    headerTintColor: Colors.light.brandBlue,
+                }}
+            />
 
             <View style={styles.header}>
-                <View style={[styles.iconContainer, { backgroundColor: colors.tint + '20' }]}>
-                    <Ionicons name={category.icon as any} size={40} color={colors.tint} />
+                <View style={[styles.headerIconContainer, { backgroundColor: Colors.light.brandBlue + '15' }]}>
+                    <Ionicons name={category.icon as any} size={32} color={Colors.light.brandBlue} />
                 </View>
-                <ThemedText type="subtitle" style={styles.description}>{t(`help.categories.${categoryId}.description`)}</ThemedText>
+                <ThemedText style={styles.headerTitle}>{t(`help.categories.${categoryId}.title`)}</ThemedText>
+                <ThemedText style={styles.description}>{t(`help.categories.${categoryId}.description`)}</ThemedText>
             </View>
 
-            <FlatList
-                data={category.articles}
-                renderItem={renderArticleItem}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.list}
-            />
+            <View style={styles.listContainer}>
+                <FlatList
+                    data={category.articles}
+                    renderItem={renderArticleItem}
+                    keyExtractor={(item) => item.id}
+                    contentContainerStyle={styles.list}
+                    ItemSeparatorComponent={() => <View style={styles.separator} />}
+                />
+            </View>
         </ThemedView>
     );
 }
@@ -66,35 +78,72 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        padding: 24,
+        padding: Spacing.xl,
         alignItems: 'center',
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#ccc',
+        backgroundColor: Colors.light.white,
+        marginBottom: Spacing.md,
     },
-    iconContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+    headerIconContainer: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: Spacing.md,
+    },
+    headerTitle: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: Colors.light.brandBlue,
+        marginBottom: Spacing.xs,
+        textAlign: 'center',
     },
     description: {
         textAlign: 'center',
-        opacity: 0.8,
+        color: Colors.light.gray,
+        fontSize: 16,
+        paddingHorizontal: Spacing.lg,
+        lineHeight: 22,
+    },
+    listContainer: {
+        flex: 1,
+        backgroundColor: Colors.light.white,
+        borderTopLeftRadius: BorderRadius.xl,
+        borderTopRightRadius: BorderRadius.xl,
+        paddingTop: Spacing.lg,
     },
     list: {
-        padding: 16,
+        paddingHorizontal: Spacing.lg,
+        paddingBottom: Spacing.xxl,
     },
     item: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 16,
-        borderBottomWidth: 1,
+        paddingVertical: Spacing.md,
+    },
+    itemIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: Colors.light.lightGray,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: Spacing.md,
+        borderWidth: 1,
+        borderColor: Colors.light.borderGray,
     },
     itemContent: {
         flex: 1,
-        paddingRight: 16,
+        marginRight: Spacing.md,
     },
+    itemTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: Colors.light.text,
+    },
+    separator: {
+        height: 1,
+        backgroundColor: Colors.light.borderGray,
+        marginLeft: 52, // Align with text start
+    }
 });

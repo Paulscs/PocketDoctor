@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   overviewCard: {
-    backgroundColor: Colors.light.friendlyGreenBg,
+    backgroundColor: Colors.light.healthGreen + '22',
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
