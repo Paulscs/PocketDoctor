@@ -201,14 +201,12 @@ export default function ProfileScreen() {
     }
   };
 
-  if (isLoading || isLoggingOut) {
+  if (isLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor }]}>
         <View style={styles.loadingContainer}>
           <CustomLoader />
-          <ThemedText style={styles.loadingText}>
-            {isLoggingOut ? t("profile.logging_out") : t("profile.loading")}
-          </ThemedText>
+          <ThemedText style={styles.loadingText}>{t("profile.loading")}</ThemedText>
         </View>
       </SafeAreaView>
     );
@@ -501,6 +499,22 @@ export default function ProfileScreen() {
         onConfirm={handleConfirmDate}
         onCancel={hideDatePicker}
       />
+
+      {/* Full Screen Logout Loader Modal */}
+      <Modal
+        visible={isLoggingOut}
+        transparent={false} // Solid background to cover everything
+        animationType="fade"
+      >
+        <SafeAreaView style={[styles.container, { backgroundColor }]}>
+          <View style={styles.loadingContainer}>
+            <CustomLoader />
+            <ThemedText style={styles.loadingText}>
+              {t("profile.logging_out")}
+            </ThemedText>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
