@@ -51,7 +51,7 @@ const getResultIcon = (type: MedicalResult["type"]) => {
 const getStatusColor = (status: MedicalResult["status"]) => {
   switch (status) {
     case "normal":
-      return Colors.light.success;
+      return Colors.light.healthGreen;
     case "elevated":
     case "low":
       return Colors.light.warning;
@@ -390,7 +390,7 @@ export default function HistoryScreen() {
         </View>
 
         <View style={styles.cardFooter}>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '22' }]}>
             <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
             <ThemedText style={[styles.statusText, { color: getStatusColor(item.status) }]}>
               {getStatusText(item.status, t)}
