@@ -140,7 +140,7 @@ export default function HomeScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "normal": return Colors.light.medicalBlue;
+      case "normal": return Colors.light.healthGreen;
       case "elevated": return Colors.light.warning;
       case "critical": return Colors.light.error;
       default: return Colors.light.gray;

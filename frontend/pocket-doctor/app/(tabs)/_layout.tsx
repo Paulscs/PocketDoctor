@@ -68,6 +68,12 @@ export default function TabLayout() {
         name="chat"
         options={{
           title: "Chat",
+           tabBarLabelStyle: {
+      fontSize: 10,      // Asegúrate de poner el mismo tamaño que en screenOptions
+      fontWeight: '600', 
+      marginLeft: 2,      // <--- AUMENTA este número para bajar el texto
+            // marginBottom: 4 // <--- O usa esto para empujarlo hacia arriba
+    },
           tabBarIcon: ({ color }) => (
             <IconSymbol size={25} name="message.fill" color={color} />
           ),
@@ -77,6 +83,12 @@ export default function TabLayout() {
         name="clinics"
         options={{
           title: "Clínicas",
+           tabBarLabelStyle: {
+      fontSize: 10,      // Asegúrate de poner el mismo tamaño que en screenOptions
+      fontWeight: '600', 
+      marginLeft: 2,      // <--- AUMENTA este número para bajar el texto
+            // marginBottom: 4 // <--- O usa esto para empujarlo hacia arriba
+    },
           tabBarIcon: ({ color }) => (
             <IconSymbol size={24} name="building.fill" color={color} />
           ),
@@ -86,6 +98,12 @@ export default function TabLayout() {
         name="history"
         options={{
           title: "Historial",
+           tabBarLabelStyle: {
+      fontSize: 10,      // Asegúrate de poner el mismo tamaño que en screenOptions
+      fontWeight: '600', 
+      marginLeft: 2,      // <--- AUMENTA este número para bajar el texto
+            // marginBottom: 4 // <--- O usa esto para empujarlo hacia arriba
+    },
           tabBarIcon: ({ color }) => (
             <IconSymbol size={24} name="clock.fill" color={color} />
           ),
@@ -95,6 +113,12 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "Perfil",
+           tabBarLabelStyle: {
+      fontSize: 10,      // Asegúrate de poner el mismo tamaño que en screenOptions
+      fontWeight: '600', 
+      marginLeft: 2,      // <--- AUMENTA este número para bajar el texto
+            // marginBottom: 4 // <--- O usa esto para empujarlo hacia arriba
+    },
           tabBarIcon: ({ color }) => (
             <IconSymbol size={24} name="person.fill" color={color} />
           ),
