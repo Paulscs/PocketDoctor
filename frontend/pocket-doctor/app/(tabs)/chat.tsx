@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
   },
   messageText: {
-    fontSize: 16,
+    fontSize: 14,
     lineHeight: 22,
   },
   userText: {
@@ -510,11 +510,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.light.brandBlue,
     gap: Spacing.sm,
+    marginBottom: 6,
     shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    
+    
   },
   followUpText: {
     fontSize: 14,
