@@ -15,7 +15,9 @@
         "messages": "mensajes",
         "close": "Cerrar",
         "filter_date": "Filtrar por fecha",
-        "clear_filter": "Borrar filtro"
+        "clear_filter": "Borrar filtro",
+        "from": "Desde",
+        "to": "Hasta"
     },
     "language": {
         "select": "Selecciona tu idioma",

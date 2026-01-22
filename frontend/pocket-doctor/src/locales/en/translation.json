@@ -15,7 +15,9 @@
         "messages": "messages",
         "close": "Close",
         "filter_date": "Filter by date",
-        "clear_filter": "Clear filter"
+        "clear_filter": "Clear filter",
+        "from": "From",
+        "to": "To"
     },
     "language": {
         "select": "Select your language",

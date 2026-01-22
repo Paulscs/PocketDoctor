@@ -90,27 +90,72 @@ export default function HistoryScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-  const [filterDate, setFilterDate] = useState<Date | null>(null);
+
+  // Date Range State
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [activePicker, setActivePicker] = useState<'start' | 'end' | null>(null);
+
 
   const filteredResults = useMemo(() => {
-    if (!filterDate) return results;
-    // Format date to YYYY-MM-DD to match item.date (assuming item.date is YYYY-MM-DD)
-    // Actually item.date might be localized or different format. 
-    // Looking at fetchHistory: date: item.created_at ? item.created_at.split("T")[0] ...
-    // So it is YYYY-MM-DD.
-    const dateStr = filterDate.toISOString().split('T')[0];
-    return results.filter(item => item.date === dateStr);
-  }, [results, filterDate]);
+    if (!startDate && !endDate) return results;
 
-  const showDatePicker = () => setDatePickerVisibility(true);
-  const hideDatePicker = () => setDatePickerVisibility(false);
+    return results.filter(item => {
+      // item.date is YYYY-MM-DD
+      const itemDate = new Date(item.date);
+      // Reset hours to compare dates only
+      itemDate.setHours(0, 0, 0, 0);
+
+      let matchesStart = true;
+      let matchesEnd = true;
+
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        matchesStart = itemDate >= start;
+      }
+
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(0, 0, 0, 0);
+        matchesEnd = itemDate <= end;
+      }
+
+      return matchesStart && matchesEnd;
+    });
+  }, [results, startDate, endDate]);
+
+  const showDatePicker = (type: 'start' | 'end') => {
+    setActivePicker(type);
+    setDatePickerVisibility(true);
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisibility(false);
+    setActivePicker(null);
+  };
 
   const handleConfirmDate = (date: Date) => {
-    setFilterDate(date);
+    if (activePicker === 'start') {
+      setStartDate(date);
+      // Constructive logic: if end date exists and is before start date, maybe clear it or set it to start date?
+      // For now let's just set it.
+      if (endDate && date > endDate) {
+        setEndDate(null); // Reset end date if invalid
+      }
+    } else if (activePicker === 'end') {
+      setEndDate(date);
+      if (startDate && date < startDate) {
+        setStartDate(null); // Reset start date if invalid
+      }
+    }
     hideDatePicker();
   };
 
-  const clearFilter = () => setFilterDate(null);
+  const clearFilter = () => {
+    setStartDate(null);
+    setEndDate(null);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -217,31 +262,53 @@ export default function HistoryScreen() {
         </View>
 
         <View style={styles.filterRow}>
+          {/* Start Date Chip */}
           <TouchableOpacity
             style={[
               styles.filterChip,
-              filterDate && styles.filterChipActive
+              startDate && styles.filterChipActive
             ]}
-            onPress={showDatePicker}
+            onPress={() => showDatePicker('start')}
             activeOpacity={0.8}
           >
             <Ionicons
-              name={filterDate ? "calendar" : "calendar-outline"}
-              size={18}
-              color={filterDate ? Colors.light.white : Colors.light.brandBlue}
+              name={startDate ? "calendar" : "calendar-outline"}
+              size={16}
+              color={startDate ? Colors.light.white : Colors.light.brandBlue}
             />
             <ThemedText style={[
               styles.filterChipText,
-              filterDate && styles.filterChipTextActive
+              startDate && styles.filterChipTextActive
             ]}>
-              {filterDate ? filterDate.toLocaleDateString() : t('common.filter_date')}
+              {startDate ? startDate.toLocaleDateString() : t('common.from')}
             </ThemedText>
-            {filterDate && (
-              <View style={styles.activeDot} />
-            )}
           </TouchableOpacity>
 
-          {filterDate && (
+          <ThemedText style={{ color: Colors.light.gray, fontSize: 16 }}>-</ThemedText>
+
+          {/* End Date Chip */}
+          <TouchableOpacity
+            style={[
+              styles.filterChip,
+              endDate && styles.filterChipActive
+            ]}
+            onPress={() => showDatePicker('end')}
+            activeOpacity={0.8}
+          >
+            <Ionicons
+              name={endDate ? "calendar" : "calendar-outline"}
+              size={16}
+              color={endDate ? Colors.light.white : Colors.light.brandBlue}
+            />
+            <ThemedText style={[
+              styles.filterChipText,
+              endDate && styles.filterChipTextActive
+            ]}>
+              {endDate ? endDate.toLocaleDateString() : t('common.to')}
+            </ThemedText>
+          </TouchableOpacity>
+
+          {(startDate || endDate) && (
             <TouchableOpacity
               style={styles.clearButton}
               onPress={clearFilter}
@@ -260,6 +327,11 @@ export default function HistoryScreen() {
         onConfirm={handleConfirmDate}
         onCancel={hideDatePicker}
         maximumDate={new Date()}
+        date={
+          activePicker === 'start'
+            ? (startDate || new Date())
+            : (endDate || new Date())
+        }
       />
     </View>
   );
