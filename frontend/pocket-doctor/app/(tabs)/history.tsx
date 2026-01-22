@@ -275,6 +275,7 @@ export default function HistoryScreen() {
               name={startDate ? "calendar" : "calendar-outline"}
               size={16}
               color={startDate ? Colors.light.white : Colors.light.brandBlue}
+              style={{ marginRight: 6 }}
             />
             <ThemedText style={[
               styles.filterChipText,
@@ -299,6 +300,8 @@ export default function HistoryScreen() {
               name={endDate ? "calendar" : "calendar-outline"}
               size={16}
               color={endDate ? Colors.light.white : Colors.light.brandBlue}
+                            style={{ marginRight: 6 }}
+
             />
             <ThemedText style={[
               styles.filterChipText,
@@ -364,9 +367,11 @@ export default function HistoryScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.cardHeader}>
-          <View style={styles.dateBadge}>
-            <Ionicons name="calendar-outline" size={12} color={Colors.light.brandBlue} />
-            <ThemedText style={styles.dateText}>{item.date}</ThemedText>
+         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '22' }]}>
+            <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
+            <ThemedText style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+              {getStatusText(item.status, t)}
+            </ThemedText>
           </View>
           <TouchableOpacity onPress={(e) => handleDeletePress(item.id, e)} hitSlop={10}>
             <Ionicons name="trash-outline" size={18} color={Colors.light.medicalBlue} />
@@ -374,7 +379,7 @@ export default function HistoryScreen() {
         </View>
 
         <View style={styles.cardContent}>
-          <View style={[styles.iconContainer, { backgroundColor: Colors.light.friendlyBlueBg }]}>
+          <View style={[styles.iconContainer, { backgroundColor: Colors.light.white }]}>
             <Ionicons
               name={getResultIcon(item.type) as keyof typeof Ionicons.glyphMap}
               size={24}
@@ -390,12 +395,7 @@ export default function HistoryScreen() {
         </View>
 
         <View style={styles.cardFooter}>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '22' }]}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
-            <ThemedText style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-              {getStatusText(item.status, t)}
-            </ThemedText>
-          </View>
+          
           <View style={styles.viewDetails}>
             {submittingId === item.id ? (
               <ActivityIndicator size="small" color={Colors.light.brandBlue} />
@@ -484,10 +484,10 @@ const styles = StyleSheet.create({
   dateBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.light.lightGray,
+
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
-    borderRadius: BorderRadius.sm,
+
     gap: 4,
   },
   dateText: {
@@ -526,9 +526,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderTopWidth: 1,
     borderTopColor: Colors.light.borderGray,
-    paddingTop: Spacing.sm,
+    paddingTop: 2,
   },
   statusBadge: {
     flexDirection: 'row',
@@ -546,6 +545,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontWeight: '600',
+    marginVertical: -2,
   },
   viewDetails: {
     flexDirection: 'row',
@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
   filterChipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.light.textGray,
+    color: Colors.light.brandBlue,
   },
   filterChipTextActive: {
     color: Colors.light.white,

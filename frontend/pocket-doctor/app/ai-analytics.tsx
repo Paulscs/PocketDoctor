@@ -330,8 +330,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: Colors.light.lightGray,
-    borderBottomWidth: 1,
+    paddingBottom: 10,
+    marginBottom: -30,
     borderBottomColor: Colors.light.borderGray,
   },
   backButton: {
@@ -357,7 +357,8 @@ const styles = StyleSheet.create({
   iconContainer: {
     alignItems: "center",
     marginBottom: 24,
-    paddingTop: 16,
+    paddingTop: 0,
+    
   },
   mainTitle: {
     fontSize: 24,
