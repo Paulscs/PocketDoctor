@@ -299,8 +299,7 @@ export default function HomeScreen() {
               </View>
               <View style={styles.cardContent}>
                 <ThemedText style={styles.quickActionTitle}>
-                  {t('home.ai_consultation')}
-                </ThemedText>
+  {t('home.ai_consultation').replace(' ', '\n')}                </ThemedText>
                 <View style={styles.subtitleContainer}>
                   <View style={styles.featureTag}>
                     <IconSymbol
@@ -621,7 +620,7 @@ const styles = StyleSheet.create({
   },
   seeAllLink: {
     fontSize: 14,
-    color: Colors.light.healthGreen,
+    color: Colors.light.brandBlue,
     fontWeight: "600",
     textDecorationLine: "underline",
     marginBottom: Spacing.md,
@@ -664,7 +663,7 @@ const styles = StyleSheet.create({
   activityTitle: {
     fontSize: 16,
     fontWeight: "500",
-    color: Colors.light.black,
+    color: Colors.light.brandBlue,
     marginBottom: 2,
   },
   activityTime: {

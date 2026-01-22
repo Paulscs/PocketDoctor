@@ -38,7 +38,7 @@ interface MedicalResult {
 const getResultIcon = (type: MedicalResult["type"]) => {
   switch (type) {
     case "blood":
-      return "water";
+      return "document-text";
     case "imaging":
       return "scan";
     case "cardiac":
@@ -369,7 +369,7 @@ export default function HistoryScreen() {
             <ThemedText style={styles.dateText}>{item.date}</ThemedText>
           </View>
           <TouchableOpacity onPress={(e) => handleDeletePress(item.id, e)} hitSlop={10}>
-            <Ionicons name="trash-outline" size={18} color={Colors.light.placeholderGray} />
+            <Ionicons name="trash-outline" size={18} color={Colors.light.medicalBlue} />
           </TouchableOpacity>
         </View>
 
@@ -378,7 +378,7 @@ export default function HistoryScreen() {
             <Ionicons
               name={getResultIcon(item.type) as keyof typeof Ionicons.glyphMap}
               size={24}
-              color={Colors.light.brandBlue}
+              color={Colors.light.medicalBlue}
             />
           </View>
           <View style={styles.textContainer}>
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: Colors.light.text,
+    color: Colors.light.brandBlue,
     marginBottom: 2,
   },
   resultDescription: {
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
   viewDetailsText: {
     fontSize: 12,
     fontWeight: '600',
-    color: Colors.light.brandBlue,
+    color: Colors.light.medicalBlue,
   },
   loadingContainer: {
     flex: 1,
