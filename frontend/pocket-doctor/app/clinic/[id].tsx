@@ -93,10 +93,10 @@ export default function ClinicDetailScreen() {
                 </View>
 
                 <View style={styles.content}>
-                    <ThemedText type="title">{clinic.nombre}</ThemedText>
+                    <ThemedText type="title" style={{ color: Colors.light.brandBlue }}>{clinic.nombre}</ThemedText>
 
                     <View style={styles.infoRow}>
-                        <Ionicons name="location" size={20} color={Colors.light.textGray} />
+                        <Ionicons name="location" size={20} color={Colors.light.medicalBlue} />
                         <ThemedText style={styles.infoText}>
                             {[clinic.direccion, clinic.ciudad, clinic.provincia].filter(Boolean).join(', ')}
                         </ThemedText>
@@ -104,7 +104,7 @@ export default function ClinicDetailScreen() {
 
                     {clinic.telefono && (
                         <View style={styles.infoRow}>
-                            <Ionicons name="call" size={20} color={Colors.light.textGray} />
+                            <Ionicons name="call" size={20} color={Colors.light.medicalBlue} />
                             <ThemedText style={styles.infoText}>{clinic.telefono}</ThemedText>
                         </View>
                     )}
@@ -124,14 +124,14 @@ export default function ClinicDetailScreen() {
                     <View style={styles.divider} />
 
                     {/* Specialists Section */}
-                    <ThemedText type="subtitle" style={{ marginBottom: 12 }}>{t('clinics.detail.available_specialists')}</ThemedText>
+                    <ThemedText type="subtitle" style={{ marginBottom: 20, color: Colors.light.brandBlue }}>{t('clinics.detail.available_specialists')}</ThemedText>
 
                     {clinic.especialistas && clinic.especialistas.length > 0 ? (
                         <View style={styles.specialistList}>
                             {clinic.especialistas.map((esp) => (
                                 <View key={esp.especialista_id} style={styles.specialistCard}>
                                     <View style={styles.specialistIcon}>
-                                        <Ionicons name="person" size={20} color={Colors.light.brandBlue} />
+                                        <Ionicons name="person" size={20} color={Colors.light.medicalBlue} />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <ThemedText style={styles.specialistName}>
@@ -181,12 +181,13 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.light.background, // Should match theme
         marginTop: -20,
         flex: 1,
+
     },
     infoRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: Spacing.sm,
-        marginTop: Spacing.sm,
+        marginTop: 12,
     },
     infoText: {
         fontSize: 14,
@@ -196,8 +197,8 @@ const styles = StyleSheet.create({
     actions: {
         flexDirection: 'row',
         gap: Spacing.md,
-        marginTop: Spacing.xl,
-        marginBottom: Spacing.lg,
+        marginTop: Spacing.md,
+        marginBottom: Spacing.sm,
     },
     actionButton: {
         flex: 1,
@@ -223,7 +224,9 @@ const styles = StyleSheet.create({
     divider: {
         height: 1,
         backgroundColor: Colors.light.border,
-        marginVertical: Spacing.lg,
+        marginTop: 18,
+        marginBottom: 18,
+
     },
     specialistList: {
         gap: Spacing.sm,
@@ -231,8 +234,9 @@ const styles = StyleSheet.create({
     specialistCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: Colors.light.surface,
+        backgroundColor: Colors.light.white,
         padding: Spacing.md,
+        marginBottom: 5,
         borderRadius: BorderRadius.lg,
         borderWidth: 1,
         borderColor: Colors.light.border,
