@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   titleContainer: {
-    marginBottom: Spacing.md,
+    marginBottom: 25,
   },
   filterRow: {
     flexDirection: 'row',
