@@ -226,26 +226,20 @@ export default function ClinicsScreen() {
       onPress={() => handleClinicPress(clinic)}
       activeOpacity={0.7}
     >
-      <View style={styles.clinicIcon}>
-        <Ionicons
-          name="heart-outline"
-          size={20}
-          color={Colors.light.brandBlue}
-        />
+      <View style={styles.clinicThumbnail}>
+        <View style={styles.thumbnailPlaceholder}>
+          <Ionicons
+            name="medical-outline"
+            size={24}
+            color={Colors.light.medicalBlue}
+          />
+        </View>
       </View>
       <View style={styles.clinicInfo}>
         <ThemedText style={styles.clinicName}>{clinic.name}</ThemedText>
         <ThemedText style={styles.clinicAddress}>{clinic.address}</ThemedText>
       </View>
-      <View style={styles.clinicThumbnail}>
-        <View style={styles.thumbnailPlaceholder}>
-          <Ionicons
-            name="business-outline"
-            size={24}
-            color={Colors.light.placeholderGray}
-          />
-        </View>
-      </View>
+     
     </TouchableOpacity>
   );
 
@@ -267,12 +261,13 @@ export default function ClinicsScreen() {
               <Ionicons
                 name="search-outline"
                 size={20}
-                color={Colors.light.placeholderGray}
+                color={Colors.light.medicalBlue
+                }
               />
               <TextInput
                 style={styles.searchInput}
                 placeholder={t('clinics.search_placeholder')}
-                placeholderTextColor={Colors.light.placeholderGray}
+                placeholderTextColor={Colors.light.gray}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
@@ -427,7 +422,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.light.textGray,
     padding: 0, // Reset default padding
   },
@@ -501,11 +496,12 @@ const styles = StyleSheet.create({
   },
   clinicInfo: {
     flex: 1,
+
   },
   clinicName: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.light.textGray,
+    color: Colors.light.brandBlue,
     marginBottom: 4,
   },
   clinicAddress: {
@@ -513,13 +509,15 @@ const styles = StyleSheet.create({
     color: Colors.light.gray,
   },
   clinicThumbnail: {
-    width: 60,
-    height: 40,
+    width: 40,
+    height: 60,
+ 
   },
   thumbnailPlaceholder: {
     flex: 1,
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: Colors.light.medicalBlue +2430,
     borderRadius: 8,
+    marginRight: 19,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -550,7 +548,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   toggleButtonActive: {
-    backgroundColor: Colors.light.brandBlue,
+    backgroundColor: Colors.light.medicalBlue,
   },
   toggleButtonText: {
     fontSize: 14,
