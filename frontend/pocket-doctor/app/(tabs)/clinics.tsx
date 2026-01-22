@@ -239,7 +239,7 @@ export default function ClinicsScreen() {
         <ThemedText style={styles.clinicName}>{clinic.name}</ThemedText>
         <ThemedText style={styles.clinicAddress}>{clinic.address}</ThemedText>
       </View>
-     
+
     </TouchableOpacity>
   );
 
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
 
 
   content: {
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: Colors.light.white,
     paddingTop: 16,
   },
 
@@ -511,11 +511,11 @@ const styles = StyleSheet.create({
   clinicThumbnail: {
     width: 40,
     height: 60,
- 
+
   },
   thumbnailPlaceholder: {
     flex: 1,
-    backgroundColor: Colors.light.medicalBlue +2430,
+    backgroundColor: Colors.light.medicalBlue + 2430,
     borderRadius: 8,
     marginRight: 19,
     justifyContent: "center",

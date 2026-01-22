@@ -80,7 +80,7 @@ const getStatusText = (status: MedicalResult["status"], t: any) => {
 export default function HistoryScreen() {
   const { t } = useTranslation();
   const backgroundColor = useThemeColor(
-    { light: Colors.light.lightGray, dark: Colors.dark.background },
+    { light: Colors.light.white, dark: Colors.dark.background },
     "background"
   );
 
@@ -300,7 +300,7 @@ export default function HistoryScreen() {
               name={endDate ? "calendar" : "calendar-outline"}
               size={16}
               color={endDate ? Colors.light.white : Colors.light.brandBlue}
-                            style={{ marginRight: 6 }}
+              style={{ marginRight: 6 }}
 
             />
             <ThemedText style={[
@@ -367,7 +367,7 @@ export default function HistoryScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.cardHeader}>
-         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '22' }]}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '22' }]}>
             <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
             <ThemedText style={[styles.statusText, { color: getStatusColor(item.status) }]}>
               {getStatusText(item.status, t)}
@@ -384,7 +384,7 @@ export default function HistoryScreen() {
               name={getResultIcon(item.type) as keyof typeof Ionicons.glyphMap}
               size={24}
               color={Colors.light.medicalBlue}
-              style={{marginRight: 25}}
+              style={{ marginRight: 25 }}
             />
           </View>
           <View style={styles.textContainer}>
@@ -396,7 +396,7 @@ export default function HistoryScreen() {
         </View>
 
         <View style={styles.cardFooter}>
-          
+
           <View style={styles.viewDetails}>
             {submittingId === item.id ? (
               <ActivityIndicator size="small" color={Colors.light.brandBlue} />

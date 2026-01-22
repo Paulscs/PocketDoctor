@@ -14,7 +14,7 @@ export default function HelpCenterScreen() {
     const router = useRouter();
     const colorScheme = useColorScheme();
     const { t } = useTranslation();
-    const backgroundColor = Colors.light.lightGray;
+    const backgroundColor = Colors.light.white;
 
     const renderCategory = ({ item }: { item: HelpCategory }) => (
         <TouchableOpacity
@@ -23,8 +23,8 @@ export default function HelpCenterScreen() {
             onPress={() => router.push(`/help/${item.id}`)}
         >
             <View style={styles.cardHeader}>
-                <View style={[styles.iconContainer, { backgroundColor: Colors.light.brandBlue + '15' }]}>
-                    <Ionicons name={item.icon as any} size={28} color={Colors.light.brandBlue} />
+                <View style={[styles.iconContainer]}>
+                    <Ionicons name={item.icon as any} size={28} color={Colors.light.medicalBlue} />
                 </View>
                 <View style={styles.cardTextContent}>
                     <ThemedText style={styles.cardTitle}>{t(`help.categories.${item.id}.title`)}</ThemedText>
@@ -32,7 +32,7 @@ export default function HelpCenterScreen() {
                         {t(`help.categories.${item.id}.description`)}
                     </ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={Colors.light.placeholderGray} style={styles.chevron} />
+                <Ionicons name="chevron-forward" size={20} color={Colors.light.medicalBlue} style={styles.chevron} />
             </View>
         </TouchableOpacity>
     );
@@ -41,7 +41,7 @@ export default function HelpCenterScreen() {
         <ThemedView style={[styles.container, { backgroundColor }]}>
             <Stack.Screen
                 options={{
-                    title: t('help.ui.title'),
+                    title: "",
                     headerBackTitle: t('common.back'),
                     headerStyle: { backgroundColor: Colors.light.white },
                     headerShadowVisible: false,
@@ -81,13 +81,13 @@ const styles = StyleSheet.create({
         paddingTop: Spacing.md,
         paddingBottom: Spacing.lg,
         backgroundColor: Colors.light.white,
-        marginBottom: Spacing.md,
     },
     title: {
         fontSize: 28,
         fontWeight: "800",
         color: Colors.light.brandBlue,
         letterSpacing: -0.5,
+        paddingBottom: 8,
         marginBottom: 8,
     },
     subtitle: {
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
     listContent: {
-        padding: Spacing.lg,
+        paddingHorizontal: Spacing.lg,
     },
     card: {
         backgroundColor: Colors.light.white,

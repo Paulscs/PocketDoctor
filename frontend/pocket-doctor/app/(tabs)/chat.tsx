@@ -315,7 +315,7 @@ export default function ChatScreen() {
                       accessibilityRole="button"
                       accessibilityHint="Selecciona esta opción para continuar la conversación"
                     >
-                  
+
                       <ThemedText style={styles.followUpText}>
                         {option.text}
                       </ThemedText>
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
 
   chatContainer: {
     flex: 1,
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: Colors.light.white,
   },
   chatContent: {
     paddingHorizontal: Spacing.lg,
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
-    
+
   },
   userBubble: {
     backgroundColor: Colors.light.brandBlue,
@@ -517,8 +517,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
-    
-    
+
+
   },
   followUpText: {
     fontSize: 14,

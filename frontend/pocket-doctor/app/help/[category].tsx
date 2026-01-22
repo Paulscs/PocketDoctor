@@ -15,7 +15,7 @@ export default function HelpCategoryScreen() {
     const router = useRouter();
     const colorScheme = useColorScheme();
     const { t } = useTranslation();
-    const backgroundColor = Colors.light.lightGray;
+    const backgroundColor = Colors.light.white;
 
     const category = helpCategories.find(c => c.id === categoryId);
 
@@ -34,7 +34,7 @@ export default function HelpCategoryScreen() {
             onPress={() => router.push(`/help/article/${item.id}`)}
         >
             <View style={[styles.itemIcon, { backgroundColor: Colors.light.white }]}>
-                <Ionicons name="document-text-outline" size={20} color={Colors.light.brandBlue} />
+                <Ionicons name="document-text-outline" size={20} color={Colors.light.medicalBlue} />
             </View>
             <View style={styles.itemContent}>
                 <ThemedText style={styles.itemTitle}>{t(`help.categories.${categoryId}.articles.${item.id}.title`)}</ThemedText>

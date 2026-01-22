@@ -63,7 +63,7 @@ const INITIAL_PROFILE: UserProfile = {
 
 export default function ProfileScreen() {
   const backgroundColor = useThemeColor(
-    { light: Colors.light.lightGray, dark: Colors.dark.background },
+    { light: Colors.light.white, dark: Colors.dark.background },
     "background"
   );
   const { t } = useTranslation();

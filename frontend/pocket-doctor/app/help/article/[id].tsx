@@ -14,7 +14,7 @@ export default function HelpArticleScreen() {
     const { id } = useLocalSearchParams();
     const colorScheme = useColorScheme();
     const { t } = useTranslation();
-    const backgroundColor = Colors.light.lightGray;
+    const backgroundColor = Colors.light.white;
 
     // Find article across all categories to get the category ID
     let article: any;
