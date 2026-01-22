@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     color: Colors.light.warning,
   },
   analysisSection: {
-    marginBottom: 16,
+    marginBottom: 1,
   },
   analysisTitle: {
     fontSize: 16,
