@@ -267,7 +267,11 @@
             "chats": "Chats",
             "empty": "No hay chats disponibles",
             "empty_desc": "Sube un análisis médico para iniciar una conversación con el asistente IA."
-        }
+        },
+        "delete_title": "Eliminar Chat",
+        "delete_confirmation": "¿Estás seguro de que deseas eliminar esta conversación?",
+        "delete_cancel": "Cancelar",
+        "delete_confirm": "Eliminar"
     },
     "clinics": {
         "title": "Clínicas y",

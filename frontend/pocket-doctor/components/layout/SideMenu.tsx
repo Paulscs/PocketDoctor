@@ -6,6 +6,7 @@ import {
   ScrollView,
   Animated,
   Dimensions,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
@@ -94,6 +95,24 @@ export function SideMenu({
   //   onClose();
   // }, [onCreateNewChat, onClose]);
 
+  const confirmDelete = (id: string) => {
+    Alert.alert(
+      t('chat.delete_title'),
+      t('chat.delete_confirmation'),
+      [
+        {
+          text: t('chat.delete_cancel'),
+          style: "cancel"
+        },
+        {
+          text: t('chat.delete_confirm'),
+          style: "destructive",
+          onPress: () => onDeleteSession(id)
+        }
+      ]
+    );
+  };
+
   React.useEffect(() => {
     if (isVisible) {
       Animated.timing(slideAnimation, {
@@ -148,36 +167,25 @@ export function SideMenu({
             </TouchableOpacity>
           </View>
 
-          {/* New Chat Button */}
-          {/* New Chat Button Removed */}
-          {/* <TouchableOpacity
-            style={styles.newChatButton}
-            onPress={handleNewChat}
-            activeOpacity={0.7}
-          >
-            <IconSymbol name="plus" size={20} color={Colors.light.white} />
-            <ThemedText style={styles.newChatText}>
-              Nueva conversación
-            </ThemedText>
-          </TouchableOpacity> */}
-
           {/* Chat Sessions */}
           <ScrollView
             style={styles.sessionsContainer}
             showsVerticalScrollIndicator={false}
           >
             {chatSessions.map(session => (
-              <TouchableOpacity
+              <View
                 key={session.id}
                 style={[
                   styles.sessionItem,
                   session.isActive && styles.activeSessionItem,
                 ]}
-                onPress={() => handleSessionSelect(session.id)}
-                activeOpacity={0.7}
               >
                 <View style={styles.sessionContent}>
-                  <View style={styles.sessionInfo}>
+                  <TouchableOpacity
+                    style={styles.sessionInfo}
+                    onPress={() => handleSessionSelect(session.id)}
+                    activeOpacity={0.7}
+                  >
                     <ThemedText
                       style={[
                         styles.sessionTitle,
@@ -195,11 +203,12 @@ export function SideMenu({
                         {session.messageCount} {t('common.messages')}
                       </ThemedText>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.deleteButton}
-                    onPress={() => onDeleteSession(session.id)}
+                    onPress={() => confirmDelete(session.id)}
                     activeOpacity={0.7}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
                     <IconSymbol
                       name="trash"
@@ -208,7 +217,7 @@ export function SideMenu({
                     />
                   </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
+              </View>
             ))}
 
             {chatSessions.length === 0 && (
