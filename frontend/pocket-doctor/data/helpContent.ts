@@ -117,16 +117,6 @@ export const helpCategories: HelpCategory[] = [
         title: 'Privacidad de tus datos',
         content: 'Tus datos médicos son encriptados y confidenciales. Solo tú tienes acceso a ellos, a menos que decidas compartirlos.',
         steps: []
-      },
-      {
-        id: 'change-password',
-        title: 'Cambiar contraseña',
-        content: 'Si necesitas actualizar tu contraseña por seguridad.',
-        steps: [
-          'Ve a Perfil > Configuración > Seguridad.',
-          'Selecciona "Cambiar contraseña".',
-          'Ingresa tu contraseña actual y la nueva.'
-        ]
       }
     ]
   },
