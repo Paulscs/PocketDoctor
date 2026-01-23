@@ -5,7 +5,7 @@ export default {
     slug: "pocket-doctor",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/logoBlue.png",
+    icon: "./assets/images/alogoBlue.png",
 
     // ✅ Fixes the Linking warning in production builds
     scheme: "pocketdoctor",
@@ -24,8 +24,8 @@ export default {
       usesCleartextTraffic: true,
       predictiveBackGestureEnabled: false,
       adaptiveIcon: {
-        backgroundColor: "#002D73",
-        foregroundImage: "./assets/images/logoWhite.png",
+        backgroundColor: "#ffffff",
+        foregroundImage: "./assets/images/alogoBlue.png",
       },
       config: {
         googleMaps: {
