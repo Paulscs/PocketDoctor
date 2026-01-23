@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, ScrollView, View } from 'react-native';
+import { StyleSheet, ScrollView, View, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -7,14 +7,14 @@ import { useTranslation } from 'react-i18next';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { helpCategories } from '@/data/helpContent';
-import { Colors } from '@/constants/theme';
+import { Colors, Spacing, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function HelpArticleScreen() {
     const { id } = useLocalSearchParams();
     const colorScheme = useColorScheme();
-    const colors = Colors[colorScheme ?? 'light'];
     const { t } = useTranslation();
+    const backgroundColor = Colors.light.white;
 
     // Find article across all categories to get the category ID
     let article: any;
@@ -38,29 +38,45 @@ export default function HelpArticleScreen() {
     }
 
     return (
-        <ThemedView style={styles.container}>
-            <Stack.Screen options={{ title: t('help.ui.title'), headerBackTitle: t('common.back') }} />
+        <ThemedView style={[styles.container, { backgroundColor }]}>
+            <Stack.Screen
+                options={{
+                    title: "",
+                    headerShadowVisible: false,
+                    headerTintColor: Colors.light.medicalBlue,
+                }}
+            />
 
-            <ScrollView contentContainerStyle={styles.content}>
-                <ThemedText type="title" style={styles.title}>{t(`help.categories.${categoryId}.articles.${article.id}.title`)}</ThemedText>
-
-                <ThemedText style={styles.body}>{t(`help.categories.${categoryId}.articles.${article.id}.content`)}</ThemedText>
+            <ScrollView
+                contentContainerStyle={styles.contentContainer}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Article Header */}
+                <View style={styles.sectionCard}>
+                    <ThemedText style={styles.title}>{t(`help.categories.${categoryId}.articles.${article.id}.title`)}</ThemedText>
+                    <ThemedText style={styles.body}>{t(`help.categories.${categoryId}.articles.${article.id}.content`)}</ThemedText>
+                </View>
 
                 {/* Dynamic Steps */}
                 {(() => {
                     const steps = t(`help.categories.${categoryId}.articles.${article.id}.steps`, { returnObjects: true }) as string[];
                     if (steps && Array.isArray(steps) && steps.length > 0) {
                         return (
-                            <View style={styles.section}>
-                                <ThemedText type="subtitle" style={styles.sectionTitle}>{t('help.ui.steps_title')}</ThemedText>
-                                {steps.map((step, index) => (
-                                    <View key={index} style={styles.stepRow}>
-                                        <View style={[styles.stepNumber, { backgroundColor: colors.tint }]}>
-                                            <ThemedText style={styles.stepNumberText}>{index + 1}</ThemedText>
+                            <View style={styles.sectionCard}>
+                                <ThemedText style={styles.sectionTitle}>{t('help.ui.steps_title')}</ThemedText>
+                                <View style={styles.stepsContainer}>
+                                    {steps.map((step, index) => (
+                                        <View key={index} style={styles.stepRow}>
+                                            <View style={styles.stepTimelineContainer}>
+                                                <View style={styles.stepNumber}>
+                                                    <ThemedText style={styles.stepNumberText}>{index + 1}</ThemedText>
+                                                </View>
+                                                {index < steps.length - 1 && <View style={styles.stepLine} />}
+                                            </View>
+                                            <ThemedText style={styles.stepText}>{step}</ThemedText>
                                         </View>
-                                        <ThemedText style={styles.stepText}>{step}</ThemedText>
-                                    </View>
-                                ))}
+                                    ))}
+                                </View>
                             </View>
                         );
                     }
@@ -72,10 +88,10 @@ export default function HelpArticleScreen() {
                     const tips = t(`help.categories.${categoryId}.articles.${article.id}.tips`, { returnObjects: true }) as string[];
                     if (tips && Array.isArray(tips) && tips.length > 0) {
                         return (
-                            <View style={[styles.tipContainer, { backgroundColor: colors.tint + '15', borderColor: colors.tint }]}>
+                            <View style={styles.tipCard}>
                                 <View style={styles.tipHeader}>
-                                    <Ionicons name="bulb" size={20} color={colors.tint} />
-                                    <ThemedText type="defaultSemiBold" style={[styles.tipTitle, { color: colors.tint }]}>{t('help.ui.tip_title')}</ThemedText>
+                                    <Ionicons name="bulb" size={20} color={Colors.light.medicalBlue} />
+                                    <ThemedText style={styles.tipTitle}>{t('help.ui.tip_title')}</ThemedText>
                                 </View>
                                 {tips.map((tip, index) => (
                                     <ThemedText key={index} style={styles.tipText}>{tip}</ThemedText>
@@ -86,16 +102,16 @@ export default function HelpArticleScreen() {
                     return null;
                 })()}
 
-                {/* Feedback Section Placeholder */}
+                {/* Feedback Section */}
                 <View style={styles.feedbackContainer}>
                     <ThemedText style={styles.feedbackLabel}>{t('help.ui.feedback_question')}</ThemedText>
                     <View style={styles.feedbackButtons}>
-                        <View style={[styles.feedbackBtn, { borderColor: colors.icon }]}>
-                            <Ionicons name="thumbs-up-outline" size={20} color={colors.text} />
-                        </View>
-                        <View style={[styles.feedbackBtn, { borderColor: colors.icon }]}>
-                            <Ionicons name="thumbs-down-outline" size={20} color={colors.text} />
-                        </View>
+                        <TouchableOpacity style={styles.feedbackBtn} activeOpacity={0.7}>
+                            <Ionicons name="thumbs-up-outline" size={22} color={Colors.light.medicalBlue} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.feedbackBtn} activeOpacity={0.7}>
+                            <Ionicons name="thumbs-down-outline" size={22} color={Colors.light.medicalBlue} />
+                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -108,87 +124,128 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    content: {
-        padding: 20,
-        paddingBottom: 40,
+    contentContainer: {
+        paddingLeft: Spacing.lg,
+        paddingRight: Spacing.lg,
+        paddingBottom: Spacing.lg,
+        paddingTop: -5,
+    },
+    sectionCard: {
+        backgroundColor: Colors.light.white,
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.lg,
+        marginBottom: Spacing.lg,
+        shadowColor: Colors.light.black,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     title: {
-        marginBottom: 16,
+        fontSize: 24,
+        fontWeight: '700',
+        color: Colors.light.brandBlue,
+        marginBottom: Spacing.md,
     },
     body: {
         fontSize: 16,
         lineHeight: 24,
-        marginBottom: 24,
-    },
-    section: {
-        marginBottom: 24,
+        color: Colors.light.textGray,
     },
     sectionTitle: {
-        marginBottom: 16,
+        fontSize: 18,
+        fontWeight: '700',
+        color: Colors.light.brandBlue,
+        marginBottom: Spacing.lg,
+    },
+    stepsContainer: {
+        paddingLeft: Spacing.xs,
     },
     stepRow: {
         flexDirection: 'row',
-        marginBottom: 16,
-        alignItems: 'flex-start',
+        marginBottom: 2, // Spacing handled by content
+    },
+    stepTimelineContainer: {
+        alignItems: 'center',
+        width: 30,
+        marginRight: Spacing.md,
     },
     stepNumber: {
         width: 28,
         height: 28,
         borderRadius: 14,
+        backgroundColor: Colors.light.medicalBlue,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
-        marginTop: 2,
+        zIndex: 1,
     },
     stepNumberText: {
-        color: '#fff',
-        fontWeight: 'bold',
+        color: Colors.light.white,
+        fontWeight: '700',
         fontSize: 14,
+    },
+    stepLine: {
+        width: 2,
+        flex: 1,
+        backgroundColor: Colors.light.borderGray,
+        marginVertical: 4,
+        minHeight: 20,
     },
     stepText: {
         flex: 1,
         fontSize: 16,
         lineHeight: 24,
+        color: Colors.light.textGray,
+        paddingBottom: Spacing.lg, // Add padding here for separation
+        marginTop: 2, // Align with number
     },
-    tipContainer: {
-        padding: 16,
-        borderRadius: 12,
+    tipCard: {
+        backgroundColor: Colors.light.friendlyBlueBg,
+        borderColor: Colors.light.friendlyBlueBorder,
         borderWidth: 1,
-        marginBottom: 24,
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.lg,
+        marginBottom: Spacing.lg,
     },
     tipHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: Spacing.sm,
     },
     tipTitle: {
-        marginLeft: 8,
+        fontSize: 16,
+        fontWeight: '700',
+        color: Colors.light.brandBlue,
+        marginLeft: Spacing.sm,
     },
     tipText: {
         fontSize: 15,
         lineHeight: 22,
+        color: Colors.light.textGray,
     },
     feedbackContainer: {
-        marginTop: 24,
         alignItems: 'center',
-        paddingTop: 24,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: '#ccc',
     },
     feedbackLabel: {
-        marginBottom: 16,
-        opacity: 0.7,
+        fontSize: 14,
+        color: Colors.light.gray,
+        marginBottom: Spacing.md,
     },
     feedbackButtons: {
         flexDirection: 'row',
-        gap: 16,
+        gap: Spacing.xl,
     },
     feedbackBtn: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        borderWidth: 1,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: Colors.light.white,
         justifyContent: 'center',
         alignItems: 'center',
+        shadowColor: Colors.light.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
 });

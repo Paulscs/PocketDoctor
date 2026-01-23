@@ -24,6 +24,10 @@ import { useAuthStore } from "@/src/store/authStore";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import LanguageSwitcher from "@/src/components/LanguageSwitcher";
 import { useTranslation } from "react-i18next";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { ListItem } from "@/components/ui/ListItem";
+import { Card } from "@/components/ui/Card";
+import { CustomLoader } from "@/components/ui/CustomLoader";
 
 interface UserProfile {
   id: number;
@@ -47,9 +51,9 @@ interface UserProfile {
 const INITIAL_PROFILE: UserProfile = {
   id: 0,
   user_auth_id: "",
-  nombre: "Ethan",
-  apellido: "Peña Sosa",
-  email: "Ethan@gmail.com",
+  nombre: "",
+  apellido: "",
+  email: "",
   fecha_registro: "",
   estado: true,
   peso_kg: undefined,
@@ -66,6 +70,7 @@ export default function ProfileScreen() {
 
   const { session, userProfile, logout } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile>(INITIAL_PROFILE);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -77,6 +82,9 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     const loadProfile = async () => {
+      // If we are logging out, don't try to load profile
+      if (isLoggingOut) return;
+
       if (userProfile) {
         setProfile(userProfile);
         setIsLoading(false);
@@ -96,7 +104,8 @@ export default function ProfileScreen() {
     };
 
     loadProfile();
-  }, [userProfile, session]);
+  }, [userProfile, session, isLoggingOut]);
+
 
   const handleSaveChanges = async () => {
     if (!session?.access_token) {
@@ -106,7 +115,6 @@ export default function ProfileScreen() {
 
     setIsSaving(true);
     try {
-      // Prepare update data - only send the fields defined in UserProfileUpdate schema
       const updateData = {
         peso_kg: profile.peso_kg,
         alergias: profile.alergias,
@@ -127,10 +135,6 @@ export default function ProfileScreen() {
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleEditProfile = () => {
-    setIsEditing(true);
   };
 
   const openItemModal = (field: 'alergias' | 'condiciones_medicas') => {
@@ -182,19 +186,18 @@ export default function ProfileScreen() {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleProfilePress = () => {
-    // Already on profile tab, no navigation needed
-    console.log("Already on profile tab");
-  };
-
   const handleLogout = async () => {
-    console.log("Logging out...");
+    setIsLoggingOut(true);
+    // Give a small delay for smooth transition and visual feedback
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     try {
       await logout();
-      router.replace("/");
+      // Navigation is handled by global auth guard in _layout.tsx
     } catch (error) {
       console.error("Logout error:", error);
       Alert.alert(t("common.error"), t("profile.error_logout"));
+      setIsLoggingOut(false);
     }
   };
 
@@ -202,7 +205,7 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.light.brandBlue} />
+          <CustomLoader />
           <ThemedText style={styles.loadingText}>{t("profile.loading")}</ThemedText>
         </View>
       </SafeAreaView>
@@ -210,382 +213,280 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("@/assets/images/logoBlue.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <ThemedText style={styles.logoText}>POCKET DOCTOR</ThemedText>
+    <SafeAreaView style={[styles.container, { backgroundColor }]} edges={['top']}>
+      <View style={{ flex: 1 }}> {/* Wrapper to ensure relative positioning context if needed, though SafeAreaView handles flex:1 */}
+
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <TouchableOpacity
+            style={styles.floatingEditBtn}
+            onPress={() => isEditing ? handleSaveChanges() : setIsEditing(true)}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <ActivityIndicator size="small" color={Colors.light.brandBlue} />
+            ) : (
+              <ThemedText style={styles.editHeaderBtnText}>
+                {isEditing ? t("common.save", "Done") : t("common.edit", "Edit")}
+              </ThemedText>
+            )}
+          </TouchableOpacity>
+          {/* Profile Card */}
+          <View style={styles.profileHeaderCard}>
+            <UserAvatar size={80} />
+            <ThemedText style={styles.fullName}>
+              {profile.nombre || t('profile.names')} {profile.apellido || t('profile.surnames')}
+            </ThemedText>
+            <ThemedText style={styles.emailText}>{profile.email}</ThemedText>
           </View>
-        </View>
-        <View style={styles.headerRight}>
-          <ThemedText style={styles.pageTitle}>{t("profile.title")}</ThemedText>
-          <UserAvatar />
-        </View>
+
+          {/* Vital Stats Row */}
+          <View style={styles.statsRow}>
+            <Card style={styles.statCard} variant="elevated">
+              <ThemedText style={styles.statLabel}>{t('profile.height')}</ThemedText>
+              {isEditing ? (
+                <View style={styles.editStatRow}>
+                  <TextInput
+                    value={profile.altura_cm?.toString()}
+                    onChangeText={t => updateProfile("altura_cm", t ? Number(t) : undefined)}
+                    keyboardType="numeric"
+                    style={styles.statInput}
+                    placeholder="0"
+                  />
+                  <ThemedText style={styles.statUnit}>cm</ThemedText>
+                </View>
+              ) : (
+                <ThemedText style={styles.statValue}>{profile.altura_cm || '--'} <ThemedText style={styles.statUnit}>cm</ThemedText></ThemedText>
+              )}
+            </Card>
+            <Card style={styles.statCard} variant="elevated">
+              <ThemedText style={styles.statLabel}>{t('profile.weight')}</ThemedText>
+              {isEditing ? (
+                <View style={styles.editStatRow}>
+                  <TextInput
+                    value={profile.peso_kg?.toString()}
+                    onChangeText={t => updateProfile("peso_kg", t ? Number(t) : undefined)}
+                    keyboardType="numeric"
+                    style={styles.statInput}
+                    placeholder="0"
+                  />
+                  <ThemedText style={styles.statUnit}>kg</ThemedText>
+                </View>
+              ) : (
+                <ThemedText style={styles.statValue}>{profile.peso_kg || '--'} <ThemedText style={styles.statUnit}>kg</ThemedText></ThemedText>
+              )}
+            </Card>
+          </View>
+
+          {/* Personal Info */}
+          <SectionHeader title={t("profile.personal_info")} />
+          <Card variant="elevated" style={styles.sectionCard}>
+            {isEditing ? (
+              <View style={styles.formGroup}>
+                <ThemedText style={styles.inputLabel}>{t("profile.names")}</ThemedText>
+                <TextInput
+                  style={styles.input}
+                  value={profile.nombre}
+                  onChangeText={t => updateProfile('nombre', t)}
+                  placeholder={t("profile.names")}
+                />
+                <View style={styles.divider} />
+
+                <ThemedText style={styles.inputLabel}>{t("profile.surnames")}</ThemedText>
+                <TextInput
+                  style={styles.input}
+                  value={profile.apellido}
+                  onChangeText={t => updateProfile('apellido', t)}
+                  placeholder={t("profile.surnames")}
+                />
+                <View style={styles.divider} />
+
+                <ThemedText style={styles.inputLabel}>{t("profile.birth_date")}</ThemedText>
+                <TouchableOpacity onPress={showDatePicker} style={styles.dateInputBtn}>
+                  <ThemedText style={profile.fecha_nacimiento ? styles.inputText : styles.placeholderText}>
+                    {profile.fecha_nacimiento || "YYYY-MM-DD"}
+                  </ThemedText>
+                  <Ionicons name="calendar-outline" size={20} color={Colors.light.brandBlue} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                <ListItem
+                  title={t("profile.names")}
+                  subtitle={`${profile.nombre || ''} ${profile.apellido || ''}`}
+                  leftIcon="person-outline"
+                  showChevron={false}
+                  style={styles.cleanListItem}
+                />
+                <View style={styles.separator} />
+                <ListItem
+                  title={t("profile.birth_date")}
+                  subtitle={profile.fecha_nacimiento || t('common.not_set', 'Not Set')}
+                  leftIcon="calendar-outline"
+                  showChevron={false}
+                  style={styles.cleanListItem}
+                />
+              </>
+            )}
+          </Card>
+
+          {/* Medical History */}
+          <SectionHeader title={t("profile.medical_info")} />
+          <Card variant="elevated" style={styles.sectionCard}>
+            <View style={styles.medicalSectionPart}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={[styles.iconContainer, { backgroundColor: Colors.light.lightGray }]}>
+                  <Ionicons name="pulse-outline" size={20} color={Colors.light.brandBlue} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.medicalHeaderRow}>
+                    <ThemedText style={styles.medicalLabel}>{t("profile.allergies")}</ThemedText>
+                    {isEditing && (
+                      <TouchableOpacity onPress={() => openItemModal('alergias')}>
+                        <Ionicons name="add-circle" size={24} color={Colors.light.brandBlue} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <View style={styles.chipContainer}>
+                    {profile.alergias && profile.alergias.length > 0 ? (
+                      profile.alergias.map((item, idx) => (
+                        <View key={idx} style={styles.chip}>
+                          <ThemedText style={styles.chipText}>{item}</ThemedText>
+                          {isEditing && (
+                            <TouchableOpacity onPress={() => {
+                              const newItems = profile.alergias?.filter((_, i) => i !== idx);
+                              updateProfile('alergias', newItems);
+                            }} style={styles.chipRemove}>
+                              <Ionicons name="close" size={12} color={Colors.light.white} />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      ))
+                    ) : (
+                      <ThemedText style={styles.emptyText}>{t("profile.no_allergies")}</ThemedText>
+                    )}
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.separator} />
+
+            <View style={styles.medicalSectionPart}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={[styles.iconContainer, { backgroundColor: Colors.light.lightGray }]}>
+                  <Ionicons name="medkit-outline" size={20} color={Colors.light.brandBlue} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.medicalConHeaderRow}>
+                    <ThemedText style={styles.medicalConLabel}>{t("profile.medical_conditions")}</ThemedText>
+                    {isEditing && (
+                      <TouchableOpacity onPress={() => openItemModal('condiciones_medicas')}>
+                        <Ionicons name="add-circle" size={24} color={Colors.light.brandBlue} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <View style={styles.chipContainer}>
+                    {profile.condiciones_medicas && profile.condiciones_medicas.length > 0 ? (
+                      profile.condiciones_medicas.map((item, idx) => (
+                        <View key={idx} style={styles.chip}>
+                          <ThemedText style={styles.chipText}>{item}</ThemedText>
+                          {isEditing && (
+                            <TouchableOpacity onPress={() => {
+                              const newItems = profile.condiciones_medicas?.filter((_, i) => i !== idx);
+                              updateProfile('condiciones_medicas', newItems);
+                            }} style={styles.chipRemove}>
+                              <Ionicons name="close" size={12} color={Colors.light.white} />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      ))
+                    ) : (
+                      <ThemedText style={styles.emptyText}>{t("profile.no_conditions")}</ThemedText>
+                    )}
+                  </View>
+                </View>
+              </View>
+            </View>
+          </Card>
+
+          {/* Preferences */}
+          <SectionHeader title={t("profile.settings")} />
+          <Card variant="elevated" style={styles.sectionCard}>
+            <View style={{ padding: Spacing.sm }}>
+              <LanguageSwitcher />
+            </View>
+          </Card>
+
+          {/* Account Actions */}
+          <SectionHeader title={t("profile.support")} />
+          <ListItem
+            title={t("profile.help_center")}
+            leftIcon="help-buoy-outline"
+            onPress={() => router.push('/help')}
+            style={styles.menuItem}
+          />
+          <ListItem
+            title={t("profile.logout")}
+            leftIcon="log-out-outline"
+            variant="danger"
+            onPress={handleLogout}
+            style={styles.menuItem}
+          />
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Profile Picture Section */}
-        <View style={styles.profilePictureSection}>
-          <View style={styles.profilePictureContainer}>
-            <View style={styles.profilePicture}>
-              <Ionicons
-                name="person"
-                size={40}
-                color={Colors.light.placeholderGray}
-              />
-            </View>
-            <TouchableOpacity
-              style={styles.editPictureButton}
-              onPress={handleEditProfile}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="pencil" size={12} color={Colors.light.white} />
-            </TouchableOpacity>
-          </View>
-          <ThemedText style={styles.fullName}>
-            {profile.nombre || 'Nombre'} {profile.apellido || 'Apellido'}
-          </ThemedText>
-        </View>
-
-        {/* Personal Information Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>
-            {t("profile.personal_info")}
-          </ThemedText>
-          <View style={styles.inputRow}>
-            <View style={styles.inputContainer}>
-              <ThemedText style={styles.inputLabel}>{t("profile.names")}</ThemedText>
-              <TextInput
-                style={isEditing ? styles.textInput : styles.textInputDisabled}
-                value={profile.nombre || ''}
-                onChangeText={text => updateProfile("nombre", text)}
-                editable={isEditing}
-                placeholder={t("profile.names")}
-                placeholderTextColor={Colors.light.placeholderGray}
-              />
-            </View>
-            <View style={styles.inputContainer}>
-              <ThemedText style={styles.inputLabel}>{t("profile.surnames")}</ThemedText>
-              <TextInput
-                style={isEditing ? styles.textInput : styles.textInputDisabled}
-                value={profile.apellido || ''}
-                onChangeText={text => updateProfile("apellido", text)}
-                editable={isEditing}
-                placeholder={t("profile.surnames")}
-                placeholderTextColor={Colors.light.placeholderGray}
-              />
-            </View>
-          </View>
-        </View>
-
-
-        {/* Email Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>
-            {t("profile.email")}
-          </ThemedText>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInputDisabled}
-              value={profile.email}
-              onChangeText={text => updateProfile("email", text)}
-              editable={false}
-              placeholder={t("profile.email")}
-              placeholderTextColor={Colors.light.placeholderGray}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-        </View>
-
-        {/* Birth Date Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>{t("profile.birth_date")}</ThemedText>
-          <View style={styles.inputContainer}>
-            <TouchableOpacity
-              style={isEditing ? styles.textInput : styles.textInputDisabled}
-              onPress={() => isEditing && showDatePicker()}
-              activeOpacity={isEditing ? 0.7 : 1}
-            >
-              <ThemedText style={{ color: profile.fecha_nacimiento ? Colors.light.textGray : Colors.light.placeholderGray, fontSize: 16 }}>
-                {profile.fecha_nacimiento || "YYYY-MM-DD"}
-              </ThemedText>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Medical Information Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>{t("profile.medical_info")}</ThemedText>
-
-          {/* Height Section */}
-          <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>{t("profile.height")}</ThemedText>
-            <TextInput
-              style={isEditing ? styles.textInput : styles.textInputDisabled}
-              value={profile.altura_cm?.toString() || ''}
-              onChangeText={text => updateProfile("altura_cm", text ? parseFloat(text) : undefined)}
-              editable={isEditing}
-              placeholder={t("profile.height_placeholder")}
-              placeholderTextColor={Colors.light.placeholderGray}
-              keyboardType="numeric"
-            />
-          </View>
-
-          {/* Weight Section */}
-          <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>{t("profile.weight")}</ThemedText>
-            <TextInput
-              style={styles.textInput}
-              value={profile.peso_kg?.toString() || ''}
-              onChangeText={text => updateProfile("peso_kg", text ? parseFloat(text) : undefined)}
-              editable={isEditing}
-              placeholder={t("profile.weight_placeholder")}
-              placeholderTextColor={Colors.light.placeholderGray}
-              keyboardType="numeric"
-            />
-          </View>
-
-          {/* Allergies Section */}
-          <View style={styles.inputContainer}>
-            <View style={styles.labelRow}>
-              <ThemedText style={styles.inputLabel}>{t("profile.allergies")}</ThemedText>
-              {isEditing && (
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => openItemModal('alergias')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="add-circle" size={20} color={Colors.light.brandBlue} />
-                </TouchableOpacity>
-              )}
-            </View>
-            <View style={styles.chipContainer}>
-              {profile.alergias && profile.alergias.length > 0 ? (
-                profile.alergias.map((alergia, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.chip}
-                    onPress={() => isEditing && openItemModal('alergias')}
-                    activeOpacity={0.7}
-                  >
-                    <ThemedText style={styles.chipText}>{alergia}</ThemedText>
-                    {isEditing && (
-                      <TouchableOpacity
-                        style={styles.chipRemove}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          const newAlergias = profile.alergias?.filter((_, i) => i !== index) || [];
-                          updateProfile('alergias', newAlergias);
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="close" size={14} color={Colors.light.error} />
-                      </TouchableOpacity>
-                    )}
-                  </TouchableOpacity>
-                ))
-              ) : (
-                <TouchableOpacity
-                  style={styles.addButtonInline}
-                  onPress={() => isEditing && openItemModal('alergias')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="add" size={16} color={Colors.light.brandBlue} />
-                  <ThemedText style={styles.addButtonTextInline}>
-                    {isEditing ? t("profile.add_allergy") : t("profile.no_allergies")}
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-
-          {/* Medical Conditions Section */}
-          <View style={styles.inputContainer}>
-            <View style={styles.labelRow}>
-              <ThemedText style={styles.inputLabel}>{t("profile.medical_conditions")}</ThemedText>
-              {isEditing && (
-                <TouchableOpacity
-                  style={styles.editButton}
-                  onPress={() => openItemModal('condiciones_medicas')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="add-circle" size={20} color={Colors.light.brandBlue} />
-                </TouchableOpacity>
-              )}
-            </View>
-            <View style={styles.chipContainer}>
-              {profile.condiciones_medicas && profile.condiciones_medicas.length > 0 ? (
-                profile.condiciones_medicas.map((condicion, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.chip}
-                    onPress={() => isEditing && openItemModal('condiciones_medicas')}
-                    activeOpacity={0.7}
-                  >
-                    <ThemedText style={styles.chipText}>{condicion}</ThemedText>
-                    {isEditing && (
-                      <TouchableOpacity
-                        style={styles.chipRemove}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          const newCondiciones = profile.condiciones_medicas?.filter((_, i) => i !== index) || [];
-                          updateProfile('condiciones_medicas', newCondiciones);
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="close" size={14} color={Colors.light.error} />
-                      </TouchableOpacity>
-                    )}
-                  </TouchableOpacity>
-                ))
-              ) : (
-                <TouchableOpacity
-                  style={styles.addButtonInline}
-                  onPress={() => isEditing && openItemModal('condiciones_medicas')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="add" size={16} color={Colors.light.brandBlue} />
-                  <ThemedText style={styles.addButtonTextInline}>
-                    {isEditing ? t("profile.add_condition") : t("profile.no_conditions")}
-                  </ThemedText>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        </View>
-
-
-
-        {/* Save Changes Button */}
-        {isSaving ? (
-          <View style={styles.saveButton}>
-            <ActivityIndicator color={Colors.light.white} />
-            <ThemedText style={styles.saveButtonText}>{t("profile.saving")}</ThemedText>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={handleSaveChanges}
-            activeOpacity={0.7}
-          >
-            <ThemedText style={styles.saveButtonText}>{t("profile.save_changes")}</ThemedText>
-          </TouchableOpacity>
-        )}
-
-        {/* Support Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>{t("profile.settings")}</ThemedText>
-          <LanguageSwitcher />
-        </View>
-
-        {/* Support Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>{t("profile.support")}</ThemedText>
-          <TouchableOpacity
-            style={styles.helpButton}
-            onPress={() => router.push('/help')}
-            activeOpacity={0.7}
-          >
-            <View style={styles.helpButtonContent}>
-              <Ionicons name="help-buoy-outline" size={24} color={Colors.light.brandBlue} />
-              <ThemedText style={styles.helpButtonText}>{t("profile.help_center")}</ThemedText>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.light.placeholderGray} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Logout Button */}{/* Logout Button */}
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name="log-out-outline"
-            size={16}
-            color={Colors.light.error}
-          />
-          <ThemedText style={styles.logoutButtonText}>{t("profile.logout")}</ThemedText>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* Modal for editing allergies/medical conditions */}
+      {/* Modal for adding items */}
       <Modal
         visible={modalVisible}
         transparent={true}
         animationType="fade"
         onRequestClose={cancelItems}
       >
-        <View style={styles.modalContainer}>
+        <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <ThemedText style={styles.modalTitle}>
               {editingField === 'alergias' ? t("profile.edit_allergies") : t("profile.edit_conditions")}
             </ThemedText>
 
             <FlatList
-              style={styles.itemList}
               data={tempItems}
-              keyExtractor={(item, index) => index.toString()}
+              keyExtractor={(_, i) => i.toString()}
               renderItem={({ item, index }) => (
-                <View style={styles.itemRow}>
-                  <ThemedText style={styles.itemText}>{item}</ThemedText>
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removeItem(index)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="close-circle" size={20} color={Colors.light.error} />
+                <View style={styles.modalItemRow}>
+                  <ThemedText>{item}</ThemedText>
+                  <TouchableOpacity onPress={() => removeItem(index)}>
+                    <Ionicons name="trash-outline" size={20} color={Colors.light.error} />
                   </TouchableOpacity>
                 </View>
               )}
-              ListEmptyComponent={
-                <ThemedText style={styles.placeholderText}>
-                  {editingField === 'alergias' ? t("profile.no_allergies") : t("profile.no_conditions")}
-                </ThemedText>
-              }
+              style={styles.modalList}
             />
 
-            <View style={styles.addItemContainer}>
+            <View style={styles.addItemRow}>
               <TextInput
                 style={styles.addItemInput}
                 value={newItem}
                 onChangeText={setNewItem}
-                placeholder={editingField === 'alergias' ? t("profile.new_allergy") : t("profile.new_condition")}
-                placeholderTextColor={Colors.light.placeholderGray}
+                placeholder={t("common.add_new", "Add new...")}
               />
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={addItem}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="add" size={20} color={Colors.light.white} />
+              <TouchableOpacity style={styles.addItemBtn} onPress={addItem}>
+                <Ionicons name="add" size={24} color="white" />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={cancelItems}
-                activeOpacity={0.7}
-              >
-                <ThemedText style={styles.cancelButtonText}>{t("common.cancel")}</ThemedText>
+            <View style={styles.modalActions}>
+              <TouchableOpacity onPress={cancelItems} style={styles.modalCancelBtn}>
+                <ThemedText style={{ color: Colors.light.gray }}>{t("common.cancel")}</ThemedText>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButtonModal]}
-                onPress={saveItems}
-                activeOpacity={0.7}
-              >
-                <ThemedText style={styles.saveButtonTextModal}>{t("common.save")}</ThemedText>
+              <TouchableOpacity onPress={saveItems} style={styles.modalSaveBtn}>
+                <ThemedText style={{ color: 'white', fontWeight: '600' }}>{t("common.save")}</ThemedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -598,6 +499,22 @@ export default function ProfileScreen() {
         onConfirm={handleConfirmDate}
         onCancel={hideDatePicker}
       />
+
+      {/* Full Screen Logout Loader Modal */}
+      <Modal
+        visible={isLoggingOut}
+        transparent={false} // Solid background to cover everything
+        animationType="fade"
+      >
+        <SafeAreaView style={[styles.container, { backgroundColor }]}>
+          <View style={styles.loadingContainer}>
+            <CustomLoader />
+            <ThemedText style={styles.loadingText}>
+              {t("profile.logging_out")}
+            </ThemedText>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -606,207 +523,175 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.borderGray,
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  logo: {
-    width: 32,
-    height: 32,
-  },
-  logoText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: Colors.light.brandBlue,
-    letterSpacing: 0.5,
-  },
-  pageTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.brandBlue,
-  },
-  profileIcon: {
-    width: 32,
-    height: 32,
-    backgroundColor: Colors.light.brandBlue,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profileIconText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.light.white,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  profilePictureSection: {
-    alignItems: "center",
-    paddingTop: 24,
-    paddingBottom: 32,
-  },
-  profilePictureContainer: {
-    position: "relative",
-    marginBottom: 16,
-  },
-  profilePicture: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.light.lightGray,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: Colors.light.borderGray,
-  },
-  editPictureButton: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.light.brandBlue,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: Colors.light.white,
-  },
-  fullName: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: Colors.light.brandBlue,
-    textAlign: "center",
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.brandBlue,
-    marginBottom: 12,
-  },
-  inputRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  inputContainer: {
-    flex: 1,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: Colors.light.textGray,
-    marginBottom: 8,
-  },
-  textInput: {
-    backgroundColor: Colors.light.white,
-    borderRadius: 8,
+  floatingEditBtn: {
+    position: 'absolute',
+    top: Spacing.md,
+    right: Spacing.lg,
+    zIndex: 100,
+    backgroundColor: 'rgba(255,255,255,0.9)', // Slight background for visibility
     paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: Colors.light.textGray,
-    borderWidth: 1,
-    borderColor: Colors.light.borderGray,
-    shadowColor: Colors.light.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  textInputDisabled: {
-    backgroundColor: Colors.light.lightGray,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: Colors.light.placeholderGray,
-    borderWidth: 1,
-    borderColor: Colors.light.borderGray,
-    shadowColor: Colors.light.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  saveButton: {
-    backgroundColor: Colors.light.brandBlue,
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: "center",
-    marginTop: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
     shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  saveButtonText: {
+  editHeaderBtnText: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.light.white,
-  },
-  logoutButton: {
-    backgroundColor: Colors.light.white,
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: "center",
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: Colors.light.error,
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-  },
-  logoutButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.error,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
     color: Colors.light.brandBlue,
   },
-  labelRow: {
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: Spacing.lg,
+  },
+  profileHeaderCard: {
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  fullName: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.light.brandBlue,
+    marginTop: Spacing.md,
+    marginBottom: 4,
+  },
+  emailText: {
+    fontSize: 14,
+    color: Colors.light.gray,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  statCard: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.lg,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: Colors.light.gray,
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.light.brandBlue,
+  },
+  statUnit: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.light.placeholderGray,
+  },
+  editStatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statInput: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.light.brandBlue,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.borderGray,
+    textAlign: 'center',
+    width: 60,
+    padding: 0,
+  },
+  sectionCard: {
+    marginBottom: Spacing.lg,
+    padding: 0, // Reset default padding to handle list items better
+  },
+  cleanListItem: {
+    backgroundColor: 'transparent',
+    shadowColor: 'transparent',
+    elevation: 0,
+    borderBottomWidth: 0,
+    marginBottom: 0,
+  },
+  menuItem: {
+    marginBottom: Spacing.sm,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: Colors.light.borderGray,
+    marginHorizontal: Spacing.md,
+  },
+  formGroup: {
+    padding: Spacing.md,
+  },
+  inputLabel: {
+    fontSize: 12,
+    color: Colors.light.gray,
+    marginBottom: 4,
+  },
+  input: {
+    fontSize: 16,
+    color: Colors.light.text,
+    paddingVertical: 8,
+    paddingHorizontal: 0,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.light.borderGray,
+    marginVertical: 8,
+  },
+  dateInputBtn: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.borderGray,
   },
-  editButton: {
-    padding: 4,
+  inputText: {
+    fontSize: 16,
+    color: Colors.light.text,
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: Colors.light.placeholderGray,
+  },
+  medicalSectionPart: {
+    paddingVertical: 18,
+    paddingHorizontal: Spacing.md,
+  },
+  medicalHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2, // Match ListItem subtitle spacing (marginTop: 2)
+  },
+  medicalConHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2, // Match ListItem subtitle spacing (marginTop: 2)
+  },
+  medicalLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: Spacing.sm,
+
+    // color: Colors.light.textGray, // Removed to match ListItem title (inherits default)
+  },
+  medicalConLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: Spacing.sm,
+
+
+    // color: Colors.light.textGray, // Removed to match ListItem title (inherits default)
   },
   chipContainer: {
     flexDirection: 'row',
@@ -814,165 +699,117 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: Colors.light.friendlyBlueBg,
     borderRadius: 16,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: Colors.light.borderGray,
+    paddingVertical: 2,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    marginBottom: 4,
   },
   chipText: {
-    fontSize: 14,
-    color: Colors.light.textGray,
+    color: Colors.light.brandBlue,
+    fontSize: 13, // Match ListItem subtitle fontSize
+    fontWeight: '500',
   },
   chipRemove: {
-    padding: 2,
-  },
-  addButtonInline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: Colors.light.brandBlue,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.light.borderGray,
-    borderStyle: 'dashed',
+    width: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  addButtonTextInline: {
-    fontSize: 14,
-    color: Colors.light.brandBlue,
-  },
-  placeholderText: {
-    fontSize: 14,
+  emptyText: {
     color: Colors.light.placeholderGray,
     fontStyle: 'italic',
+    fontSize: 13, // Match ListItem subtitle fontSize
   },
-  modalContainer: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  loadingText: {
+    marginTop: Spacing.md,
+    color: Colors.light.gray,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: Spacing.lg,
   },
   modalContent: {
-    backgroundColor: Colors.light.white,
-    borderRadius: 12,
-    padding: 20,
-    width: '90%',
-    maxHeight: '80%',
+    backgroundColor: 'white',
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    maxHeight: '60%',
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: Colors.light.brandBlue,
-    marginBottom: 16,
+    fontWeight: '700',
+    marginBottom: Spacing.md,
     textAlign: 'center',
   },
-  itemList: {
-    maxHeight: 200,
-    marginBottom: 16,
+  modalList: {
+    marginBottom: Spacing.md,
   },
-  itemRow: {
+  modalItemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: Colors.light.lightGray,
-    borderRadius: 8,
-    marginBottom: 8,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.lightGray,
   },
-  itemText: {
-    fontSize: 16,
-    color: Colors.light.textGray,
-    flex: 1,
-  },
-  removeButton: {
-    padding: 4,
-  },
-  addItemContainer: {
+  addItemRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
   },
   addItemInput: {
     flex: 1,
-    backgroundColor: Colors.light.white,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: Colors.light.textGray,
     borderWidth: 1,
     borderColor: Colors.light.borderGray,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    height: 44,
   },
-  addButton: {
+  addItemBtn: {
+    width: 44,
+    height: 44,
     backgroundColor: Colors.light.brandBlue,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  addButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.light.white,
-  },
-  modalButtons: {
+  modalActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: Spacing.md,
   },
-  modalButton: {
+  modalCancelBtn: {
     flex: 1,
-    borderRadius: 8,
-    paddingVertical: 12,
+    padding: Spacing.md,
     alignItems: 'center',
-  },
-  cancelButton: {
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.light.lightGray,
   },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.light.textGray,
-  },
-  saveButtonModal: {
+  modalSaveBtn: {
+    flex: 1,
+    padding: Spacing.md,
+    alignItems: 'center',
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.light.brandBlue,
   },
-  saveButtonTextModal: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.light.white,
-  },
-  helpButton: {
-    backgroundColor: Colors.light.white,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    flexDirection: 'row',
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20, // Circle
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: Colors.light.borderGray,
-    shadowColor: Colors.light.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  helpButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  helpButtonText: {
-    fontSize: 16,
-    color: Colors.light.textGray,
-    fontWeight: '500',
+    marginRight: Spacing.md,
   },
 });

@@ -227,10 +227,16 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: containerBg }]}>
-      <View style={[styles.header, { backgroundColor: headerBg }]}>
-        <View style={styles.headerLeft}>
+
+
+      <ScrollView
+        style={styles.chatContainer}
+        contentContainerStyle={styles.chatContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.headerSection}>
           <TouchableOpacity
-            style={styles.menuButton}
+            style={styles.menuButtonInline}
             onPress={handleMenuPress}
             activeOpacity={0.7}
             accessibilityLabel="Abrir menú de conversaciones"
@@ -238,30 +244,12 @@ export default function ChatScreen() {
           >
             <IconSymbol
               name="line.3.horizontal"
-              size={20}
+              size={24}
               color={Colors.light.brandBlue}
             />
           </TouchableOpacity>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("@/assets/images/logoBlue.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <ThemedText style={styles.logoText}>POCKET DOCTOR</ThemedText>
-          </View>
+          <ThemedText style={styles.headerTitle}>{t('chat.title')}</ThemedText>
         </View>
-        <View style={styles.headerRight}>
-          <ThemedText style={styles.pageTitle}>{t('chat.title')}</ThemedText>
-          <UserAvatar />
-        </View>
-      </View>
-
-      <ScrollView
-        style={styles.chatContainer}
-        contentContainerStyle={styles.chatContent}
-        showsVerticalScrollIndicator={false}
-      >
         {messages.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconContainer}>
@@ -327,11 +315,7 @@ export default function ChatScreen() {
                       accessibilityRole="button"
                       accessibilityHint="Selecciona esta opción para continuar la conversación"
                     >
-                      <Ionicons
-                        name={option.icon as keyof typeof Ionicons.glyphMap}
-                        size={16}
-                        color={Colors.light.brandBlue}
-                      />
+
                       <ThemedText style={styles.followUpText}>
                         {option.text}
                       </ThemedText>
@@ -413,77 +397,44 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.borderGray,
-  },
-  headerLeft: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  menuButton: {
-    width: 32,
-    height: 32,
-    borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.light.lightGray,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-  },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  logo: {
-    width: 32,
-    height: 32,
-  },
-  logoText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: Colors.light.brandBlue,
-    letterSpacing: 0.5,
-  },
-  pageTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.brandBlue,
-  },
-  profileIcon: {
-    width: 32,
-    height: 32,
-    backgroundColor: Colors.light.brandBlue,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profileIconText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.light.white,
-  },
+
+
 
   chatContainer: {
     flex: 1,
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: Colors.light.white,
   },
   chatContent: {
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
     paddingBottom: Spacing.sm,
     flexGrow: 1,
+  },
+
+  // New Header Styles
+  headerSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.lg,
+    gap: Spacing.md,
+  },
+  menuButtonInline: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.light.white,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: Colors.light.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: Colors.light.brandBlue,
   },
 
   messageContainer: {
@@ -516,13 +467,14 @@ const styles = StyleSheet.create({
   messageBubble: {
     maxWidth: "80%",
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
+    paddingVertical: 10,
     borderRadius: BorderRadius.xl,
     shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+
   },
   userBubble: {
     backgroundColor: Colors.light.brandBlue,
@@ -533,7 +485,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
   },
   messageText: {
-    fontSize: 16,
+    fontSize: 14,
     lineHeight: 22,
   },
   userText: {
@@ -559,11 +511,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.light.brandBlue,
     gap: Spacing.sm,
+    marginBottom: 6,
     shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+
+
   },
   followUpText: {
     fontSize: 14,
@@ -574,6 +529,7 @@ const styles = StyleSheet.create({
   warningSection: {
     marginTop: Spacing.md,
     paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   warningCard: {
     backgroundColor: Colors.light.warningBg,

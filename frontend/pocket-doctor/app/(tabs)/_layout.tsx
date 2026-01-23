@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -8,6 +9,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -16,34 +18,78 @@ export default function TabLayout() {
         tabBarInactiveTintColor: Colors[colorScheme ?? "light"].tabIconDefault,
         headerShown: false,
         tabBarButton: HapticTab,
+
+        // 🔽 Baja todo el item
+        tabBarItemStyle: {
+          paddingTop: 4,
+          paddingBottom: 10,   // <-- sube/baja icono + texto juntos
+        },
+
+        tabBarLabelStyle: {
+          fontSize: 10,
+          marginTop: 2,    // <-- baja SOLO el texto
+        },
+
         tabBarStyle: {
           backgroundColor: Colors[colorScheme ?? "light"].card,
           borderTopColor: Colors[colorScheme ?? "light"].border,
+          left: 20,
+          right: 20,
+          elevation: 5,
+          borderRadius: 20,
+          height: 60,
+          borderTopWidth: 0,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.25,
+          shadowRadius: 3.5,
         },
       }}
     >
+
       <Tabs.Screen
         name="home"
         options={{
-          title: "Inicio",
+          title: t('home.title'),
+
+          // Agrega esto:
+          tabBarLabelStyle: {
+            fontSize: 10,      // Asegúrate de poner el mismo tamaño que en screenOptions
+            fontWeight: '600',
+            marginLeft: 2,      // <--- AUMENTA este número para bajar el texto
+            // marginBottom: 4 // <--- O usa esto para empujarlo hacia arriba
+          },
+
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={24} name="house.fill" color={color} />
+            <IconSymbol size={25} name="house.fill" color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="chat"
         options={{
-          title: "Chat",
+          title: t('chat.title'),
+          tabBarLabelStyle: {
+            fontSize: 10,      // Asegúrate de poner el mismo tamaño que en screenOptions
+            fontWeight: '600',
+            marginLeft: 2,      // <--- AUMENTA este número para bajar el texto
+            // marginBottom: 4 // <--- O usa esto para empujarlo hacia arriba
+          },
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={24} name="message.fill" color={color} />
+            <IconSymbol size={25} name="message.fill" color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="clinics"
         options={{
-          title: "Clínicas",
+          title: t('clinics.clinics'),
+          tabBarLabelStyle: {
+            fontSize: 10,      // Asegúrate de poner el mismo tamaño que en screenOptions
+            fontWeight: '600',
+            marginLeft: 2,      // <--- AUMENTA este número para bajar el texto
+            // marginBottom: 4 // <--- O usa esto para empujarlo hacia arriba
+          },
           tabBarIcon: ({ color }) => (
             <IconSymbol size={24} name="building.fill" color={color} />
           ),
@@ -52,7 +98,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: "Historial",
+          title: t('history.title'),
+          tabBarLabelStyle: {
+            fontSize: 10,      // Asegúrate de poner el mismo tamaño que en screenOptions
+            fontWeight: '600',
+            marginLeft: 2,      // <--- AUMENTA este número para bajar el texto
+            // marginBottom: 4 // <--- O usa esto para empujarlo hacia arriba
+          },
           tabBarIcon: ({ color }) => (
             <IconSymbol size={24} name="clock.fill" color={color} />
           ),
@@ -61,7 +113,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Perfil",
+          title: t('profile.title'),
+          tabBarLabelStyle: {
+            fontSize: 10,      // Asegúrate de poner el mismo tamaño que en screenOptions
+            fontWeight: '600',
+            marginLeft: 2,      // <--- AUMENTA este número para bajar el texto
+            // marginBottom: 4 // <--- O usa esto para empujarlo hacia arriba
+          },
           tabBarIcon: ({ color }) => (
             <IconSymbol size={24} name="person.fill" color={color} />
           ),

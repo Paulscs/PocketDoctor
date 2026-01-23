@@ -3,6 +3,7 @@
         "loading": "Loading...",
         "error": "Error",
         "save": "Save",
+        "edit": "Edit",
         "cancel": "Cancel",
         "back": "Back",
         "next": "Next",
@@ -13,7 +14,12 @@
         "yesterday": "Yesterday",
         "days_ago": "{{count}} days ago",
         "messages": "messages",
-        "close": "Close"
+        "close": "Close",
+        "filter_date": "Filter by date",
+        "clear_filter": "Clear filter",
+        "from": "From",
+        "to": "To",
+        "view": "View Details"
     },
     "language": {
         "select": "Select your language",
@@ -182,6 +188,7 @@
         "support": "Support",
         "help_center": "Help Center",
         "logout": "Log Out",
+        "logging_out": "Logging out...",
         "settings": "Settings",
         "loading": "Loading profile...",
         "edit_allergies": "Edit Allergies",
@@ -255,8 +262,8 @@
             "default": "I understand. I am processing that request."
         },
         "options": {
-            "simple_explanation": "Explain what these results mean",
-            "lifestyle_changes": "What lifestyle changes do you recommend?",
+            "simple_explanation": "What do these results mean?",
+            "lifestyle_changes": "What lifestyle do you recommend?",
             "causes": "What could be the causes?",
             "warning_signs": "Are there any urgent warning signs?",
             "doctor_questions": "What questions should I ask my doctor?"
@@ -267,7 +274,11 @@
             "chats": "Chats",
             "empty": "No chats available",
             "empty_desc": "Upload a medical analysis to start a conversation with the AI assistant."
-        }
+        },
+        "delete_title": "Delete Chat",
+        "delete_confirmation": "Are you sure you want to delete this conversation?",
+        "delete_cancel": "Cancel",
+        "delete_confirm": "Delete"
     },
     "clinics": {
         "title": "Clinics and",
@@ -307,6 +318,7 @@
         "status": {
             "normal": "Normal",
             "elevated": "Elevated",
+            "alto": "High",
             "low": "Low",
             "critical": "Critical",
             "pending": "Pending"
@@ -574,5 +586,12 @@
         "possible_risks": "Possible Risks",
         "view_recommendations": "View detailed recommendations",
         "chat_assistant": "Chat with Assistant"
+    },
+    "recommendations": {
+        "title": "Recommendations"
+    },
+    "validate": {
+        "title": "Validate Data",
+        "subtitle": "Validate extracted data"
     }
 }

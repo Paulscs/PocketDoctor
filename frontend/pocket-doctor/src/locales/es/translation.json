@@ -3,6 +3,7 @@
         "loading": "Cargando...",
         "error": "Error",
         "save": "Guardar",
+        "edit": "Editar",
         "cancel": "Cancelar",
         "back": "Atrás",
         "next": "Siguiente",
@@ -13,7 +14,12 @@
         "yesterday": "Ayer",
         "days_ago": "Hace {{count}} días",
         "messages": "mensajes",
-        "close": "Cerrar"
+        "close": "Cerrar",
+        "filter_date": "Filtrar por fecha",
+        "clear_filter": "Borrar filtro",
+        "from": "Desde",
+        "to": "Hasta",
+        "view": "Ver Detalles"
     },
     "language": {
         "select": "Selecciona tu idioma",
@@ -182,6 +188,7 @@
         "support": "Soporte",
         "help_center": "Centro de Ayuda",
         "logout": "Cerrar Sesión",
+        "logging_out": "Cerrando sesión...",
         "settings": "Configuración",
         "loading": "Cargando perfil...",
         "edit_allergies": "Editar Alérgias",
@@ -255,8 +262,8 @@
             "default": "Entiendo. Estoy procesando esa solicitud."
         },
         "options": {
-            "simple_explanation": "Explícame qué significan estos resultados",
-            "lifestyle_changes": "¿Qué cambios de estilo de vida recomiendas?",
+            "simple_explanation": "¿Qué significan estos resultados?",
+            "lifestyle_changes": "¿Qué estilos de vida me recomiendas?",
             "causes": "¿Cuáles podrían ser las causas?",
             "warning_signs": "¿Hay señales de alerta urgentes?",
             "doctor_questions": "¿Qué preguntas hacerle a mi médico?"
@@ -267,7 +274,11 @@
             "chats": "Chats",
             "empty": "No hay chats disponibles",
             "empty_desc": "Sube un análisis médico para iniciar una conversación con el asistente IA."
-        }
+        },
+        "delete_title": "Eliminar Chat",
+        "delete_confirmation": "¿Estás seguro de que deseas eliminar esta conversación?",
+        "delete_cancel": "Cancelar",
+        "delete_confirm": "Eliminar"
     },
     "clinics": {
         "title": "Clínicas y",
@@ -307,6 +318,7 @@
         "status": {
             "normal": "Normal",
             "elevated": "Elevado",
+            "alto": "Elevado",
             "low": "Bajo",
             "critical": "Crítico",
             "pending": "Pendiente"
@@ -574,5 +586,12 @@
         "possible_risks": "Posibles Riesgos",
         "view_recommendations": "Ver recomendaciones detalladas",
         "chat_assistant": "Chat con Asistente"
+    },
+    "recommendations": {
+        "title": "Recomendaciones"
+    },
+    "validate": {
+        "title": "Validar Datos",
+        "subtitle": "Validar datos extraídos"
     }
 }

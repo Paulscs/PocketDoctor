@@ -140,7 +140,7 @@ export default function HomeScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "normal": return Colors.light.success;
+      case "normal": return Colors.light.healthGreen;
       case "elevated": return Colors.light.warning;
       case "critical": return Colors.light.error;
       default: return Colors.light.gray;
@@ -150,8 +150,8 @@ export default function HomeScreen() {
   const getStatusText = (status: string) => {
     switch (status) {
       case "normal": return t('home.status.normal');
-      case "elevated": return t('home.status.elevated');
-      case "critical": return t('home.status.critical');
+      case "elevated": return t('history.status.elevated');
+      case "critical": return t('history.status.critical');
       default: return t('home.status.info');
     }
   };
@@ -182,22 +182,6 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={containerStyle}>
       {/* Custom Header */}
-      <View style={headerStyle}>
-        <View style={styles.headerLeft}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("@/assets/images/logoBlue.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <ThemedText style={styles.logoText}>POCKET DOCTOR</ThemedText>
-          </View>
-        </View>
-        <View style={styles.headerRight}>
-          <ThemedText style={styles.pageTitle}>{t('home.title')}</ThemedText>
-          <UserAvatar />
-        </View>
-      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -315,8 +299,7 @@ export default function HomeScreen() {
               </View>
               <View style={styles.cardContent}>
                 <ThemedText style={styles.quickActionTitle}>
-                  {t('home.ai_consultation')}
-                </ThemedText>
+  {t('home.ai_consultation').replace(' ', '\n')}                </ThemedText>
                 <View style={styles.subtitleContainer}>
                   <View style={styles.featureTag}>
                     <IconSymbol
@@ -340,7 +323,7 @@ export default function HomeScreen() {
                 <ThemedText style={styles.cardFooterText}>
                   {t('home.tap_to_start')}
                 </ThemedText>
-                <IconSymbol
+                  <IconSymbol
                   name="chevron.right"
                   size={16}
                   color={Colors.light.white}
@@ -370,31 +353,37 @@ export default function HomeScreen() {
 
           <View style={styles.activitiesList}>
             {recentActivities.length > 0 ? (
-              recentActivities.map((activity) => (
-                <View key={activity.id} style={styles.activityItem}>
-                  <View style={styles.activityIcon}>
-                    <Ionicons
-                      name="document-text"
-                      size={20}
-                      color={Colors.light.brandBlue}
-                    />
-                  </View>
-                  <View style={styles.activityContent}>
-                    <ThemedText style={styles.activityTitle}>
-                      {activity.title || t('home.analysis')}
-                    </ThemedText>
-                    <ThemedText style={styles.activityTime}>
-                      {formatTimeAgo(activity.date)}
-                    </ThemedText>
-                  </View>
+              // 1. Agregamos el segundo parámetro 'index' aquí
+              recentActivities.map((activity, index) => (
+                <View key={activity.id}>
                   <View
-                    style={[
-                      styles.statusPill,
-                      { backgroundColor: getStatusColor(activity.status) },
-                    ]}
+                    style={styles.activityItem}
                   >
-                    <ThemedText style={styles.statusText}>{getStatusText(activity.status)}</ThemedText>
+                    <View style={styles.activityIcon}>
+                      <Ionicons
+                        name="document-text"
+                        size={20}
+                        color={Colors.light.medicalBlue}
+                      />
+                    </View>
+                    <View style={styles.activityContent}>
+                      <ThemedText style={styles.activityTitle}>
+                        {activity.title || t('home.analysis')}
+                      </ThemedText>
+                      <ThemedText style={styles.activityTime}>
+                        {formatTimeAgo(activity.date)}
+                      </ThemedText>
+                    </View>
+                    <View
+                      style={[
+                        styles.statusPill,
+                        { backgroundColor: getStatusColor(activity.status) },
+                      ]}
+                    >
+                      <ThemedText style={styles.statusText}>{getStatusText(activity.status)}</ThemedText>
+                    </View>
                   </View>
+                  {index < recentActivities.length - 1 && <View style={styles.separator} />}
                 </View>
               ))
             ) : (
@@ -414,21 +403,6 @@ export default function HomeScreen() {
             )}
           </View>
         </View>
-
-        {/* Warning */}
-        <View style={styles.warningSection}>
-          <View style={styles.warningCard}>
-            <View style={styles.warningIcon}>
-              <Ionicons name="warning" size={20} color={Colors.light.white} />
-            </View>
-            <View style={styles.warningContent}>
-              <ThemedText style={styles.warningTitle}>{t('home.warning_title')}</ThemedText>
-              <ThemedText style={styles.warningText}>
-                {t('home.warning_text')}
-              </ThemedText>
-            </View>
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -440,10 +414,11 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
+    backgroundColor: Colors.light.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.borderGray,
   },
@@ -471,7 +446,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   pageTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
     color: Colors.light.brandBlue,
   },
@@ -499,7 +474,6 @@ const styles = StyleSheet.create({
   greetingSection: {
     paddingTop: Spacing.xl,
     paddingBottom: Spacing.md,
-    paddingHorizontal: Spacing.sm,
   },
   greeting: {
     fontSize: 24,
@@ -528,7 +502,7 @@ const styles = StyleSheet.create({
   },
 
   quickActionsSection: {
-    marginBottom: Spacing.xxl,
+    marginBottom: Spacing.lg,
   },
   sectionTitle: {
     fontSize: 18,
@@ -602,6 +576,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: Spacing.sm,
+    marginTop: "auto",
   },
   featureTag: {
     flexDirection: "row",
@@ -622,8 +597,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: Spacing.md,
-    paddingHorizontal: Spacing.sm,
-    paddingBottom: Spacing.xs,
+    paddingHorizontal: 0,
+    paddingBottom: 1,
+
   },
   cardFooterText: {
     fontSize: 12,
@@ -631,39 +607,46 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     flex: 1,
     marginRight: 12,
+    lineHeight: 14,
   },
 
   activitiesSection: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.xxl,
   },
   activitiesHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.md,
   },
   seeAllLink: {
     fontSize: 14,
     color: Colors.light.brandBlue,
     fontWeight: "600",
     textDecorationLine: "underline",
+    marginBottom: Spacing.md,
+
   },
   activitiesList: {
     backgroundColor: Colors.light.white,
     borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+    padding: 0, // Similar to profile sectionCard
     shadowColor: Colors.light.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    overflow: 'hidden', // Ensure children don't bleed out
   },
   activityItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.borderGray,
+    paddingHorizontal: Spacing.md, // Added padding content
+  },
+  separator: {
+    height: 1,
+    backgroundColor: Colors.light.borderGray,
+  marginHorizontal: Spacing.md,
   },
   activityIcon: {
     width: 40,
@@ -680,7 +663,7 @@ const styles = StyleSheet.create({
   activityTitle: {
     fontSize: 16,
     fontWeight: "500",
-    color: Colors.light.black,
+    color: Colors.light.brandBlue,
     marginBottom: 2,
   },
   activityTime: {

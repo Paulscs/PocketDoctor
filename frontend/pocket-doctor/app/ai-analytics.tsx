@@ -174,23 +174,10 @@ export default function IAAnalyticsScreen() {
           onPress={handleBack}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color={Colors.light.textGray} />
+          <Ionicons name="arrow-back" size={24} color={Colors.light.brandBlue} />
         </TouchableOpacity>
 
-        <View style={styles.headerCenter}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("@/assets/images/logoBlue.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <ThemedText style={styles.brandTitle}>POCKET DOCTOR</ThemedText>
-          </View>
-        </View>
-
-        <View style={styles.profileIcon}>
-          <ThemedText style={styles.profileIconText}>A</ThemedText>
-        </View>
+        <ThemedText style={styles.headerTitle}></ThemedText>
       </View>
 
       <ScrollView
@@ -233,15 +220,18 @@ export default function IAAnalyticsScreen() {
                   </ThemedText>
                   <View style={[
                     styles.priorityPill,
-                    item.status === 'alto' ? { backgroundColor: Colors.light.error + '20', borderColor: Colors.light.error } :
-                      item.status === 'bajo' ? { backgroundColor: Colors.light.warningBg, borderColor: Colors.light.warningBorder } :
-                        { backgroundColor: Colors.light.friendlyGreenBg, borderColor: Colors.light.friendlyGreenBorder }
+                    {
+                      backgroundColor: (item.status === 'alto' || item.status === 'bajo') ? Colors.light.warning + '22' : Colors.light.healthGreen + '22',
+                      borderColor: 'transparent'
+                    }
                   ]}>
+                    <View style={[
+                      styles.statusDot,
+                      { backgroundColor: (item.status === 'alto' || item.status === 'bajo') ? Colors.light.warning : Colors.light.healthGreen }
+                    ]} />
                     <ThemedText style={[
                       styles.priorityText,
-                      item.status === 'alto' ? { color: Colors.light.error } :
-                        item.status === 'bajo' ? { color: Colors.light.warning } :
-                          { color: Colors.light.success }
+                      { color: (item.status === 'alto' || item.status === 'bajo') ? Colors.light.warning : Colors.light.healthGreen }
                     ]}>
                       {item.status ? (t(`history.status.${item.status}`) || item.status.toUpperCase()) : t('analytics.normal')}
                     </ThemedText>
@@ -340,47 +330,24 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: Colors.light.lightGray,
-    borderBottomWidth: 1,
+    paddingBottom: 10,
+    marginBottom: -30,
     borderBottomColor: Colors.light.borderGray,
   },
   backButton: {
     padding: 8,
+    position: "absolute",
+    left: 20,
+    zIndex: 10,
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  logo: {
-    width: 32,
-    height: 32,
-    marginRight: 12,
-  },
-  brandTitle: {
+  headerTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: Colors.light.brandBlue,
-    lineHeight: 22,
-  },
-  profileIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.light.brandBlue,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  profileIconText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.white,
+    textAlign: "center",
   },
   scrollContent: {
     flex: 1,
@@ -393,16 +360,17 @@ const styles = StyleSheet.create({
   iconContainer: {
     alignItems: "center",
     marginBottom: 24,
-    paddingTop: 16,
+    paddingTop: 0,
+
   },
   mainTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: Colors.light.textGray,
+    color: Colors.light.brandBlue,
     textAlign: "center",
   },
   overviewCard: {
-    backgroundColor: Colors.light.friendlyGreenBg,
+    backgroundColor: Colors.light.healthGreen + '22',
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
@@ -431,7 +399,7 @@ const styles = StyleSheet.create({
   overviewTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: Colors.light.textGray,
+    color: Colors.light.brandBlue,
   },
   overviewText: {
     fontSize: 16,
@@ -445,7 +413,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: Colors.light.textGray,
+    color: Colors.light.brandBlue,
     marginBottom: 16,
   },
   medicalCard: {
@@ -477,16 +445,20 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   priorityPill: {
-    backgroundColor: Colors.light.warningBg,
-    borderColor: Colors.light.warningBorder,
-    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 999, // Circle equivalent
+    gap: 6,
     alignSelf: 'flex-start',
-    minWidth: 60, // Ensure it doesn't collapse
-    alignItems: 'center',
-    flexShrink: 0, // DO NOT SHRINK
+    minWidth: 60,
+    flexShrink: 0,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   priorityText: {
     fontSize: 12,
@@ -494,7 +466,7 @@ const styles = StyleSheet.create({
     color: Colors.light.warning,
   },
   analysisSection: {
-    marginBottom: 16,
+    marginBottom: 1,
   },
   analysisTitle: {
     fontSize: 16,

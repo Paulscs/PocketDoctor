@@ -18,6 +18,7 @@ import { useAuthStore } from "@/src/store/authStore";
 import { getCentros, Centro, getEspecialistasCentro, EspecialistaCentro, searchSpecialists } from "@/src/services/clinics";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ClinicsMap } from "@/components/ClinicsMap";
+import { CustomLoader } from "@/components/ui/CustomLoader";
 
 // Clinic interface imported from component to ensure compatibility
 import { Clinic } from "@/components/ClinicsMap";
@@ -225,26 +226,20 @@ export default function ClinicsScreen() {
       onPress={() => handleClinicPress(clinic)}
       activeOpacity={0.7}
     >
-      <View style={styles.clinicIcon}>
-        <Ionicons
-          name="heart-outline"
-          size={20}
-          color={Colors.light.brandBlue}
-        />
+      <View style={styles.clinicThumbnail}>
+        <View style={styles.thumbnailPlaceholder}>
+          <Ionicons
+            name="medical-outline"
+            size={24}
+            color={Colors.light.medicalBlue}
+          />
+        </View>
       </View>
       <View style={styles.clinicInfo}>
         <ThemedText style={styles.clinicName}>{clinic.name}</ThemedText>
         <ThemedText style={styles.clinicAddress}>{clinic.address}</ThemedText>
       </View>
-      <View style={styles.clinicThumbnail}>
-        <View style={styles.thumbnailPlaceholder}>
-          <Ionicons
-            name="business-outline"
-            size={24}
-            color={Colors.light.placeholderGray}
-          />
-        </View>
-      </View>
+
     </TouchableOpacity>
   );
 
@@ -252,41 +247,27 @@ export default function ClinicsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor }]}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("@/assets/images/logoBlue.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <ThemedText style={styles.logoText}>POCKET DOCTOR</ThemedText>
-          </View>
-        </View>
-        <View style={styles.headerRight}>
-          <View style={styles.titleContainer}>
-            <ThemedText style={styles.pageTitle}>{t('clinics.title')}</ThemedText>
-            <ThemedText style={styles.pageTitle}>{t('clinics.title_specialists')}</ThemedText>
-          </View>
-          <View style={styles.profileIcon}>
-            <UserAvatar size={32} />
-          </View>
-        </View>
-      </View>
 
-      {!errorState ? (
+
+
+      {loading ? (
+        <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+          <CustomLoader />
+        </View>
+      ) : !errorState ? (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.searchContainer}>
             <View style={styles.searchBar}>
               <Ionicons
                 name="search-outline"
                 size={20}
-                color={Colors.light.placeholderGray}
+                color={Colors.light.medicalBlue
+                }
               />
               <TextInput
                 style={styles.searchInput}
                 placeholder={t('clinics.search_placeholder')}
-                placeholderTextColor={Colors.light.placeholderGray}
+                placeholderTextColor={Colors.light.gray}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
@@ -413,69 +394,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.borderGray,
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  titleContainer: {
-    alignItems: "center",
-  },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  logo: {
-    width: 32,
-    height: 32,
-  },
-  logoText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: Colors.light.brandBlue,
-    letterSpacing: 0.5,
-  },
-  pageTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.brandBlue,
-  },
-  profileIcon: {
-    width: 32,
-    height: 32,
-    backgroundColor: Colors.light.brandBlue,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profileIconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profileIconText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.light.white,
-  },
+
+
 
   content: {
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: Colors.light.white,
     paddingTop: 16,
   },
 
@@ -499,7 +422,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.light.textGray,
     padding: 0, // Reset default padding
   },
@@ -573,11 +496,12 @@ const styles = StyleSheet.create({
   },
   clinicInfo: {
     flex: 1,
+
   },
   clinicName: {
     fontSize: 16,
     fontWeight: "600",
-    color: Colors.light.textGray,
+    color: Colors.light.brandBlue,
     marginBottom: 4,
   },
   clinicAddress: {
@@ -585,13 +509,15 @@ const styles = StyleSheet.create({
     color: Colors.light.gray,
   },
   clinicThumbnail: {
-    width: 60,
-    height: 40,
+    width: 40,
+    height: 60,
+
   },
   thumbnailPlaceholder: {
     flex: 1,
-    backgroundColor: Colors.light.lightGray,
+    backgroundColor: Colors.light.medicalBlue + 2430,
     borderRadius: 8,
+    marginRight: 19,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -622,7 +548,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   toggleButtonActive: {
-    backgroundColor: Colors.light.brandBlue,
+    backgroundColor: Colors.light.medicalBlue,
   },
   toggleButtonText: {
     fontSize: 14,

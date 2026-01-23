@@ -13,9 +13,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { router, useLocalSearchParams } from "expo-router";
 import { Colors, Spacing, BorderRadius } from "@/constants/theme";
+import { useTranslation } from "react-i18next";
 
 export default function RecommendationsScreen() {
   const { data } = useLocalSearchParams();
+  const { t } = useTranslation();
 
   // Parse findings from params
   let analysisData: any = null;
@@ -56,23 +58,10 @@ export default function RecommendationsScreen() {
           onPress={handleBack}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color={Colors.light.textGray} />
+          <Ionicons name="arrow-back" size={24} color={Colors.light.brandBlue} />
         </TouchableOpacity>
 
-        <View style={styles.headerCenter}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("@/assets/images/logoBlue.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <ThemedText style={styles.brandTitle}>POCKET DOCTOR</ThemedText>
-          </View>
-        </View>
-
-        <View style={styles.profileIcon}>
-          <ThemedText style={styles.profileIconText}>A</ThemedText>
-        </View>
+        <ThemedText style={styles.headerTitle}></ThemedText>
       </View>
 
       <ScrollView
@@ -90,7 +79,7 @@ export default function RecommendationsScreen() {
                 color={Colors.light.white}
               />
             </View>
-            <ThemedText style={styles.mainTitle}>Recomendaciones</ThemedText>
+            <ThemedText style={styles.mainTitle}>{t('recommendations.title')}</ThemedText>
           </View>
 
           {/* Recommendation Cards */}
@@ -190,7 +179,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
     backgroundColor: Colors.light.lightGray,
@@ -199,38 +188,15 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    position: "absolute",
+    left: 20,
+    zIndex: 10,
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
-  logoContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  logo: {
-    width: 32,
-    height: 32,
-    marginRight: 12,
-  },
-  brandTitle: {
+  headerTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: Colors.light.brandBlue,
-    lineHeight: 22,
-  },
-  profileIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.light.brandBlue,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  profileIconText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.light.white,
+    textAlign: "center",
   },
   scrollContent: {
     flex: 1,

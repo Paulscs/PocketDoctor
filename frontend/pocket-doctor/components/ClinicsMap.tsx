@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         marginHorizontal: 20,
         marginBottom: 20,
-        height: 500, // Explicit height for ScrollView compatibility or flex:1 if parent allows
+        height: 620, // Explicit height for ScrollView compatibility or flex:1 if parent allows
         backgroundColor: Colors.light.lightGray,
     },
     map: {
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     markerIcon: {
-        backgroundColor: Colors.light.brandBlue,
+        backgroundColor: Colors.light.medicalBlue,
         padding: 6,
         borderRadius: 20,
         borderWidth: 2,
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
         borderTopWidth: 8,
         borderLeftColor: 'transparent',
         borderRightColor: 'transparent',
-        borderTopColor: Colors.light.brandBlue,
+        borderTopColor: Colors.light.medicalBlue,
         marginTop: -2,
     },
 });
