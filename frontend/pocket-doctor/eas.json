@@ -11,6 +11,11 @@
             "distribution": "internal",
             "android": {
                 "buildType": "apk"
+            },
+            "env": {
+                "EXPO_PUBLIC_SUPABASE_URL": "https://nmcpndumjvpaztctibkn.supabase.co",
+                "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tY3BuZHVtanZwYXp0Y3RpYmtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyODg4ODMsImV4cCI6MjA3Mzg2NDg4M30.vUZHF76bG8TTkxzEBYdjO2Tj4zqVtDkCXLeM4CTGbZE",
+                "EXPO_PUBLIC_API_BASE_URL": "https://pocketdoctor-gkg3.onrender.com"
             }
         },
         "production": {}

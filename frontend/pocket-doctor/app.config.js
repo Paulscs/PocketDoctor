@@ -19,6 +19,7 @@ export default {
     },
 
     android: {
+      package: "com.litox06.pocketdoctor",
       edgeToEdgeEnabled: true,
       usesCleartextTraffic: true,
       predictiveBackGestureEnabled: false,
@@ -55,17 +56,6 @@ export default {
           dark: { backgroundColor: "#000000" },
         },
       ],
-      // ✅ Your fonts plugin merged here
-      [
-        "expo-font",
-        {
-          fonts: [
-            "./node_modules/@expo-google-fonts/pridi/Pridi_400Regular.ttf",
-            "./node_modules/@expo-google-fonts/pridi/Pridi_500Medium.ttf",
-            "./node_modules/@expo-google-fonts/pridi/Pridi_700Bold.ttf",
-          ],
-        },
-      ],
       "expo-web-browser",
       [
         "expo-location",
@@ -79,5 +69,10 @@ export default {
       typedRoutes: true,
       reactCompiler: false,
     },
+    extra: {
+      eas: {
+        projectId: "2e198946-5c5c-48a5-bed0-d6273bd0bf43"
+      }
+    }
   },
 };
