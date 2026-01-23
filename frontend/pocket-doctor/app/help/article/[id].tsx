@@ -43,6 +43,7 @@ export default function HelpArticleScreen() {
                 options={{
                     title: "",
                     headerShadowVisible: false,
+                    headerTintColor: Colors.light.medicalBlue,
                 }}
             />
 
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
         paddingLeft: Spacing.lg,
         paddingRight: Spacing.lg,
         paddingBottom: Spacing.lg,
-        paddingTop:-5,
+        paddingTop: -5,
     },
     sectionCard: {
         backgroundColor: Colors.light.white,

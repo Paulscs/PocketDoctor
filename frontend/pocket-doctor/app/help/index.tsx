@@ -45,7 +45,7 @@ export default function HelpCenterScreen() {
                     headerBackTitle: t('common.back'),
                     headerStyle: { backgroundColor: Colors.light.white },
                     headerShadowVisible: false,
-                    headerTintColor: Colors.light.brandBlue,
+                    headerTintColor: Colors.light.medicalBlue,
                     headerTitleStyle: {
                         color: Colors.light.brandBlue,
                         fontWeight: '700',
