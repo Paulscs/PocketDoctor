@@ -31,7 +31,36 @@ Before building the app, you must tell the frontend where the live server is.
     ```
     *Note: Do not add a trailing slash `/`.*
 
-## 3. APK Building (Expo EAS)
+## 3. Google Maps Configuration (Crucial for APK)
+
+**This is the reason for the map crash.** You must configure Google Maps for the standalone Android app.
+
+1.  **Go to Google Cloud Console**: [https://console.cloud.google.com/](https://console.cloud.google.com/)
+2.  **Create a Project** (or select an existing one).
+3.  **Enable SDK**:
+    *   Go to "APIs & Services" -> "Library".
+    *   Search for **"Maps SDK for Android"**.
+    *   Click **Enable**.
+4.  **Create API Key**:
+    *   Go to "APIs & Services" -> "Credentials".
+    *   Click **"Create Credentials"** -> **"API Key"**.
+    *   **(Recommended) Restrict Key**: Click the pencil icon to edit the key. Under "API restrictions", select "Restrict key" and choose "Maps SDK for Android".
+5.  **Copy the API Key**.
+6.  **Add to `app.config.js`**:
+    *   We will add it to the `android` section:
+    ```javascript
+    android: {
+      package: "com.litox06.pocketdoctor",
+      config: {
+        googleMaps: {
+          apiKey: "YOUR_API_KEY_HERE"
+        }
+      }
+      // ... other settings
+    }
+    ```
+
+## 4. APK Building (Expo EAS)
 
 We have added `eas.json` to the `frontend/pocket-doctor/` folder.
 

@@ -27,6 +27,11 @@ export default {
         backgroundColor: "#002D73",
         foregroundImage: "./assets/images/logoWhite.png",
       },
+      config: {
+        googleMaps: {
+          apiKey: "AIzaSyCVe5d6ODI4neGp1dfclP9TuwQHAfq38Zg",
+        },
+      },
       // (Optional) Let Android open your app via your scheme: pocketdoctor://
       intentFilters: [
         {
