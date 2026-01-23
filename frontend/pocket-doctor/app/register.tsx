@@ -993,22 +993,52 @@ function RegisterScreenInner() {
                 <Text style={styles.err}>{t('common.required')}</Text>
               )}
 
-              <SelectField
-                label={t('auth.register.blood_type')}
-                value={bloodType}
-                onChange={setBloodType}
-                placeholder={t('auth.register.blood_type_placeholder')}
-                items={bloodTypeItems}
-                open={openBlood}
-                setOpen={o => {
-                  setOpenBlood(o);
-                  if (o) setOpenGenderDD(false);
-                }}
-                zIndex={2000}
-                invalid={submitted && !requiredStr(bloodType)}
-                required
-                styles={styles}
-              />
+              <Label required styles={styles}>
+                {t('auth.register.blood_type')}
+              </Label>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 10, paddingVertical: 4, paddingHorizontal: 2 }}
+                style={{ marginBottom: 12 }}
+              >
+                {bloodTypeItems.map((item) => {
+                  const isSelected = bloodType === item.value;
+                  return (
+                    <TouchableOpacity
+                      key={item.value}
+                      onPress={() => setBloodType(item.value)}
+                      activeOpacity={0.7}
+                      style={{
+                        paddingHorizontal: 20,
+                        paddingVertical: 10,
+                        borderRadius: 24,
+                        backgroundColor: isSelected ? brandBlue : white,
+                        borderWidth: 1,
+                        borderColor: isSelected ? brandBlue : borderGray,
+                        minWidth: 64,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.05,
+                        shadowRadius: 2,
+                        elevation: 2,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: isSelected ? white : textGray,
+                          fontWeight: isSelected ? "700" : "500",
+                          fontSize: 15,
+                        }}
+                      >
+                        {item.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
               {submitted && !requiredStr(bloodType) && (
                 <Text style={styles.err}>{t('common.required')}</Text>
               )}
