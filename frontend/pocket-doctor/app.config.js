@@ -5,7 +5,7 @@ export default {
     slug: "pocket-doctor",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/icon.png",
+    icon: "./assets/images/logoBlue.png",
 
     // ✅ Fixes the Linking warning in production builds
     scheme: "pocketdoctor",
@@ -24,10 +24,8 @@ export default {
       usesCleartextTraffic: true,
       predictiveBackGestureEnabled: false,
       adaptiveIcon: {
-        backgroundColor: "#E6F4FE",
-        foregroundImage: "./assets/images/android-icon-foreground.png",
-        backgroundImage: "./assets/images/android-icon-background.png",
-        monochromeImage: "./assets/images/android-icon-monochrome.png",
+        backgroundColor: "#002D73",
+        foregroundImage: "./assets/images/logoWhite.png",
       },
       // (Optional) Let Android open your app via your scheme: pocketdoctor://
       intentFilters: [
@@ -49,11 +47,9 @@ export default {
       [
         "expo-splash-screen",
         {
-          image: "./assets/images/splash-icon.png",
-          imageWidth: 200,
-          resizeMode: "contain",
-          backgroundColor: "#ffffff",
-          dark: { backgroundColor: "#000000" },
+          image: "./assets/images/logoWhite.png",
+
+          backgroundColor: "#002D73",
         },
       ],
       "expo-web-browser",
