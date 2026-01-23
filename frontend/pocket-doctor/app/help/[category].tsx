@@ -50,6 +50,7 @@ export default function HelpCategoryScreen() {
                     title: "",
                     headerShadowVisible: false,
                     headerTintColor: Colors.light.medicalBlue,
+                    
                 }}
             />
 
@@ -77,13 +78,14 @@ export default function HelpCategoryScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        
     },
     header: {
         padding: Spacing.xl,
         alignItems: 'center',
         backgroundColor: Colors.light.white,
         marginBottom: Spacing.md,
-        paddingTop: Spacing.md,
+        paddingTop: -100,
         paddingBottom: Spacing.lg,
     },
     headerIconContainer: {
@@ -135,8 +137,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: Spacing.md,
-        borderWidth: 1,
-        borderColor: Colors.light.borderGray,
     },
     itemContent: {
         flex: 1,
