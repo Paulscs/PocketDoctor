@@ -21,3 +21,7 @@ class UserProfileUpdate(BaseModel):
     peso_kg: Optional[float] = None
     alergias: Optional[List[str]] = None
     condiciones_medicas: Optional[List[str]] = None
+    nombre: Optional[str] = None
+    apellido: Optional[str] = None
+    altura_cm: Optional[int] = None
+    fecha_nacimiento: Optional[str] = None
