@@ -9,6 +9,9 @@ module.exports = function (api) {
 
   return {
     presets: ['babel-preset-expo'],
-    plugins: platform === 'web' ? ['babel-plugin-transform-import-meta'] : [],
+    plugins: [
+      platform === 'web' && 'babel-plugin-transform-import-meta',
+      'react-native-reanimated/plugin',
+    ].filter(Boolean),
   };
 };
