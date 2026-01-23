@@ -83,6 +83,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: Colors.light.white,
         marginBottom: Spacing.md,
+        paddingTop: Spacing.md,
+        paddingBottom: Spacing.lg,
     },
     headerIconContainer: {
         width: 64,
@@ -90,7 +92,9 @@ const styles = StyleSheet.create({
         borderRadius: 32,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: Spacing.md,
+       letterSpacing: -0.5,
+        paddingBottom: 8,
+        marginBottom: 8,
     },
     headerTitle: {
         fontSize: 22,

@@ -124,8 +124,10 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     contentContainer: {
-        padding: Spacing.lg,
-        paddingBottom: Spacing.xxl,
+        paddingLeft: Spacing.lg,
+        paddingRight: Spacing.lg,
+        paddingBottom: Spacing.lg,
+        paddingTop:-5,
     },
     sectionCard: {
         backgroundColor: Colors.light.white,

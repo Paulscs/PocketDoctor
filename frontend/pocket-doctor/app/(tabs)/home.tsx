@@ -150,8 +150,8 @@ export default function HomeScreen() {
   const getStatusText = (status: string) => {
     switch (status) {
       case "normal": return t('home.status.normal');
-      case "elevated": return t('home.status.elevated');
-      case "critical": return t('home.status.critical');
+      case "elevated": return t('history.status.elevated');
+      case "critical": return t('history.status.critical');
       default: return t('home.status.info');
     }
   };
