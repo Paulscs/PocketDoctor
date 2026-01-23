@@ -730,7 +730,7 @@ export default function LoginScreen() {
         }
 
         useAuthStore.setState({ user, session });
-        Alert.alert(t("common.welcome"), t("auth.login.google_success"));
+        // Alert.alert(t("common.welcome"), t("auth.login.google_success"));
       }
     } catch (err) {
       console.error("[GOOGLE] error inesperado:", err);
