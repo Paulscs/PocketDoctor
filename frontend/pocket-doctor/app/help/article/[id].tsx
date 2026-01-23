@@ -90,7 +90,7 @@ export default function HelpArticleScreen() {
                         return (
                             <View style={styles.tipCard}>
                                 <View style={styles.tipHeader}>
-                                    <Ionicons name="bulb" size={20} color={Colors.light.brandBlue} />
+                                    <Ionicons name="bulb" size={20} color={Colors.light.medicalBlue} />
                                     <ThemedText style={styles.tipTitle}>{t('help.ui.tip_title')}</ThemedText>
                                 </View>
                                 {tips.map((tip, index) => (
@@ -107,10 +107,10 @@ export default function HelpArticleScreen() {
                     <ThemedText style={styles.feedbackLabel}>{t('help.ui.feedback_question')}</ThemedText>
                     <View style={styles.feedbackButtons}>
                         <TouchableOpacity style={styles.feedbackBtn} activeOpacity={0.7}>
-                            <Ionicons name="thumbs-up-outline" size={22} color={Colors.light.brandBlue} />
+                            <Ionicons name="thumbs-up-outline" size={22} color={Colors.light.medicalBlue} />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.feedbackBtn} activeOpacity={0.7}>
-                            <Ionicons name="thumbs-down-outline" size={22} color={Colors.light.brandBlue} />
+                            <Ionicons name="thumbs-down-outline" size={22} color={Colors.light.medicalBlue} />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: Colors.light.brandBlue,
+        backgroundColor: Colors.light.medicalBlue,
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1,
@@ -222,9 +222,7 @@ const styles = StyleSheet.create({
         color: Colors.light.textGray,
     },
     feedbackContainer: {
-        marginTop: Spacing.md,
         alignItems: 'center',
-        paddingVertical: Spacing.lg,
     },
     feedbackLabel: {
         fontSize: 14,

@@ -39,7 +39,7 @@ export default function HelpCategoryScreen() {
             <View style={styles.itemContent}>
                 <ThemedText style={styles.itemTitle}>{t(`help.categories.${categoryId}.articles.${item.id}.title`)}</ThemedText>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.light.placeholderGray} />
+            <Ionicons name="chevron-forward" size={18} color={Colors.light.medicalBlue} />
         </TouchableOpacity>
     );
 
@@ -53,8 +53,8 @@ export default function HelpCategoryScreen() {
             />
 
             <View style={styles.header}>
-                <View style={[styles.headerIconContainer, { backgroundColor: Colors.light.brandBlue + '15' }]}>
-                    <Ionicons name={category.icon as any} size={32} color={Colors.light.brandBlue} />
+                <View style={[styles.headerIconContainer]}>
+                    <Ionicons name={category.icon as any} size={32} color={Colors.light.medicalBlue} />
                 </View>
                 <ThemedText style={styles.headerTitle}>{t(`help.categories.${categoryId}.title`)}</ThemedText>
                 <ThemedText style={styles.description}>{t(`help.categories.${categoryId}.description`)}</ThemedText>
@@ -110,7 +110,6 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.light.white,
         borderTopLeftRadius: BorderRadius.xl,
         borderTopRightRadius: BorderRadius.xl,
-        paddingTop: Spacing.lg,
     },
     list: {
         paddingHorizontal: Spacing.lg,
@@ -144,6 +143,5 @@ const styles = StyleSheet.create({
     separator: {
         height: 1,
         backgroundColor: Colors.light.borderGray,
-        marginLeft: 52, // Align with text start
     }
 });
