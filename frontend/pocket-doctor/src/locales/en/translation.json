@@ -3,6 +3,7 @@
         "loading": "Loading...",
         "error": "Error",
         "save": "Save",
+        "edit": "Edit",
         "cancel": "Cancel",
         "back": "Back",
         "next": "Next",
@@ -17,7 +18,8 @@
         "filter_date": "Filter by date",
         "clear_filter": "Clear filter",
         "from": "From",
-        "to": "To"
+        "to": "To",
+        "view": "View Details"
     },
     "language": {
         "select": "Select your language",
