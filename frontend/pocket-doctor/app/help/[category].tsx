@@ -47,8 +47,9 @@ export default function HelpCategoryScreen() {
         <ThemedView style={[styles.container, { backgroundColor }]}>
             <Stack.Screen
                 options={{
-                    title: t(`help.categories.${categoryId}.title`),
-                    headerTintColor: Colors.light.brandBlue,
+                    title: "",
+                    headerShadowVisible: false,
+                    
                 }}
             />
 

@@ -41,9 +41,8 @@ export default function HelpArticleScreen() {
         <ThemedView style={[styles.container, { backgroundColor }]}>
             <Stack.Screen
                 options={{
-                    title: t('help.ui.title'),
-                    headerBackTitle: t('common.back'),
-                    headerTintColor: Colors.light.brandBlue,
+                    title: "",
+                    headerShadowVisible: false,
                 }}
             />
 
